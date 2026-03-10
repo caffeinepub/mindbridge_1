@@ -10,7 +10,6 @@ import { Link, useLocation } from "@tanstack/react-router";
 import {
   Activity,
   BookOpen,
-  Brain,
   ClipboardList,
   Heart,
   LayoutDashboard,
@@ -21,6 +20,8 @@ import {
   UtensilsCrossed,
   X,
 } from "lucide-react";
+
+const LOGO_SRC = "/assets/generated/lumi-arc-logo-transparent.dim_400x400.png";
 import { useState } from "react";
 import { useAppContext } from "../context/AppContext";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
@@ -66,11 +67,15 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             data-ocid="nav.link"
             className="flex items-center gap-2 group"
           >
-            <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center shadow-teal group-hover:shadow-teal-lg transition-shadow">
-              <Brain className="w-4 h-4 text-primary-foreground" />
+            <div className="w-9 h-9 rounded-xl overflow-hidden flex items-center justify-center group-hover:scale-105 transition-transform">
+              <img
+                src={LOGO_SRC}
+                alt="Lumi Arc Logo"
+                className="w-full h-full object-contain"
+              />
             </div>
             <span className="font-display text-xl font-semibold text-foreground">
-              Mind<span className="text-teal-600">Bridge</span>
+              Lumi<span className="text-teal-600"> Arc</span>
             </span>
           </Link>
 
@@ -201,9 +206,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       <footer className="border-t border-border/60 bg-muted/30 py-6">
         <div className="container mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-sm text-muted-foreground">
           <div className="flex items-center gap-1.5">
-            <Brain className="w-4 h-4 text-primary" />
+            <img
+              src={LOGO_SRC}
+              alt="Lumi Arc"
+              className="w-5 h-5 object-contain"
+            />
             <span className="font-display font-medium text-foreground">
-              MindBridge
+              Lumi Arc
             </span>
             <span>— Your mental wellness companion</span>
           </div>

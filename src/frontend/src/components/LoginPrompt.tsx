@@ -19,7 +19,7 @@ export default function LoginPrompt() {
             <Brain className="w-8 h-8 text-primary" />
           </div>
           <h1 className="font-display text-2xl font-bold text-foreground mb-3">
-            Welcome to MindBridge
+            Welcome to Lumi Arc
           </h1>
           <p className="text-muted-foreground mb-8 leading-relaxed">
             Your safe space for mental wellness. Please sign in to access your

@@ -1,6 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import {
@@ -8,6 +9,7 @@ import {
   Brain,
   CheckCircle,
   ChevronDown,
+  Gamepad2,
   Heart,
   Loader2,
   PenLine,
@@ -21,6 +23,15 @@ import {
   useGetAllActivities,
   useSubmitActivityResponse,
 } from "../hooks/useQueries";
+
+// Detect if an activity is a game by checking the [GAME] prefix in the title
+function isGameActivity(activity: LanguageActivity): boolean {
+  return activity.title.startsWith("[GAME]");
+}
+
+function cleanTitle(title: string): string {
+  return title.replace(/^\[GAME\]\s*/, "");
+}
 
 const activityConfig = {
   journaling: {
@@ -41,15 +52,25 @@ const activityConfig = {
     color: "bg-rose-100 text-rose-700",
     description: "Positive statements to build self-compassion",
   },
+  game: {
+    label: "Game",
+    icon: Gamepad2,
+    color: "bg-green-100 text-green-700",
+    description: "Fun, interactive games for mental wellness",
+  },
 };
 
 type ActivityType = keyof typeof activityConfig;
+type FilterTab = ActivityType | "all";
 
 function ActivityCard({
   activity,
   index,
 }: { activity: LanguageActivity; index: number }) {
-  const typeKey = activity.activityType as unknown as string;
+  const isGame = isGameActivity(activity);
+  const typeKey = isGame
+    ? "game"
+    : (activity.activityType as unknown as string);
   const config =
     activityConfig[typeKey as ActivityType] ?? activityConfig.journaling;
   const Icon = config.icon;
@@ -78,12 +99,13 @@ function ActivityCard({
   };
 
   const difficultyLevel = Number(activity.difficultyLevel);
+  const displayTitle = cleanTitle(activity.title);
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.06, duration: 0.35 }}
+      transition={{ delay: index * 0.04, duration: 0.35 }}
       data-ocid={`activities.item.${index + 1}`}
     >
       <Card className="rounded-2xl border-border/40 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
@@ -97,7 +119,7 @@ function ActivityCard({
               </div>
               <div>
                 <CardTitle className="font-display text-sm font-semibold leading-snug">
-                  {activity.title}
+                  {displayTitle}
                 </CardTitle>
                 <div className="flex items-center gap-2 mt-0.5">
                   <Badge className={`rounded-full text-xs ${config.color}`}>
@@ -136,9 +158,10 @@ function ActivityCard({
               className="overflow-hidden"
             >
               <CardContent className="pt-0 px-5 pb-5">
+                {/* Remove the GAME: prefix from the prompt display */}
                 <div className="bg-muted/40 rounded-xl p-4 mb-4">
                   <p className="text-sm text-foreground leading-relaxed">
-                    {activity.prompt}
+                    {activity.prompt.replace(/^GAME:\s*/, "")}
                   </p>
                 </div>
 
@@ -148,11 +171,13 @@ function ActivityCard({
                       value={response}
                       onChange={(e) => setResponse(e.target.value)}
                       placeholder={
-                        typeKey === "affirmation"
-                          ? "Write how this affirmation makes you feel..."
-                          : typeKey === "word_association"
-                            ? "Write your word associations here..."
-                            : "Begin writing here — there's no right or wrong..."
+                        isGame
+                          ? "Share your experience playing this game..."
+                          : typeKey === "affirmation"
+                            ? "Write how this affirmation makes you feel..."
+                            : typeKey === "word_association"
+                              ? "Write your word associations here..."
+                              : "Begin writing here — there's no right or wrong..."
                       }
                       className="min-h-[120px] rounded-xl resize-none text-sm"
                       data-ocid={`activities.textarea.${index + 1}`}
@@ -203,26 +228,65 @@ function ActivityCard({
 
 export default function ActivitiesPage() {
   const { data: backendActivities, isLoading } = useGetAllActivities();
+  const [activeTab, setActiveTab] = useState<FilterTab>("all");
 
   const activities =
     backendActivities && backendActivities.length > 0
       ? backendActivities
       : SAMPLE_ACTIVITIES;
 
-  const journaling = activities.filter(
-    (a) => (a.activityType as unknown as string) === "journaling",
-  );
-  const wordAssoc = activities.filter(
-    (a) => (a.activityType as unknown as string) === "word_association",
-  );
-  const affirmations = activities.filter(
-    (a) => (a.activityType as unknown as string) === "affirmation",
-  );
+  const categorised = {
+    journaling: activities.filter(
+      (a) =>
+        !isGameActivity(a) &&
+        (a.activityType as unknown as string) === "journaling",
+    ),
+    word_association: activities.filter(
+      (a) =>
+        !isGameActivity(a) &&
+        (a.activityType as unknown as string) === "word_association",
+    ),
+    affirmation: activities.filter(
+      (a) =>
+        !isGameActivity(a) &&
+        (a.activityType as unknown as string) === "affirmation",
+    ),
+    game: activities.filter((a) => isGameActivity(a)),
+  };
 
-  const counts = {
-    journaling: journaling.length,
-    word_association: wordAssoc.length,
-    affirmation: affirmations.length,
+  const counts: Record<FilterTab, number> = {
+    all: activities.length,
+    journaling: categorised.journaling.length,
+    word_association: categorised.word_association.length,
+    affirmation: categorised.affirmation.length,
+    game: categorised.game.length,
+  };
+
+  const filtered =
+    activeTab === "all"
+      ? activities
+      : activeTab === "game"
+        ? categorised.game
+        : activeTab === "word_association"
+          ? categorised.word_association
+          : activeTab === "affirmation"
+            ? categorised.affirmation
+            : categorised.journaling;
+
+  const tabs: FilterTab[] = [
+    "all",
+    "journaling",
+    "affirmation",
+    "word_association",
+    "game",
+  ];
+
+  const tabLabels: Record<FilterTab, string> = {
+    all: "All",
+    journaling: "Journaling",
+    affirmation: "Affirmations",
+    word_association: "Word Play",
+    game: "Games",
   };
 
   return (
@@ -238,18 +302,21 @@ export default function ActivitiesPage() {
           Wellness Activities
         </div>
         <h1 className="font-display text-3xl font-bold text-foreground mb-2">
-          Language Activities
+          Activities & Games
         </h1>
         <p className="text-muted-foreground text-sm max-w-xl">
-          Engage with these therapeutic language exercises to build emotional
-          resilience, self- awareness, and a sense of inner calm.
+          Engage with therapeutic language exercises and fun mental wellness
+          games to build emotional resilience, self-awareness, and a sense of
+          inner calm.
         </p>
       </motion.div>
 
-      {/* Stats */}
-      <div className="flex gap-3 mb-8 flex-wrap">
-        {Object.entries(counts).map(([type, count]) => {
-          const cfg = activityConfig[type as ActivityType];
+      {/* Stats row */}
+      <div className="flex gap-3 mb-6 flex-wrap">
+        {(
+          ["journaling", "affirmation", "word_association", "game"] as const
+        ).map((type) => {
+          const cfg = activityConfig[type];
           const Icon = cfg.icon;
           return (
             <div
@@ -257,10 +324,36 @@ export default function ActivitiesPage() {
               className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium ${cfg.color}`}
             >
               <Icon className="w-3 h-3" />
-              {cfg.label}: {count}
+              {cfg.label}: {counts[type]}
             </div>
           );
         })}
+      </div>
+
+      {/* Filter tabs */}
+      <div className="mb-6 overflow-x-auto">
+        <Tabs
+          value={activeTab}
+          onValueChange={(v) => setActiveTab(v as FilterTab)}
+        >
+          <TabsList className="h-10 rounded-xl bg-muted p-1 flex gap-1 w-max">
+            {tabs.map((tab) => (
+              <TabsTrigger
+                key={tab}
+                value={tab}
+                className="rounded-lg text-xs px-3"
+                data-ocid={`activities.${tab}.tab`}
+              >
+                {tabLabels[tab]}
+                {counts[tab] > 0 && (
+                  <span className="ml-1 text-xs opacity-60">
+                    ({counts[tab]})
+                  </span>
+                )}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
       </div>
 
       {/* Loading */}
@@ -279,7 +372,7 @@ export default function ActivitiesPage() {
       {/* Activities list */}
       {!isLoading && (
         <div className="space-y-4">
-          {activities.length === 0 ? (
+          {filtered.length === 0 ? (
             <div
               className="text-center py-16"
               data-ocid="activities.empty_state"
@@ -293,7 +386,7 @@ export default function ActivitiesPage() {
               </p>
             </div>
           ) : (
-            activities.map((activity, i) => (
+            filtered.map((activity, i) => (
               <ActivityCard
                 key={activity.id.toString()}
                 activity={activity}

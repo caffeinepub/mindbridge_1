@@ -123,7 +123,7 @@ export default function OnboardingPage() {
             <Brain className="w-7 h-7 text-primary" />
           </div>
           <h1 className="font-display text-3xl font-bold text-foreground mb-2">
-            Welcome to MindBridge
+            Welcome to Lumi Arc
           </h1>
           <p className="text-muted-foreground">
             Let's set up your profile in just a few steps

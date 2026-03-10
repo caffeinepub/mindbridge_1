@@ -4,7 +4,6 @@ import {
   Activity,
   ArrowRight,
   BookOpen,
-  Brain,
   ClipboardList,
   Heart,
   Shield,
@@ -13,6 +12,8 @@ import {
   TrendingUp,
   Users,
 } from "lucide-react";
+
+const LOGO_SRC = "/assets/generated/lumi-arc-logo-transparent.dim_400x400.png";
 import { motion } from "motion/react";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
 
@@ -74,7 +75,7 @@ const testimonials = [
   {
     name: "Priya S.",
     role: "High School Student",
-    text: "MindBridge helped me realize I was dealing with more anxiety than I knew. The resources section gave me practical tools that actually work.",
+    text: "Lumi Arc helped me realize I was dealing with more anxiety than I knew. The resources section gave me practical tools that actually work.",
     stars: 5,
   },
   {
@@ -124,7 +125,7 @@ export default function LandingPage() {
                 variants={fadeUp}
                 className="inline-flex items-center gap-2 bg-teal-100 text-teal-700 px-4 py-2 rounded-full text-sm font-medium mb-6"
               >
-                <Sparkles className="w-4 h-4" />
+                <img src={LOGO_SRC} alt="" className="w-5 h-5 object-contain" />
                 Clinically-informed mental wellness
               </motion.div>
 
@@ -165,7 +166,7 @@ export default function LandingPage() {
                 variants={fadeUp}
                 className="text-lg text-muted-foreground leading-relaxed mb-8 max-w-lg"
               >
-                MindBridge helps students understand their mental health through
+                Lumi Arc helps students understand their mental health through
                 validated assessments, track their progress over time, and
                 connect with curated resources — all in a safe, private
                 environment.
@@ -236,7 +237,7 @@ export default function LandingPage() {
               <div className="relative rounded-3xl overflow-hidden shadow-lg">
                 <img
                   src="/assets/generated/hero-mindbridge.dim_1200x600.jpg"
-                  alt="MindBridge — Mental wellness landscape"
+                  alt="Lumi Arc — Mental wellness landscape"
                   className="w-full h-[460px] object-cover"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-foreground/10 to-transparent" />
@@ -297,9 +298,9 @@ export default function LandingPage() {
               Everything you need to thrive
             </h2>
             <p className="text-muted-foreground max-w-xl mx-auto">
-              Built with evidence-based tools and compassionate design,
-              MindBridge supports students through every step of their mental
-              wellness journey.
+              Built with evidence-based tools and compassionate design, Lumi Arc
+              supports students through every step of their mental wellness
+              journey.
             </p>
           </motion.div>
 
@@ -349,8 +350,8 @@ export default function LandingPage() {
               Stories of growth
             </h2>
             <p className="text-muted-foreground max-w-lg mx-auto">
-              Real experiences from students, teachers, and parents using
-              MindBridge.
+              Real experiences from students, teachers, and parents using Lumi
+              Arc.
             </p>
           </motion.div>
 

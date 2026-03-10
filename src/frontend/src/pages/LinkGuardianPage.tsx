@@ -157,9 +157,8 @@ export default function LinkGuardianPage() {
       >
         <Info className="w-4 h-4 flex-shrink-0 mt-0.5 text-primary" />
         <p>
-          Ask your teacher and parent to sign in to MindBridge, create a
-          profile, and share their Principal ID with you. Then enter their IDs
-          below.
+          Ask your teacher and parent to sign in to Lumi Arc, create a profile,
+          and share their Principal ID with you. Then enter their IDs below.
         </p>
       </motion.div>
 

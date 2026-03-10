@@ -9,10 +9,13 @@ import {
   ChevronDown,
   ChevronUp,
   Clock,
+  Cookie,
   Flame,
   FlameKindling,
+  GlassWater,
   Leaf,
   Search,
+  Soup,
   Sparkles,
   Users,
   Zap,
@@ -21,7 +24,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 import { type Dish, MINDFUL_DISHES } from "../data/dishesData";
 
-type Filter = "all" | "no-fire" | "cooked";
+type Filter = "all" | "no-fire" | "cooked" | "snack" | "drink" | "soup";
 
 function NutrientBadge({ label }: { label: string }) {
   return (
@@ -230,7 +233,10 @@ export default function MindfulKitchenPage() {
     const matchesFilter =
       filter === "all" ||
       (filter === "no-fire" && d.noFire) ||
-      (filter === "cooked" && !d.noFire);
+      (filter === "cooked" && !d.noFire) ||
+      (filter === "snack" && d.category === "snack") ||
+      (filter === "drink" && d.category === "drink") ||
+      (filter === "soup" && d.category === "soup");
 
     const q = search.toLowerCase();
     const matchesSearch =
@@ -248,6 +254,9 @@ export default function MindfulKitchenPage() {
     all: MINDFUL_DISHES.length,
     "no-fire": MINDFUL_DISHES.filter((d) => d.noFire).length,
     cooked: MINDFUL_DISHES.filter((d) => !d.noFire).length,
+    snack: MINDFUL_DISHES.filter((d) => d.category === "snack").length,
+    drink: MINDFUL_DISHES.filter((d) => d.category === "drink").length,
+    soup: MINDFUL_DISHES.filter((d) => d.category === "soup").length,
   };
 
   return (
@@ -306,17 +315,17 @@ export default function MindfulKitchenPage() {
           onValueChange={(v) => setFilter(v as Filter)}
           className="w-full md:w-auto"
         >
-          <TabsList className="h-11 rounded-xl bg-muted p-1 flex gap-1">
+          <TabsList className="h-11 rounded-xl bg-muted p-1 flex gap-1 overflow-x-auto flex-nowrap">
             <TabsTrigger
               value="all"
-              className="rounded-lg text-xs px-4"
+              className="rounded-lg text-xs px-3 flex-shrink-0"
               data-ocid="kitchen.all.tab"
             >
               All ({counts.all})
             </TabsTrigger>
             <TabsTrigger
               value="no-fire"
-              className="rounded-lg text-xs px-4"
+              className="rounded-lg text-xs px-3 flex-shrink-0"
               data-ocid="kitchen.nofire.tab"
             >
               <FlameKindling className="w-3.5 h-3.5 mr-1" />
@@ -324,11 +333,35 @@ export default function MindfulKitchenPage() {
             </TabsTrigger>
             <TabsTrigger
               value="cooked"
-              className="rounded-lg text-xs px-4"
+              className="rounded-lg text-xs px-3 flex-shrink-0"
               data-ocid="kitchen.cooked.tab"
             >
               <Flame className="w-3.5 h-3.5 mr-1" />
               Cooked ({counts.cooked})
+            </TabsTrigger>
+            <TabsTrigger
+              value="snack"
+              className="rounded-lg text-xs px-3 flex-shrink-0"
+              data-ocid="kitchen.snacks.tab"
+            >
+              <Cookie className="w-3.5 h-3.5 mr-1" />
+              Snacks ({counts.snack})
+            </TabsTrigger>
+            <TabsTrigger
+              value="drink"
+              className="rounded-lg text-xs px-3 flex-shrink-0"
+              data-ocid="kitchen.drinks.tab"
+            >
+              <GlassWater className="w-3.5 h-3.5 mr-1" />
+              Drinks ({counts.drink})
+            </TabsTrigger>
+            <TabsTrigger
+              value="soup"
+              className="rounded-lg text-xs px-3 flex-shrink-0"
+              data-ocid="kitchen.soups.tab"
+            >
+              <Soup className="w-3.5 h-3.5 mr-1" />
+              Soups ({counts.soup})
             </TabsTrigger>
           </TabsList>
         </Tabs>
