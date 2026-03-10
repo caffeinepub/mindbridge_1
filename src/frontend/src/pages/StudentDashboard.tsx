@@ -14,6 +14,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { motion } from "motion/react";
+import DailyTrackers from "../components/DailyTrackers";
 import MoodCheckIn from "../components/MoodCheckIn";
 import { useAppContext } from "../context/AppContext";
 import { getTodaysTip } from "../data/wellnessTips";
@@ -267,6 +268,19 @@ export default function StudentDashboard() {
                 );
               })}
             </div>
+          </motion.div>
+
+          {/* Daily Habits Trackers */}
+          <motion.div
+            initial="hidden"
+            animate="visible"
+            custom={2.5}
+            variants={fadeUp}
+          >
+            <h2 className="font-display text-xl font-semibold mb-4 flex items-center gap-2">
+              🌱 Daily Habits
+            </h2>
+            <DailyTrackers />
           </motion.div>
 
           {/* Daily Tip */}

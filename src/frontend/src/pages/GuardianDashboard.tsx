@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
 import {
   Table,
   TableBody,
@@ -17,13 +18,17 @@ import {
   Calendar,
   Loader2,
   Search,
+  SmilePlus,
   TrendingUp,
   Users,
 } from "lucide-react";
 import { motion } from "motion/react";
 import { useState } from "react";
 import {
+  Bar,
+  BarChart,
   CartesianGrid,
+  Cell,
   Legend,
   Line,
   LineChart,
@@ -34,6 +39,7 @@ import {
 } from "recharts";
 import type { DASS21Assessment } from "../backend.d";
 import { useActor } from "../hooks/useActor";
+import { useGuardianHabitData } from "../hooks/useGuardianHabitData";
 import { useGetStudentAssessments } from "../hooks/useQueries";
 import {
   formatSeverityLabel,
@@ -54,6 +60,284 @@ function getSocialScore(a: DASS21Assessment): number {
     .socialIsolationScore;
   if (social !== undefined && social !== null) return Number(social);
   return 0;
+}
+
+// ─── Mood History Helpers ─────────────────────────────────────────────────────
+
+const MOOD_LABELS: Record<number, string> = {
+  1: "Very Sad",
+  2: "Sad",
+  3: "Okay",
+  4: "Happy",
+  5: "Very Happy",
+};
+
+const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+function seededRand(seed: string, index: number): number {
+  let h = 2166136261;
+  const s = seed + String(index);
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return ((h >>> 0) % 5) + 1;
+}
+
+function generateWeeklyMoodData(principalText: string) {
+  return DAYS.map((day, i) => ({
+    day,
+    mood: seededRand(principalText, i),
+  }));
+}
+
+const MOOD_BAR_COLORS: Record<number, string> = {
+  1: "oklch(0.55 0.14 260)",
+  2: "oklch(0.62 0.13 230)",
+  3: "oklch(0.65 0.14 195)",
+  4: "oklch(0.62 0.16 170)",
+  5: "oklch(0.58 0.18 155)",
+};
+
+const HABIT_BAR_COLORS: Record<number, string> = {
+  0: "oklch(0.85 0.01 195)",
+  1: "oklch(0.62 0.14 35)",
+  2: "oklch(0.55 0.13 195)",
+  3: "oklch(0.72 0.14 85)",
+};
+
+function MoodTooltip({
+  active,
+  payload,
+  label,
+}: {
+  active?: boolean;
+  payload?: Array<{ value: number }>;
+  label?: string;
+}) {
+  if (!active || !payload?.length) return null;
+  const score = payload[0].value;
+  return (
+    <div className="bg-white/95 backdrop-blur-sm border border-border/40 rounded-xl px-3 py-2 shadow-md text-xs">
+      <div className="font-semibold text-foreground">{label}</div>
+      <div className="text-muted-foreground mt-0.5">
+        {score} — {MOOD_LABELS[score]}
+      </div>
+    </div>
+  );
+}
+
+function HabitTooltip({
+  active,
+  payload,
+  label,
+}: {
+  active?: boolean;
+  payload?: Array<{ value: number }>;
+  label?: string;
+}) {
+  if (!active || !payload?.length) return null;
+  const count = payload[0].value;
+  const labels = [
+    "No habits logged",
+    "1 habit logged",
+    "2 habits logged",
+    "All 3 habits logged!",
+  ];
+  return (
+    <div className="bg-white/95 backdrop-blur-sm border border-border/40 rounded-xl px-3 py-2 shadow-md text-xs">
+      <div className="font-semibold text-foreground">{label}</div>
+      <div className="text-muted-foreground mt-0.5">
+        {labels[count] ?? `${count} habits`}
+      </div>
+    </div>
+  );
+}
+
+// ─── Daily Habits Section ─────────────────────────────────────────────────────
+
+function DailyHabitsSection() {
+  const {
+    sleepStreak,
+    exerciseStreak,
+    outdoorStreak,
+    totalXP,
+    levelLabel,
+    xpProgress,
+    xpToNextLevel,
+    weeklyActivityData,
+    unlockedBadges,
+  } = useGuardianHabitData();
+
+  const streaks = [
+    {
+      icon: "🌙",
+      label: "Sleep Streak",
+      value: sleepStreak,
+      color: "from-indigo-100 to-violet-100 border-indigo-200",
+    },
+    {
+      icon: "💪",
+      label: "Exercise Streak",
+      value: exerciseStreak,
+      color: "from-orange-100 to-rose-100 border-orange-200",
+    },
+    {
+      icon: "🌳",
+      label: "Outdoor Streak",
+      value: outdoorStreak,
+      color: "from-emerald-100 to-teal-100 border-emerald-200",
+    },
+  ];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.22 }}
+      className="space-y-4"
+      data-ocid="guardian.habits.section"
+    >
+      {/* Section header */}
+      <div className="flex items-center justify-between">
+        <h2 className="font-display text-lg font-bold text-foreground flex items-center gap-2">
+          🏃 Daily Habits Overview
+        </h2>
+        <span className="text-xs text-muted-foreground italic bg-muted/50 px-2 py-1 rounded-full">
+          Viewing this student's device habit data
+        </span>
+      </div>
+
+      {/* Streak cards */}
+      <div className="grid grid-cols-3 gap-3" data-ocid="guardian.habits.panel">
+        {streaks.map((s) => (
+          <div
+            key={s.label}
+            className={`rounded-2xl border bg-gradient-to-br ${s.color} p-4 text-center shadow-sm`}
+          >
+            <div className="text-2xl mb-1">{s.icon}</div>
+            <div className="font-display text-3xl font-bold text-foreground flex items-center justify-center gap-1">
+              {s.value > 0 && <span className="text-xl">🔥</span>}
+              {s.value}
+            </div>
+            <div className="text-xs text-muted-foreground mt-0.5 font-medium">
+              {s.label}
+            </div>
+            <div className="text-xs text-muted-foreground">
+              {s.value === 1 ? "day" : "days"}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* XP Level banner */}
+      <div className="rounded-2xl bg-gradient-to-r from-amber-50 via-orange-50 to-yellow-50 border border-amber-200 p-4 shadow-sm">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <span className="text-xl">✨</span>
+            <span className="font-display font-bold text-foreground text-base">
+              {levelLabel}
+            </span>
+          </div>
+          <div className="text-sm font-semibold text-amber-700">
+            {totalXP} XP
+          </div>
+        </div>
+        <Progress value={xpProgress} className="h-2 bg-amber-100" />
+        <div className="text-xs text-muted-foreground mt-1.5">
+          {xpToNextLevel > 0
+            ? `${xpToNextLevel} XP to next level`
+            : "Max level reached! 🏆"}
+        </div>
+      </div>
+
+      {/* Weekly Habit Activity chart */}
+      <Card className="rounded-2xl border-border/40 shadow-sm">
+        <CardHeader className="pb-2">
+          <CardTitle className="font-display text-base flex items-center gap-2">
+            <span>📅</span> Weekly Habit Activity
+          </CardTitle>
+          <p className="text-xs text-muted-foreground">
+            Habits logged per day (0–3) over the last 7 days
+          </p>
+        </CardHeader>
+        <CardContent>
+          <ResponsiveContainer width="100%" height={200}>
+            <BarChart
+              data={weeklyActivityData}
+              barCategoryGap="28%"
+              margin={{ top: 4, right: 8, left: -10, bottom: 0 }}
+            >
+              <CartesianGrid
+                strokeDasharray="3 3"
+                vertical={false}
+                stroke="oklch(0.92 0.015 195)"
+              />
+              <XAxis
+                dataKey="day"
+                tick={{ fontSize: 11 }}
+                axisLine={false}
+                tickLine={false}
+              />
+              <YAxis
+                domain={[0, 3]}
+                ticks={[0, 1, 2, 3]}
+                tick={{ fontSize: 11 }}
+                axisLine={false}
+                tickLine={false}
+              />
+              <Tooltip
+                content={<HabitTooltip />}
+                cursor={{ fill: "oklch(0.96 0.02 195 / 0.5)" }}
+              />
+              <Bar dataKey="count" radius={[6, 6, 0, 0]} maxBarSize={48}>
+                {weeklyActivityData.map((entry) => (
+                  <Cell
+                    key={`habit-bar-${entry.day}`}
+                    fill={HABIT_BAR_COLORS[entry.count] ?? HABIT_BAR_COLORS[0]}
+                  />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
+
+      {/* Badges shelf */}
+      <Card className="rounded-2xl border-border/40 shadow-sm">
+        <CardHeader className="pb-2">
+          <CardTitle className="font-display text-base flex items-center gap-2">
+            🏅 Achievements
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-5 gap-3">
+            {unlockedBadges.map((badge) => (
+              <div
+                key={badge.id}
+                title={badge.unlocked ? badge.description : badge.hint}
+                className={`flex flex-col items-center gap-1 p-2 rounded-xl text-center transition-all ${
+                  badge.unlocked
+                    ? "bg-amber-50 border border-amber-200 shadow-sm ring-1 ring-amber-300/50"
+                    : "bg-muted/40 border border-border/30 opacity-50 grayscale"
+                }`}
+              >
+                <span className="text-xl">{badge.emoji}</span>
+                <span className="text-[10px] font-medium leading-tight text-foreground">
+                  {badge.name}
+                </span>
+                {badge.unlocked && (
+                  <span className="text-[9px] text-amber-600 font-semibold">
+                    Earned!
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </motion.div>
+  );
 }
 
 export default function GuardianDashboard() {
@@ -96,6 +380,10 @@ export default function GuardianDashboard() {
       })) ?? [];
 
   const latest = assessments?.[assessments.length - 1];
+
+  const weeklyMoodData = studentPrincipal
+    ? generateWeeklyMoodData(studentPrincipal.toString())
+    : [];
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-5xl">
@@ -341,11 +629,83 @@ export default function GuardianDashboard() {
                 </motion.div>
               )}
 
+              {/* Weekly Mood History chart */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                data-ocid="guardian.mood.panel"
+              >
+                <Card className="rounded-2xl border-border/40 shadow-sm">
+                  <CardHeader>
+                    <CardTitle className="font-display text-base flex items-center gap-2">
+                      <SmilePlus className="w-4 h-4 text-primary" />
+                      Weekly Mood Check-Ins
+                    </CardTitle>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Mood score: 1 = Very Sad · 2 = Sad · 3 = Okay · 4 = Happy
+                      · 5 = Very Happy
+                    </p>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={220}>
+                      <BarChart
+                        data={weeklyMoodData}
+                        barCategoryGap="28%"
+                        margin={{ top: 4, right: 8, left: -10, bottom: 0 }}
+                      >
+                        <CartesianGrid
+                          strokeDasharray="3 3"
+                          vertical={false}
+                          stroke="oklch(0.92 0.015 195)"
+                        />
+                        <XAxis
+                          dataKey="day"
+                          tick={{ fontSize: 11 }}
+                          axisLine={false}
+                          tickLine={false}
+                        />
+                        <YAxis
+                          domain={[0, 5]}
+                          ticks={[1, 2, 3, 4, 5]}
+                          tick={{ fontSize: 11 }}
+                          axisLine={false}
+                          tickLine={false}
+                        />
+                        <Tooltip
+                          content={<MoodTooltip />}
+                          cursor={{ fill: "oklch(0.96 0.02 195 / 0.5)" }}
+                        />
+                        <Bar
+                          dataKey="mood"
+                          radius={[6, 6, 0, 0]}
+                          maxBarSize={48}
+                        >
+                          {weeklyMoodData.map((entry) => (
+                            <Cell
+                              key={`mood-bar-${entry.day}`}
+                              fill={MOOD_BAR_COLORS[entry.mood]}
+                            />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                    <p className="text-xs text-muted-foreground/70 mt-3 text-center italic">
+                      Mood data shown is illustrative — student must share
+                      access for live sync
+                    </p>
+                  </CardContent>
+                </Card>
+              </motion.div>
+
+              {/* Daily Habits Section */}
+              <DailyHabitsSection />
+
               {/* History table */}
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.25 }}
+                transition={{ delay: 0.28 }}
               >
                 <Card className="rounded-2xl border-border/40 shadow-sm">
                   <CardHeader>

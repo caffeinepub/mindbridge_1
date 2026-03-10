@@ -1,7 +1,8 @@
+import { RefreshCw } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// ─── Types ─────────────────────────────────────────────────────────────────────────────────
 
 type MoodKey = "very-sad" | "sad" | "okay" | "happy" | "very-happy";
 
@@ -37,7 +38,7 @@ interface FireworkBurst {
   delay: number;
 }
 
-// ─── Mood Data ────────────────────────────────────────────────────────────────
+// ─── Mood Data ────────────────────────────────────────────────────────────────────────────
 
 const MOODS: Mood[] = [
   {
@@ -102,7 +103,7 @@ const MOODS: Mood[] = [
   },
 ];
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Helpers ─────────────────────────────────────────────────────────────────────────────────
 
 function todayKey() {
   const d = new Date();
@@ -152,7 +153,7 @@ function makeFireworks(): FireworkBurst[] {
   }));
 }
 
-// ─── Brain SVG ────────────────────────────────────────────────────────────────
+// ─── Brain SVG ────────────────────────────────────────────────────────────────────────────
 
 interface BrainEmojiProps {
   mood: MoodKey;
@@ -519,7 +520,7 @@ function BrainEmoji({
   );
 }
 
-// ─── Confetti ─────────────────────────────────────────────────────────────────
+// ─── Confetti ────────────────────────────────────────────────────────────────────────────────
 
 function ConfettiLayer({ pieces }: { pieces: ConfettiPiece[] }) {
   return (
@@ -558,7 +559,7 @@ function ConfettiLayer({ pieces }: { pieces: ConfettiPiece[] }) {
   );
 }
 
-// ─── Fireworks ────────────────────────────────────────────────────────────────
+// ─── Fireworks ───────────────────────────────────────────────────────────────────────────────
 
 const SPARK_ANGLES = [0, 45, 90, 135, 180, 225, 270, 315];
 
@@ -601,7 +602,7 @@ function FireworksLayer({ bursts }: { bursts: FireworkBurst[] }) {
   );
 }
 
-// ─── Mood Overlay ─────────────────────────────────────────────────────────────
+// ─── Mood Overlay ───────────────────────────────────────────────────────────────────────────
 
 interface MoodOverlayProps {
   mood: Mood;
@@ -689,7 +690,7 @@ function MoodOverlay({ mood, onDismiss }: MoodOverlayProps) {
   );
 }
 
-// ─── Main MoodCheckIn Component ───────────────────────────────────────────────
+// ─── Main MoodCheckIn Component ──────────────────────────────────────────────────────────────────────
 
 export default function MoodCheckIn() {
   const [selected, setSelected] = useState<MoodKey | null>(null);
@@ -769,17 +770,26 @@ export default function MoodCheckIn() {
               <div className="text-sm font-bold text-foreground">
                 {checkedInMoodData?.label}
               </div>
-              <button
+              {/* Update Mood button — dark peach, clearly visible */}
+              <motion.button
                 type="button"
                 data-ocid="mood.edit_button"
                 onClick={() => {
                   setShowChangePrompt(true);
                   setSelected(checkedInToday);
                 }}
-                className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground transition-colors mt-1"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.96 }}
+                className="mt-2 flex items-center gap-1.5 px-5 py-2 rounded-xl text-xs font-bold text-white transition-all shadow-md"
+                style={{
+                  background:
+                    "linear-gradient(135deg, #e07a5f 0%, #c9614a 100%)",
+                  boxShadow: "0 4px 12px rgba(224,122,95,0.45)",
+                }}
               >
-                Change?
-              </button>
+                <RefreshCw className="w-3.5 h-3.5" />
+                Update Mood
+              </motion.button>
             </div>
           </div>
         ) : (
@@ -787,7 +797,6 @@ export default function MoodCheckIn() {
           <div className="px-4 pb-5">
             <fieldset className="border-0 p-0 m-0">
               <legend className="sr-only">Select your mood</legend>
-              {/* Vertical list — each mood is a full-width row */}
               <div className="flex flex-col gap-2 mb-4">
                 {MOODS.map((mood, i) => {
                   const isSelected = selected === mood.key;
@@ -820,7 +829,6 @@ export default function MoodCheckIn() {
                       aria-pressed={isSelected}
                       aria-label={mood.label}
                     >
-                      {/* Brain emoji — given enough padding so overflow:visible works */}
                       <div
                         className={isSelected ? "mood-wiggle" : ""}
                         style={{ padding: "6px", flexShrink: 0 }}
@@ -832,11 +840,9 @@ export default function MoodCheckIn() {
                           isSelected={isSelected}
                         />
                       </div>
-                      {/* Label */}
                       <span className="text-sm font-semibold text-foreground/80 leading-tight">
                         {mood.label}
                       </span>
-                      {/* Tick for selected */}
                       {isSelected && (
                         <span className="ml-auto text-base" aria-hidden="true">
                           ✓
@@ -859,7 +865,12 @@ export default function MoodCheckIn() {
                   exit={{ opacity: 0, y: 4 }}
                   transition={{ duration: 0.2 }}
                   onClick={handleConfirm}
-                  className="w-full py-2.5 rounded-xl font-semibold text-sm bg-foreground/90 text-background hover:bg-foreground transition-colors shadow-sm"
+                  className="w-full py-2.5 rounded-xl font-bold text-sm text-white transition-all shadow-md"
+                  style={{
+                    background:
+                      "linear-gradient(135deg, #e07a5f 0%, #c9614a 100%)",
+                    boxShadow: "0 4px 14px rgba(224,122,95,0.4)",
+                  }}
                 >
                   {showChangePrompt ? "Update Mood ✨" : "Share My Mood ✨"}
                 </motion.button>

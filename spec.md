@@ -1,30 +1,29 @@
-# MindBridge
+# Lumi Arc
 
 ## Current State
-- Full-stack mental health assessment app with DASS-21 questionnaire, social isolation scoring, student dashboard, guardian dashboard, resources library, and language activities.
-- Resources page shows books, articles, podcasts, and wellness activities.
-- No food/nutrition section exists.
+The Guardian Dashboard displays DASS-21 assessment trends and a weekly mood chart (currently seeded/illustrative data). The Daily Habits tracker (DailyTrackers.tsx) stores sleep, exercise, and outdoor logs, plus streak, XP, and badge data in localStorage under key `lumi_arc_daily_logs`. The Guardian Dashboard has no awareness of this habits data.
 
 ## Requested Changes (Diff)
 
 ### Add
-- A new "Mindful Kitchen" page (`/mindful-kitchen`) with Indian vegetarian dishes curated for mental well-being (reducing stress, anxiety, depression).
-- Dishes must focus on greens and nutrient-dense ingredients with documented mood-boosting properties.
-- Each dish should include: dish name, key mental-health benefit, ingredients list, step-by-step cooking method, and a "No Fire Needed" badge where applicable.
-- At least 6-8 dishes total, with 2-3 explicitly no-fire/raw dishes.
-- A nav link "Mindful Kitchen" accessible from the main navigation Layout.
-- Route added to App.tsx and guarded with AuthGuarded.
+- A new "Daily Habits" section in the Guardian Dashboard that reads directly from `lumi_arc_daily_logs` localStorage and displays:
+  - Three streak cards: Sleep streak, Exercise streak, Outdoor streak (consecutive days each has been logged)
+  - A weekly activity summary bar chart showing how many habit categories (0-3) the student logged each of the last 7 days
+  - XP level badge showing the student's current level label (Seeker, Mindful, Balanced, Radiant, Wellness Champion) and total XP
+  - Badge shelf showing all 10 collectible badges (locked/unlocked) just like on the student dashboard
 
 ### Modify
-- `Layout.tsx` (or wherever the nav links live) -- add a Mindful Kitchen nav link.
-- `App.tsx` -- register the new route.
+- Guardian Dashboard: Replace the illustrative mood chart disclaimer text with the real habit data section above (keep the mood chart but also add the habits section below it)
+- The weekly mood chart can remain as-is (still seeded by principal) since mood data is not in localStorage
 
 ### Remove
-- Nothing removed.
+- Nothing removed
 
 ## Implementation Plan
-1. Create `src/frontend/src/data/dishesData.ts` with 7-8 dish objects (static data, no backend needed).
-2. Create `src/frontend/src/pages/MindfulKitchenPage.tsx` rendering dish cards with expandable cooking steps and badges.
-3. Add route `/mindful-kitchen` in `App.tsx`.
-4. Add nav link in `Layout.tsx`.
-5. Validate (typecheck, lint, build).
+1. Create a `useGuardianHabitData.ts` hook that reads `lumi_arc_daily_logs` from localStorage and returns: sleepStreak, exerciseStreak, outdoorStreak, totalXP, levelLabel, unlockedBadges, and weeklyActivityData (last 7 days, each with a count of habits logged that day 0-3)
+2. Update `GuardianDashboard.tsx` to import and use the new hook, rendering:
+   - A streak summary row with 3 cards (sleep/exercise/outdoor streaks)
+   - A weekly habits bar chart (0-3 activities per day over the last 7 days)
+   - XP level pill
+   - Badge shelf (same visual style as DailyTrackers BadgeShelf)
+3. Place the new section between the mood chart and the assessment history table

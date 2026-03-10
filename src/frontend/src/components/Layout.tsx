@@ -3,6 +3,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
@@ -11,11 +12,11 @@ import {
   Activity,
   BookOpen,
   ClipboardList,
-  Heart,
   LayoutDashboard,
   Link2,
   LogOut,
   Menu,
+  User,
   Users,
   UtensilsCrossed,
   X,
@@ -25,6 +26,27 @@ const LOGO_SRC = "/assets/generated/lumi-arc-logo-transparent.dim_400x400.png";
 import { useState } from "react";
 import { useAppContext } from "../context/AppContext";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
+import { useUserProfile } from "../hooks/useUserProfile";
+import ProfileModal from "./ProfileModal";
+
+const AVATARS: Record<string, string> = {
+  sun: "🌻",
+  moon: "🌙",
+  star: "⭐",
+  leaf: "🍃",
+  butterfly: "🦋",
+  owl: "🦉",
+  fox: "🦊",
+  panda: "🐼",
+  cat: "🐱",
+  bunny: "🐰",
+  frog: "🐸",
+  penguin: "🐧",
+  lotus: "🪷",
+  rainbow: "🌈",
+  fire: "🔥",
+  gem: "💎",
+};
 
 const studentNav = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -44,8 +66,10 @@ const guardianNav = [
 export default function Layout({ children }: { children: React.ReactNode }) {
   const { identity, clear } = useInternetIdentity();
   const { userRole } = useAppContext();
+  const { profile } = useUserProfile();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
 
   const isLoggedIn = !!identity;
   const navItems =
@@ -55,6 +79,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const shortPrincipal = principal
     ? `${principal.slice(0, 5)}...${principal.slice(-3)}`
     : "";
+
+  const avatarEmoji = profile.avatar ? (AVATARS[profile.avatar] ?? "🌻") : "🌻";
+  const displayLabel = profile.name ? profile.name : shortPrincipal;
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -113,24 +140,60 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="hidden md:flex gap-2 rounded-full border-border/60"
+                    className="hidden md:flex gap-2 rounded-full border-border/60 pr-3"
                     data-ocid="nav.dropdown_menu"
                   >
-                    <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center">
-                      <Heart className="w-3 h-3 text-primary" />
+                    {/* Avatar circle */}
+                    <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#fdf0ec] to-[#fce8e4] flex items-center justify-center text-sm border border-[#e07a5f]/30">
+                      {avatarEmoji}
                     </div>
-                    <span className="text-xs text-muted-foreground">
-                      {shortPrincipal}
+                    <span className="text-xs text-muted-foreground max-w-[80px] truncate">
+                      {displayLabel}
                     </span>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuContent align="end" className="w-52">
+                  {/* Profile summary */}
+                  <div className="px-3 py-2.5 border-b border-border/40">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#fdf0ec] to-[#fce8e4] flex items-center justify-center text-xl border border-[#e07a5f]/20">
+                        {avatarEmoji}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-sm font-semibold text-foreground truncate">
+                          {profile.name || "Student"}
+                        </div>
+                        {profile.fieldOfStudy && (
+                          <div className="text-xs text-muted-foreground truncate">
+                            {profile.fieldOfStudy}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    {profile.goal && (
+                      <p className="text-xs text-muted-foreground mt-2 italic leading-snug line-clamp-2">
+                        "{profile.goal}"
+                      </p>
+                    )}
+                  </div>
+
+                  <DropdownMenuItem
+                    onClick={() => setProfileOpen(true)}
+                    className="cursor-pointer gap-2 mt-1"
+                    data-ocid="nav.edit_profile_button"
+                  >
+                    <User className="w-4 h-4 text-[#e07a5f]" />
+                    <span>Edit Profile</span>
+                  </DropdownMenuItem>
+
+                  <DropdownMenuSeparator />
+
                   <DropdownMenuItem
                     onClick={() => clear()}
-                    className="text-destructive cursor-pointer"
+                    className="text-destructive cursor-pointer gap-2"
                     data-ocid="nav.logout_button"
                   >
-                    <LogOut className="w-4 h-4 mr-2" />
+                    <LogOut className="w-4 h-4" />
                     Sign Out
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -181,7 +244,19 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 </Link>
               );
             })}
-            <div className="pt-2 border-t border-border/60 mt-2">
+            <div className="pt-2 border-t border-border/60 mt-2 flex flex-col gap-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setProfileOpen(true);
+                  setMobileOpen(false);
+                }}
+                className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-[#e07a5f] hover:bg-[#fdf0ec] w-full"
+                data-ocid="nav.edit_profile_button"
+              >
+                <User className="w-4 h-4" />
+                Edit Profile
+              </button>
               <button
                 type="button"
                 onClick={() => {
@@ -218,7 +293,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </div>
           <span>
             © {new Date().getFullYear()}. Built with{" "}
-            <Heart className="inline w-3 h-3 text-red-500 fill-red-500" /> using{" "}
+            <span className="inline text-red-500">♥</span> using{" "}
             <a
               href={`https://caffeine.ai?utm_source=caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(window.location.hostname)}`}
               className="text-primary hover:underline"
@@ -230,6 +305,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </span>
         </div>
       </footer>
+
+      {/* Profile modal */}
+      <ProfileModal open={profileOpen} onClose={() => setProfileOpen(false)} />
     </div>
   );
 }
