@@ -1,10 +1,11 @@
 import { Button } from "@/components/ui/button";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import {
   Activity,
   ArrowRight,
   BookOpen,
   ClipboardList,
+  GraduationCap,
   Heart,
   Shield,
   Sparkles,
@@ -57,7 +58,7 @@ const features = [
   },
   {
     icon: Activity,
-    title: "Language Activities",
+    title: "Wellness Activities",
     description:
       "Engage with journaling prompts, word associations, and affirmations to build emotional resilience.",
     color: "bg-amber-100 text-amber-700",
@@ -74,13 +75,13 @@ const features = [
 const testimonials = [
   {
     name: "Priya S.",
-    role: "High School Student",
+    role: "University Student",
     text: "Lumi Arc helped me realize I was dealing with more anxiety than I knew. The resources section gave me practical tools that actually work.",
     stars: 5,
   },
   {
     name: "Mr. Thomas R.",
-    role: "School Counselor",
+    role: "University Counselor",
     text: "Being able to check on my students' wellbeing trends has made a real difference. I can intervene earlier and more meaningfully.",
     stars: 5,
   },
@@ -89,6 +90,45 @@ const testimonials = [
     role: "Parent",
     text: "As a parent, having visibility into my child's mental health check-ins — with their permission — gives me peace of mind and opens conversations.",
     stars: 5,
+  },
+];
+
+const roles = [
+  {
+    icon: GraduationCap,
+    title: "Student",
+    description:
+      "Access your personal dashboard, track your mood daily, complete DASS-21 assessments, and explore 100+ curated wellness resources.",
+    buttonLabel: "Student Portal",
+    path: "/dashboard",
+    bg: "bg-teal-50 border-teal-200",
+    iconBg: "bg-teal-100 text-teal-600",
+    btnClass: "bg-teal-600 hover:bg-teal-700 text-white",
+    ocid: "landing.student.button",
+  },
+  {
+    icon: Users,
+    title: "Teacher",
+    description:
+      "View class-level wellness reports, identify at-risk students at a glance, and click into individual profiles for a detailed view.",
+    buttonLabel: "Teacher Dashboard",
+    path: "/teacher-dashboard",
+    bg: "bg-sage-50 border-sage-200",
+    iconBg: "bg-sage-100 text-sage-600",
+    btnClass: "bg-sage-600 hover:bg-sage-700 text-white",
+    ocid: "landing.teacher.button",
+  },
+  {
+    icon: Heart,
+    title: "Parent / Guardian",
+    description:
+      "Monitor your child's mood history, daily habit streaks, XP progress, and wellness badges — all updated in real time.",
+    buttonLabel: "Guardian View",
+    path: "/guardian-dashboard",
+    bg: "bg-rose-50 border-rose-200",
+    iconBg: "bg-rose-100 text-rose-600",
+    btnClass: "bg-rose-500 hover:bg-rose-600 text-white",
+    ocid: "landing.guardian.button",
   },
 ];
 
@@ -195,12 +235,12 @@ export default function LandingPage() {
                   className="h-12 px-8 rounded-xl border-border/60 font-medium text-base"
                   onClick={() =>
                     document
-                      .getElementById("features")
+                      .getElementById("who-is-lumi-arc-for")
                       ?.scrollIntoView({ behavior: "smooth" })
                   }
                   data-ocid="landing.secondary_button"
                 >
-                  Learn More
+                  Who is it for?
                 </Button>
               </motion.div>
 
@@ -213,8 +253,8 @@ export default function LandingPage() {
               >
                 {[
                   { label: "Students Supported", value: "2,400+" },
-                  { label: "Resources Available", value: "50+" },
-                  { label: "Schools Connected", value: "38" },
+                  { label: "Resources Available", value: "100+" },
+                  { label: "Universities Connected", value: "38" },
                 ].map((stat) => (
                   <div key={stat.label} className="text-center">
                     <div className="font-display text-2xl font-bold text-teal-700">
@@ -280,6 +320,68 @@ export default function LandingPage() {
                 </p>
               </motion.div>
             </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* Who is Lumi Arc for? */}
+      <section
+        id="who-is-lumi-arc-for"
+        className="py-24 bg-gradient-to-b from-background to-muted/20"
+      >
+        <div className="container mx-auto px-4">
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={fadeUp}
+            className="text-center mb-14"
+          >
+            <h2 className="font-display text-4xl font-bold text-foreground mb-4">
+              Who is Lumi Arc for?
+            </h2>
+            <p className="text-muted-foreground max-w-xl mx-auto">
+              Lumi Arc serves everyone in the university wellness ecosystem —
+              students, teachers, and parents — each with their own tailored
+              experience.
+            </p>
+          </motion.div>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            {roles.map((role, i) => {
+              const Icon = role.icon;
+              return (
+                <motion.div
+                  key={role.title}
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={{ once: true }}
+                  custom={i * 0.1}
+                  variants={fadeUp}
+                  className={`rounded-2xl border p-8 flex flex-col ${role.bg}`}
+                >
+                  <div
+                    className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-5 ${role.iconBg}`}
+                  >
+                    <Icon className="w-7 h-7" />
+                  </div>
+                  <h3 className="font-display text-xl font-bold text-foreground mb-3">
+                    {role.title}
+                  </h3>
+                  <p className="text-muted-foreground text-sm leading-relaxed mb-6 flex-1">
+                    {role.description}
+                  </p>
+                  <Button
+                    onClick={() => navigate({ to: role.path })}
+                    data-ocid={role.ocid}
+                    className={`w-full rounded-xl font-medium ${role.btnClass}`}
+                  >
+                    {role.buttonLabel}
+                    <ArrowRight className="ml-2 w-4 h-4" />
+                  </Button>
+                </motion.div>
+              );
+            })}
           </div>
         </div>
       </section>

@@ -72,26 +72,34 @@ const MOOD_LABELS: Record<number, string> = {
   5: "Very Happy",
 };
 
-const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const MOOD_STRING_TO_NUMBER: Record<string, number> = {
+  "very-sad": 1,
+  sad: 2,
+  okay: 3,
+  happy: 4,
+  "very-happy": 5,
+};
 
-function seededRand(seed: string, index: number): number {
-  let h = 2166136261;
-  const s = seed + String(index);
-  for (let i = 0; i < s.length; i++) {
-    h ^= s.charCodeAt(i);
-    h = Math.imul(h, 16777619);
+function getRealWeeklyMoodData(): Array<{ day: string; mood: number }> {
+  const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const result: Array<{ day: string; mood: number }> = [];
+  const today = new Date();
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    const key = `lumi_arc_mood_${yyyy}-${mm}-${dd}`;
+    const stored = localStorage.getItem(key);
+    const mood = stored ? (MOOD_STRING_TO_NUMBER[stored] ?? 0) : 0;
+    result.push({ day: DAY_NAMES[d.getDay()], mood });
   }
-  return ((h >>> 0) % 5) + 1;
-}
-
-function generateWeeklyMoodData(principalText: string) {
-  return DAYS.map((day, i) => ({
-    day,
-    mood: seededRand(principalText, i),
-  }));
+  return result;
 }
 
 const MOOD_BAR_COLORS: Record<number, string> = {
+  0: "oklch(0.88 0.01 195)",
   1: "oklch(0.55 0.14 260)",
   2: "oklch(0.62 0.13 230)",
   3: "oklch(0.65 0.14 195)",
@@ -117,6 +125,14 @@ function MoodTooltip({
 }) {
   if (!active || !payload?.length) return null;
   const score = payload[0].value;
+  if (score === 0) {
+    return (
+      <div className="bg-white/95 backdrop-blur-sm border border-border/40 rounded-xl px-3 py-2 shadow-md text-xs">
+        <div className="font-semibold text-foreground">{label}</div>
+        <div className="text-muted-foreground mt-0.5">No check-in recorded</div>
+      </div>
+    );
+  }
   return (
     <div className="bg-white/95 backdrop-blur-sm border border-border/40 rounded-xl px-3 py-2 shadow-md text-xs">
       <div className="font-semibold text-foreground">{label}</div>
@@ -381,9 +397,7 @@ export default function GuardianDashboard() {
 
   const latest = assessments?.[assessments.length - 1];
 
-  const weeklyMoodData = studentPrincipal
-    ? generateWeeklyMoodData(studentPrincipal.toString())
-    : [];
+  const weeklyMoodData = getRealWeeklyMoodData();
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-5xl">
@@ -684,15 +698,18 @@ export default function GuardianDashboard() {
                           {weeklyMoodData.map((entry) => (
                             <Cell
                               key={`mood-bar-${entry.day}`}
-                              fill={MOOD_BAR_COLORS[entry.mood]}
+                              fill={
+                                MOOD_BAR_COLORS[entry.mood] ??
+                                MOOD_BAR_COLORS[0]
+                              }
                             />
                           ))}
                         </Bar>
                       </BarChart>
                     </ResponsiveContainer>
                     <p className="text-xs text-muted-foreground/70 mt-3 text-center italic">
-                      Mood data shown is illustrative — student must share
-                      access for live sync
+                      Showing this device's logged mood check-ins for the last 7
+                      days.
                     </p>
                   </CardContent>
                 </Card>

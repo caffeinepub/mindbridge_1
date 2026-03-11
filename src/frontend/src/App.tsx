@@ -20,6 +20,7 @@ import OnboardingPage from "./pages/OnboardingPage";
 import ResourcesPage from "./pages/ResourcesPage";
 import ResultsPage from "./pages/ResultsPage";
 import StudentDashboard from "./pages/StudentDashboard";
+import TeacherDashboard from "./pages/TeacherDashboard";
 
 // Root layout component
 function RootComponent() {
@@ -117,6 +118,13 @@ const guardianDashboardRoute = createRoute({
   ),
 });
 
+// Teacher Dashboard (no auth guard — accessible directly)
+const teacherDashboardRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/teacher-dashboard",
+  component: TeacherDashboard,
+});
+
 // Resources
 const resourcesRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -168,6 +176,7 @@ const routeTree = rootRoute.addChildren([
   assessmentRoute,
   resultsRoute,
   guardianDashboardRoute,
+  teacherDashboardRoute,
   resourcesRoute,
   activitiesRoute,
   linkGuardianRoute,
