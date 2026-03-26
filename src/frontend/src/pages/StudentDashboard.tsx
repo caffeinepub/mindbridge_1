@@ -6,18 +6,25 @@ import {
   Activity,
   AlertCircle,
   ArrowRight,
+  Bell,
   BookOpen,
   ClipboardList,
   Heart,
   Link2,
   Sparkles,
   TrendingUp,
+  X,
 } from "lucide-react";
-import { motion } from "motion/react";
+import { Copy, GraduationCap, Share2 } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
+import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import DailyTrackers from "../components/DailyTrackers";
 import MoodCheckIn from "../components/MoodCheckIn";
 import { useAppContext } from "../context/AppContext";
 import { getTodaysTip } from "../data/wellnessTips";
+import { useInternetIdentity } from "../hooks/useInternetIdentity";
+import { useProfile } from "../hooks/useProfile";
 import { formatSeverityLabel, severityBgClass } from "../utils/scoring";
 
 const fadeUp = {
@@ -66,11 +73,109 @@ const quickLinks = [
 
 const todayTip = getTodaysTip();
 
+const STORAGE_KEY = "lumi_arc_daily_logs";
+const TODAY_KEY = new Date().toISOString().slice(0, 10);
+
+function getTodayLog() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    const logs = raw ? JSON.parse(raw) : {};
+    return logs[TODAY_KEY] ?? {};
+  } catch {
+    return {};
+  }
+}
+
 export default function StudentDashboard() {
   const { latestResult } = useAppContext();
+  const { identity } = useInternetIdentity();
+  const { profile: lumiProfile } = useProfile(identity);
+
+  // Profile
+  const [profile, setProfile] = useState<{
+    displayName?: string;
+    avatar?: string;
+  } | null>(null);
+
+  // Reminder banner
+  const [bannerDismissed, setBannerDismissed] = useState(false);
+  const [todayLog, setTodayLog] = useState(getTodayLog);
+
+  useEffect(() => {
+    // Set last active timestamp
+    localStorage.setItem("lumiLastActive", new Date().toISOString());
+    // Load profile
+    try {
+      const raw = localStorage.getItem("lumiProfile");
+      if (raw) setProfile(JSON.parse(raw));
+    } catch {
+      // ignore
+    }
+    // Refresh today log
+    setTodayLog(getTodayLog());
+  }, []);
+
+  const missingTrackers = useMemo(() => {
+    const missing: string[] = [];
+    if (!todayLog.sleep) missing.push("sleep");
+    if (!todayLog.exercise) missing.push("exercise");
+    if (!todayLog.outdoor) missing.push("outdoor games");
+    return missing;
+  }, [todayLog]);
+
+  const showBanner = !bannerDismissed && missingTrackers.length > 0;
+
+  const displayName = profile?.displayName?.trim() || null;
+  const avatarEmoji = profile?.avatar || null;
+
+  const handleScrollToTrackers = () => {
+    const el = document.getElementById("daily-habits-section");
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
+      {/* Reminder Banner */}
+      <AnimatePresence>
+        {showBanner && (
+          <motion.div
+            initial={{ opacity: 0, y: -12, height: 0 }}
+            animate={{ opacity: 1, y: 0, height: "auto" }}
+            exit={{ opacity: 0, y: -12, height: 0 }}
+            transition={{ duration: 0.3 }}
+            className="mb-4 overflow-hidden"
+            data-ocid="dashboard.reminder.panel"
+          >
+            <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3">
+              <Bell className="w-4 h-4 text-amber-600 flex-shrink-0" />
+              <p className="text-sm text-amber-800 flex-1">
+                You haven&apos;t logged your{" "}
+                <span className="font-semibold">
+                  {missingTrackers.join(", ")}
+                </span>{" "}
+                today — a small step counts!
+              </p>
+              <button
+                type="button"
+                onClick={handleScrollToTrackers}
+                className="text-xs font-semibold text-amber-700 underline underline-offset-2 flex-shrink-0"
+                data-ocid="dashboard.reminder.button"
+              >
+                Log now
+              </button>
+              <button
+                type="button"
+                onClick={() => setBannerDismissed(true)}
+                className="text-amber-500 hover:text-amber-700 flex-shrink-0"
+                data-ocid="dashboard.reminder.close_button"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Welcome header */}
       <motion.div
         initial="hidden"
@@ -83,9 +188,20 @@ export default function StudentDashboard() {
           <Sparkles className="w-4 h-4 text-teal-500" />
           Good to see you
         </div>
-        <h1 className="font-display text-3xl md:text-4xl font-bold text-foreground">
-          Your Wellness Dashboard
-        </h1>
+        {displayName ? (
+          <div className="flex items-center gap-3">
+            {avatarEmoji && (
+              <span className="text-4xl leading-none">{avatarEmoji}</span>
+            )}
+            <h1 className="font-display text-3xl md:text-4xl font-bold text-foreground">
+              Welcome back, {displayName}! 👋
+            </h1>
+          </div>
+        ) : (
+          <h1 className="font-display text-3xl md:text-4xl font-bold text-foreground">
+            Your Wellness Dashboard
+          </h1>
+        )}
       </motion.div>
 
       {/* Two-column responsive layout */}
@@ -270,8 +386,87 @@ export default function StudentDashboard() {
             </div>
           </motion.div>
 
+          {/* Student Code & Teacher Info */}
+          {lumiProfile && (
+            <motion.div
+              initial="hidden"
+              animate="visible"
+              custom={2.2}
+              variants={fadeUp}
+              className="grid sm:grid-cols-2 gap-4"
+            >
+              {/* Student Code Card */}
+              <div
+                className="rounded-2xl bg-teal-50 border border-teal-200 p-4 flex flex-col gap-2"
+                data-ocid="dashboard.student_code.card"
+              >
+                <div className="flex items-center gap-2">
+                  <Share2 className="w-4 h-4 text-teal-600" />
+                  <span className="text-xs font-semibold text-teal-700 uppercase tracking-wide">
+                    Your Student Code
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="font-mono font-bold text-lg text-foreground">
+                    {lumiProfile.studentCode || "—"}
+                  </span>
+                  {lumiProfile.studentCode && (
+                    <button
+                      type="button"
+                      data-ocid="dashboard.copy_code.button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(
+                          lumiProfile.studentCode || "",
+                        );
+                        toast.success("Student code copied!");
+                      }}
+                      className="p-1.5 rounded-lg hover:bg-teal-100 transition-colors"
+                    >
+                      <Copy className="w-3.5 h-3.5 text-teal-600" />
+                    </button>
+                  )}
+                </div>
+                <p className="text-xs text-teal-600">
+                  Share this code with your parent/guardian
+                </p>
+              </div>
+
+              {/* Teacher Info Card */}
+              <div
+                className="rounded-2xl bg-sage-50 border border-sage-200 p-4 flex flex-col gap-2"
+                data-ocid="dashboard.teacher_info.card"
+              >
+                <div className="flex items-center gap-2">
+                  <GraduationCap className="w-4 h-4 text-sage-600" />
+                  <span className="text-xs font-semibold text-sage-700 uppercase tracking-wide">
+                    Your Mentor Teacher
+                  </span>
+                </div>
+                {lumiProfile.linkedTeacherEmail ? (
+                  <>
+                    <p className="font-medium text-sm text-foreground">
+                      {lumiProfile.linkedTeacherName || "Teacher"}
+                    </p>
+                    <a
+                      href={`mailto:${lumiProfile.linkedTeacherEmail}`}
+                      className="text-xs text-sage-600 hover:underline truncate"
+                    >
+                      {lumiProfile.linkedTeacherEmail}
+                    </a>
+                  </>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    Not yet linked to a teacher. Sign up via your teacher's
+                    invite link to connect.
+                  </p>
+                )}
+              </div>
+            </motion.div>
+          )}
+
           {/* Daily Habits Trackers */}
           <motion.div
+            id="daily-habits-section"
             initial="hidden"
             animate="visible"
             custom={2.5}
@@ -301,7 +496,7 @@ export default function StudentDashboard() {
                 <div className="flex-1">
                   <div className="flex items-center justify-between mb-1">
                     <div className="text-xs font-semibold text-primary uppercase tracking-wide">
-                      Today's Wellness Tip
+                      Today&apos;s Wellness Tip
                     </div>
                     <div className="text-xs text-muted-foreground">
                       {new Date().toLocaleDateString(undefined, {

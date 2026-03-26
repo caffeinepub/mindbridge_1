@@ -7,6 +7,7 @@ import {
   Moon,
   Smile,
   TreePine,
+  TrendingUp,
   Users,
   Zap,
 } from "lucide-react";
@@ -19,7 +20,11 @@ import {
   teacherStudents,
 } from "../data/teacherSampleData";
 
-// ── Mood helpers ─────────────────────────────────────────────────────────────
+import { Copy, Link2, Mail, User } from "lucide-react";
+import { toast } from "sonner";
+import { useInternetIdentity } from "../hooks/useInternetIdentity";
+import { generateTeacherInviteLink, useProfile } from "../hooks/useProfile";
+// ── Mood helpers ─────────────────────────────────────────────────────────────────────────────
 
 const MOOD_CONFIG: Record<
   MoodValue,
@@ -89,7 +94,7 @@ function SeverityBadge({ severity }: { severity: string }) {
   );
 }
 
-// ── Class Overview ────────────────────────────────────────────────────────────
+// ── Class Overview ─────────────────────────────────────────────────────────────────────────────
 
 type FilterType = "all" | "at-risk" | "active";
 
@@ -336,7 +341,7 @@ function ClassOverview({
   );
 }
 
-// ── Individual Student Profile ────────────────────────────────────────────────
+// ── Individual Student Profile ──────────────────────────────────────────────────────────────────────────────
 
 function StudentProfile({
   student,
@@ -361,6 +366,19 @@ function StudentProfile({
     if (pct < 0.35) return "bg-amber-400";
     if (pct < 0.55) return "bg-orange-400";
     return "bg-red-500";
+  };
+
+  // Build compact 30-day chart data
+  const mood30ChartColor = (mood: MoodValue | null): string => {
+    if (!mood) return "#e5e7eb";
+    const colors: Record<MoodValue, string> = {
+      "Very Happy": "#2dd4bf",
+      Happy: "#4ade80",
+      Neutral: "#fbbf24",
+      Sad: "#fb923c",
+      "Very Sad": "#f87171",
+    };
+    return colors[mood];
   };
 
   return (
@@ -480,13 +498,13 @@ function StudentProfile({
                 {
                   label: "Depression",
                   score: student.dass21.depression,
-                  max: 28,
+                  max: 42,
                 },
-                { label: "Anxiety", score: student.dass21.anxiety, max: 21 },
-                { label: "Stress", score: student.dass21.stress, max: 34 },
-              ] as const
+                { label: "Anxiety", score: student.dass21.anxiety, max: 42 },
+                { label: "Stress", score: student.dass21.stress, max: 42 },
+              ] as Array<{ label: string; score: number; max: number }>
             ).map(({ label, score, max }) => {
-              const pct = Math.min((score / max) * 100, 100);
+              const pct = Math.min(100, (score / max) * 100);
               let sev = "Normal";
               if (label === "Depression") {
                 sev =
@@ -544,96 +562,205 @@ function StudentProfile({
             })}
           </div>
         </div>
+      </div>
 
-        {/* Habit Streaks */}
-        <div className="bg-card border border-border/50 rounded-2xl p-6">
-          <h3 className="font-display text-lg font-semibold mb-5 flex items-center gap-2">
-            <Flame className="w-5 h-5 text-orange-400" />
-            Habit Streaks
-          </h3>
-          <div className="grid grid-cols-3 gap-4">
-            {[
-              {
-                label: "Sleep",
-                streak: student.sleepStreak,
-                Icon: Moon,
-                color: "bg-blue-50 border-blue-200 text-blue-700",
-              },
-              {
-                label: "Exercise",
-                streak: student.exerciseStreak,
-                Icon: Dumbbell,
-                color: "bg-green-50 border-green-200 text-green-700",
-              },
-              {
-                label: "Outdoor",
-                streak: student.outdoorStreak,
-                Icon: TreePine,
-                color: "bg-teal-50 border-teal-200 text-teal-700",
-              },
-            ].map(({ label, streak, Icon, color }) => (
+      {/* Mood Trend — Last 30 Days */}
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.15 }}
+        className="bg-card border border-border/50 rounded-2xl p-6"
+        data-ocid="teacher.mood30.panel"
+      >
+        <h3 className="font-display text-lg font-semibold mb-2 flex items-center gap-2">
+          <TrendingUp className="w-5 h-5 text-teal-500" />
+          Mood Trend — Last 30 Days
+        </h3>
+        <p className="text-xs text-muted-foreground mb-5">
+          Each bar represents one day. Colour indicates mood; grey = no
+          check-in.
+        </p>
+        <div className="flex items-end gap-0.5" style={{ height: "80px" }}>
+          {student.moodHistory30.map(({ day, mood }) => (
+            <div
+              key={`mood30-${day}`}
+              className="flex-1 relative group"
+              style={{ height: "80px" }}
+              title={mood ? `${day}: ${mood}` : `${day}: No check-in`}
+            >
               <div
-                key={label}
-                className={`rounded-xl border p-4 text-center ${color}`}
-              >
-                <Icon className="w-5 h-5 mx-auto mb-2 opacity-70" />
-                <div className="font-display text-2xl font-bold">
-                  {streak > 0 ? `🔥${streak}` : "—"}
-                </div>
-                <div className="text-xs font-medium mt-1 opacity-80">
-                  {label}
-                </div>
-                <div className="text-xs opacity-60">
-                  {streak === 1 ? "day" : "days"}
-                </div>
-              </div>
-            ))}
-          </div>
+                className="absolute bottom-0 left-0 right-0 rounded-t-sm transition-all"
+                style={{
+                  height: mood ? `${(MOOD_SCORE[mood] / 5) * 100}%` : "4px",
+                  backgroundColor: mood30ChartColor(mood),
+                  minHeight: "4px",
+                }}
+              />
+            </div>
+          ))}
         </div>
+        {/* Day labels for start, mid, end */}
+        <div className="flex justify-between mt-2">
+          <span className="text-xs text-muted-foreground">Day 1</span>
+          <span className="text-xs text-muted-foreground">Day 15</span>
+          <span className="text-xs text-muted-foreground">Day 30</span>
+        </div>
+        <div className="flex flex-wrap gap-3 mt-4 pt-4 border-t border-border/40">
+          {Object.entries(MOOD_CONFIG).map(([key, cfg]) => (
+            <span
+              key={key}
+              className="flex items-center gap-1 text-xs text-muted-foreground"
+            >
+              <span className={`w-2.5 h-2.5 rounded-full ${cfg.bar}`} />
+              {cfg.label}
+            </span>
+          ))}
+          <span className="flex items-center gap-1 text-xs text-muted-foreground">
+            <span className="w-2.5 h-2.5 rounded-full bg-muted-foreground/30" />
+            No check-in
+          </span>
+        </div>
+      </motion.div>
 
-        {/* Badges */}
-        <div className="bg-card border border-border/50 rounded-2xl p-6">
-          <h3 className="font-display text-lg font-semibold mb-5 flex items-center gap-2">
-            <Zap className="w-5 h-5 text-purple-500" />
-            Badges Earned
-          </h3>
-          <div className="flex flex-wrap gap-2">
-            {ALL_BADGES.map((badge) => {
-              const earned = student.badges.includes(badge);
-              return (
-                <span
-                  key={badge}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
-                    earned
-                      ? "bg-purple-100 border-purple-200 text-purple-700"
-                      : "bg-muted border-border/40 text-muted-foreground line-through opacity-50"
-                  }`}
-                >
-                  {earned ? "🏅 " : ""}
-                  {badge}
-                </span>
-              );
-            })}
-          </div>
-          <p className="text-xs text-muted-foreground mt-4">
-            {student.badges.length} / {ALL_BADGES.length} badges earned
-          </p>
+      {/* Habit Streaks */}
+      <div className="bg-card border border-border/50 rounded-2xl p-6">
+        <h3 className="font-display text-lg font-semibold mb-5 flex items-center gap-2">
+          <Flame className="w-5 h-5 text-orange-400" />
+          Habit Streaks
+        </h3>
+        <div className="grid grid-cols-3 gap-4">
+          {[
+            {
+              label: "Sleep",
+              streak: student.sleepStreak,
+              Icon: Moon,
+              color: "bg-blue-50 border-blue-200 text-blue-700",
+            },
+            {
+              label: "Exercise",
+              streak: student.exerciseStreak,
+              Icon: Dumbbell,
+              color: "bg-green-50 border-green-200 text-green-700",
+            },
+            {
+              label: "Outdoor",
+              streak: student.outdoorStreak,
+              Icon: TreePine,
+              color: "bg-teal-50 border-teal-200 text-teal-700",
+            },
+          ].map(({ label, streak, Icon, color }) => (
+            <div
+              key={label}
+              className={`rounded-xl border p-4 text-center ${color}`}
+            >
+              <Icon className="w-5 h-5 mx-auto mb-2 opacity-70" />
+              <div className="font-display text-2xl font-bold">
+                {streak > 0 ? `🔥${streak}` : "—"}
+              </div>
+              <div className="text-xs font-medium mt-1 opacity-80">{label}</div>
+              <div className="text-xs opacity-60">
+                {streak === 1 ? "day" : "days"}
+              </div>
+            </div>
+          ))}
         </div>
+      </div>
+
+      {/* Badges */}
+      <div className="bg-card border border-border/50 rounded-2xl p-6">
+        <h3 className="font-display text-lg font-semibold mb-5 flex items-center gap-2">
+          <Zap className="w-5 h-5 text-purple-500" />
+          Badges Earned
+        </h3>
+        <div className="flex flex-wrap gap-2">
+          {ALL_BADGES.map((badge) => {
+            const earned = student.badges.includes(badge);
+            return (
+              <span
+                key={badge}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
+                  earned
+                    ? "bg-purple-100 border-purple-200 text-purple-700"
+                    : "bg-muted border-border/40 text-muted-foreground line-through opacity-50"
+                }`}
+              >
+                {earned ? "🏅 " : ""}
+                {badge}
+              </span>
+            );
+          })}
+        </div>
+        <p className="text-xs text-muted-foreground mt-4">
+          {student.badges.length} / {ALL_BADGES.length} badges earned
+        </p>
       </div>
     </motion.div>
   );
 }
 
-// ── Main ──────────────────────────────────────────────────────────────────────
+// ── Main ────────────────────────────────────────────────────────────────────────────────────────────────────────
 
 export default function TeacherDashboard() {
   const [selectedStudent, setSelectedStudent] = useState<StudentRecord | null>(
     null,
   );
+  const { identity } = useInternetIdentity();
+  const { profile } = useProfile(identity);
+
+  const inviteLink = identity ? generateTeacherInviteLink(identity) : "";
+
+  const handleCopyLink = () => {
+    if (!inviteLink) return;
+    navigator.clipboard.writeText(inviteLink).then(() => {
+      toast.success("Invite link copied to clipboard!");
+    });
+  };
 
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-10 max-w-6xl">
+        {/* Teacher Account Banner */}
+        {profile && (
+          <div className="flex flex-wrap items-center justify-between gap-4 mb-6 bg-teal-50 border border-teal-200 rounded-2xl px-5 py-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center">
+                <User className="w-5 h-5 text-teal-700" />
+              </div>
+              <div>
+                <p className="font-semibold text-foreground text-sm">
+                  {profile.name}
+                </p>
+                <div className="flex items-center gap-1 text-xs text-teal-700">
+                  <Mail className="w-3 h-3" />
+                  <a
+                    href={`mailto:${profile.email}`}
+                    className="hover:underline"
+                  >
+                    {profile.email}
+                  </a>
+                </div>
+              </div>
+            </div>
+            {/* Share Invite Link */}
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 bg-white border border-teal-200 rounded-xl px-3 py-2">
+                <Link2 className="w-4 h-4 text-teal-600 flex-shrink-0" />
+                <span className="text-xs text-muted-foreground truncate max-w-[180px]">
+                  {inviteLink || "Generating..."}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={handleCopyLink}
+                data-ocid="teacher.invite_link.button"
+                className="flex items-center gap-1.5 bg-teal-600 hover:bg-teal-700 text-white text-xs font-medium px-3 py-2 rounded-xl transition-colors"
+              >
+                <Copy className="w-3.5 h-3.5" />
+                Copy Invite Link
+              </button>
+            </div>
+          </div>
+        )}
         <AnimatePresence mode="wait">
           {selectedStudent ? (
             <motion.div

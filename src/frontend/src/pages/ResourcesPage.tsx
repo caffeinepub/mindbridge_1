@@ -4,12 +4,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Activity,
   BookOpen,
   ExternalLink,
   FileText,
   Headphones,
   Loader2,
+  Mic2,
   Search,
 } from "lucide-react";
 import { motion } from "motion/react";
@@ -35,10 +35,10 @@ const categoryConfig = {
     icon: Headphones,
     color: "bg-purple-100 text-purple-700",
   },
-  activity: {
-    label: "Activities",
-    icon: Activity,
-    color: "bg-teal-100 text-teal-700",
+  speech: {
+    label: "Speeches",
+    icon: Mic2,
+    color: "bg-rose-100 text-rose-700",
   },
 };
 
@@ -149,8 +149,8 @@ export default function ResourcesPage() {
     podcast: resources.filter(
       (r) => (r.category as unknown as string) === "podcast",
     ).length,
-    activity: resources.filter(
-      (r) => (r.category as unknown as string) === "activity",
+    speech: resources.filter(
+      (r) => (r.category as unknown as string) === "speech",
     ).length,
   };
 

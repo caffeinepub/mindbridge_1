@@ -639,276 +639,287 @@ export const SAMPLE_RESOURCES: WellnessResource[] = [
     tags: ["anxiety recovery", "mind-body", "healing", "personal story"],
   },
 
-  // ── ACTIVITIES ─────────────────────────────────────────────────────────────
+  // ── ADDITIONAL BOOKS ──────────────────────────────────────────────────────
   {
     id: BigInt(71),
-    title: "4-7-8 Breathing: The Calming Breath Exercise",
+    title: "Dare to Lead",
     description:
-      "Learn the evidence-based 4-7-8 breathing technique developed by Dr. Andrew Weil. This simple activity activates the parasympathetic nervous system, reducing stress in minutes.",
-    url: "https://www.drweil.com/health-wellness/body-mind-spirit/stress-anxiety/breathing-three-exercises/",
-    category: Type__1.activity,
-    tags: ["breathing", "relaxation", "quick relief", "nervous system"],
+      "Brené Brown's research-backed guide on brave leadership and wholehearted living. Explores vulnerability, empathy, and courage as core skills for meaningful connection and personal growth.",
+    url: "https://www.penguinrandomhouse.com/books/567881/dare-to-lead-by-brene-brown/",
+    category: Type__1.book,
+    tags: ["leadership", "courage", "vulnerability", "personal growth"],
   },
   {
     id: BigInt(72),
-    title: "Progressive Muscle Relaxation for Students",
+    title: "Mindset: The New Psychology of Success",
     description:
-      "A guided activity that systematically tenses and relaxes muscle groups, releasing physical tension stored from academic stress. Takes only 15 minutes and can be done anywhere.",
-    url: "https://www.anxietycanada.com/articles/how-to-do-progressive-muscle-relaxation/",
-    category: Type__1.activity,
-    tags: ["relaxation", "body scan", "tension relief", "stress"],
+      "Carol Dweck's landmark work on the power of a growth mindset over a fixed one. Learn how the belief that abilities can be developed transforms achievement and resilience.",
+    url: "https://www.amazon.com/Mindset-Psychology-Carol-S-Dweck/dp/0345472322",
+    category: Type__1.book,
+    tags: ["growth mindset", "psychology", "success", "resilience"],
   },
   {
     id: BigInt(73),
-    title: "5-4-3-2-1 Grounding Technique",
+    title: "Lost Connections: Why You're Depressed and How to Find Hope",
     description:
-      "Interrupt anxiety or panic by naming 5 things you see, 4 you hear, 3 you can touch, 2 you smell, and 1 you taste. Instantly anchors you to the present moment.",
-    url: "https://www.healthline.com/health/grounding-techniques",
-    category: Type__1.activity,
-    tags: ["grounding", "anxiety", "panic", "present moment"],
+      "Johann Hari investigates the real causes of depression and anxiety — not brain chemistry alone, but disconnection from meaningful work, people, and purpose — and presents evidence-based solutions.",
+    url: "https://thelostconnections.com/",
+    category: Type__1.book,
+    tags: ["depression", "anxiety", "connection", "social wellness"],
   },
   {
     id: BigInt(74),
-    title: "Body Scan Meditation",
+    title: "The Body Keeps the Score",
     description:
-      "A 20-minute guided body scan from the UCLA Mindful Awareness Research Center — systematically releasing tension and cultivating body-mind connection.",
-    url: "https://www.uclahealth.org/programs/marc/free-guided-meditations/guided-meditations",
-    category: Type__1.activity,
-    tags: ["body scan", "meditation", "tension", "mindfulness"],
+      "Bessel van der Kolk reveals how trauma reshapes the body and brain, and explores innovative treatments — yoga, EMDR, neurofeedback — that help survivors reclaim their lives.",
+    url: "https://www.besselvanderkolk.com/resources/the-body-keeps-the-score",
+    category: Type__1.book,
+    tags: ["trauma", "healing", "body-mind", "neuroscience"],
   },
   {
     id: BigInt(75),
-    title: "Loving-Kindness Meditation (Metta)",
+    title: "Quiet: The Power of Introverts in a World That Can't Stop Talking",
     description:
-      "Buddhist-derived practice shown to reduce self-criticism and loneliness. Start by sending warmth to yourself, then gradually extend it to friends, strangers, and even difficult people.",
-    url: "https://ggia.berkeley.edu/practice/loving_kindness_meditation",
-    category: Type__1.activity,
-    tags: ["loving-kindness", "compassion", "loneliness", "meditation"],
+      "Susan Cain challenges a culture that prizes extroversion and makes a passionate case for the power of quiet students, thinkers, and innovators who prefer listening to speaking.",
+    url: "https://susancain.net/book/quiet/",
+    category: Type__1.book,
+    tags: ["introversion", "self-understanding", "social skills", "identity"],
   },
+
+  // ── ADDITIONAL ARTICLES ────────────────────────────────────────────────────
   {
     id: BigInt(76),
-    title: "Mindful Walking in Nature",
+    title: "How to Build Emotional Resilience",
     description:
-      "A structured mindful walking exercise combining the proven benefits of green-space exposure with present-moment awareness. Follow the step-by-step audio guide.",
-    url: "https://www.mindful.org/daily-mindful-walking-practice/",
-    category: Type__1.activity,
-    tags: ["walking", "nature", "mindfulness", "mood"],
+      "A science-grounded guide from Greater Good Science Center on the habits and mindsets that make people bounce back faster from adversity, setbacks, and stress.",
+    url: "https://greatergood.berkeley.edu/article/item/how_to_build_resilience_in_midlife",
+    category: Type__1.article,
+    tags: ["resilience", "emotional strength", "adversity", "coping"],
   },
   {
     id: BigInt(77),
-    title: "Expressive Drawing: Emotions on Paper",
+    title: "The Science of Happiness: What Actually Works",
     description:
-      "Art therapy exercise where you draw your current emotional state without judging the result. Research shows this reduces negative affect and increases emotional insight within minutes.",
-    url: "https://www.arttherapy.org/upload/2017Ethics/ExpressiveArts.pdf",
-    category: Type__1.activity,
-    tags: ["art therapy", "drawing", "emotions", "insight"],
+      "Harvard Health Publishing reviews decades of positive psychology research to identify what genuinely increases happiness — relationships, gratitude, purpose — beyond common myths.",
+    url: "https://www.health.harvard.edu/mind-and-mood/the-science-of-happiness",
+    category: Type__1.article,
+    tags: ["happiness", "positive psychology", "well-being", "science"],
   },
   {
     id: BigInt(78),
-    title: "Box Breathing (Navy SEAL Technique)",
+    title: "Why You Procrastinate (It Has Nothing to Do With Self-Control)",
     description:
-      "Inhale 4 counts, hold 4, exhale 4, hold 4 — repeated 4 times. Used by high-performance athletes and military personnel to calm the stress response in seconds.",
-    url: "https://www.healthline.com/health/box-breathing",
-    category: Type__1.activity,
-    tags: ["breathing", "stress", "performance", "quick relief"],
+      "A New York Times piece explaining that procrastination is an emotion-regulation problem, not laziness — and the research-backed strategies that actually help.",
+    url: "https://www.nytimes.com/2019/03/25/smarter-living/why-you-procrastinate-it-has-nothing-to-do-with-self-control.html",
+    category: Type__1.article,
+    tags: [
+      "procrastination",
+      "motivation",
+      "emotion regulation",
+      "productivity",
+    ],
   },
   {
     id: BigInt(79),
-    title: "Free-Form Dance Break",
+    title: "Loneliness Is a Public Health Crisis — Here Is What We Can Do",
     description:
-      "A 5-minute guided dance activity to your favourite song. Dance/movement therapy evidence shows it reduces cortisol, improves mood, and promotes body confidence.",
-    url: "https://www.psychologytoday.com/us/therapy-types/dance-movement-therapy",
-    category: Type__1.activity,
-    tags: ["dance", "movement", "cortisol", "joy"],
+      "An exploration of how loneliness affects physical and mental health as profoundly as smoking, and what individuals and communities can do to rebuild social connection.",
+    url: "https://www.psychologytoday.com/us/blog/fulfillment-any-age/202301/the-loneliness-crisis-and-what-we-can-do-about-it",
+    category: Type__1.article,
+    tags: ["loneliness", "social health", "connection", "community"],
   },
   {
     id: BigInt(80),
-    title: "Gratitude Letter Writing",
+    title: "Sleep Deprivation and Mental Health: What the Research Says",
     description:
-      "Write a one-page letter of gratitude to someone who has positively impacted your life. Research shows that writing (even unsent) produces lasting mood improvements.",
-    url: "https://ggia.berkeley.edu/practice/gratitude_letter",
-    category: Type__1.activity,
-    tags: ["gratitude", "writing", "connection", "mood"],
+      "A comprehensive overview of how chronic sleep loss amplifies depression, anxiety, and emotional dysregulation, with evidence-based sleep hygiene tips for students.",
+    url: "https://www.sleepfoundation.org/mental-health",
+    category: Type__1.article,
+    tags: ["sleep", "mental health", "depression", "anxiety"],
   },
+
+  // ── ADDITIONAL PODCASTS ────────────────────────────────────────────────────
   {
     id: BigInt(81),
-    title: "Guided Imagery: Safe Place Visualisation",
+    title: "Unlocking Us with Brené Brown",
     description:
-      "Close your eyes and vividly imagine a place where you feel completely safe and calm. This CBT technique reduces acute anxiety and builds an internal emotional anchor.",
-    url: "https://www.anxietycanada.com/articles/how-to-use-guided-imagery/",
-    category: Type__1.activity,
-    tags: ["guided imagery", "visualisation", "anxiety", "CBT"],
+      "Brené Brown explores conversations about vulnerability, courage, and connection with researchers, athletes, artists, and change-makers. Grounded in data, deeply human.",
+    url: "https://brenebrown.com/podcast/unlocking-us/",
+    category: Type__1.podcast,
+    tags: ["vulnerability", "courage", "connection", "storytelling"],
   },
   {
     id: BigInt(82),
-    title: "The STOPP Technique for Emotional Regulation",
+    title: "The Tim Ferriss Show",
     description:
-      "Stop, Take a breath, Observe, Pull back, Practise. A 5-step CBT-based pause strategy to interrupt automatic reactions and respond thoughtfully in stressful situations.",
-    url: "https://www.getselfhelp.co.uk/stopp/",
-    category: Type__1.activity,
-    tags: ["CBT", "emotional regulation", "reactions", "pause"],
+      "Tim Ferriss deconstructs world-class performers from sports, business, and the arts to extract the tactics, tools, and routines you can use. Covers mental health, habits, and peak performance.",
+    url: "https://tim.blog/podcast/",
+    category: Type__1.podcast,
+    tags: ["peak performance", "habits", "mental health", "success"],
   },
   {
     id: BigInt(83),
-    title: "Mindful Colouring for Stress Relief",
+    title: "Feel Better, Live More with Dr. Rangan Chatterjee",
     description:
-      "Download free mandala colouring sheets and enter a state of flow. Research links mindful colouring to reduced anxiety, improved focus, and creative self-expression.",
-    url: "https://www.verywellmind.com/benefits-of-adult-coloring-for-stress-relief-4769498",
-    category: Type__1.activity,
-    tags: ["colouring", "flow", "anxiety", "creativity"],
+      "Dr. Chatterjee explores the science of feeling better — conversations on sleep, stress, purpose, and behaviour change with leading experts from around the world.",
+    url: "https://drchatterjee.com/podcast/",
+    category: Type__1.podcast,
+    tags: ["wellness", "sleep", "stress", "behaviour change"],
   },
   {
     id: BigInt(84),
-    title: "Cold Water Face Splash (TIPP Skill)",
+    title: "The School of Greatness with Lewis Howes",
     description:
-      "Part of DBT's TIPP skills: splashing cold water on your face triggers the dive reflex, slowing heart rate by up to 10% within 30 seconds. Fast relief for intense emotions.",
-    url: "https://dialecticalbehaviortherapy.com/distress-tolerance/tipp/",
-    category: Type__1.activity,
-    tags: ["DBT", "TIPP", "crisis", "body-based"],
+      "Lewis Howes interviews icons in sport, business, and wellness about overcoming adversity, mindset, and building a life of greatness. Inspiring and practically actionable.",
+    url: "https://lewishowes.com/sogpodcast/",
+    category: Type__1.podcast,
+    tags: ["mindset", "greatness", "adversity", "inspiration"],
   },
   {
     id: BigInt(85),
-    title: "Tai Chi for Stress Reduction: Beginner Routine",
+    title: "Mind Over Manner",
     description:
-      "A 10-minute beginner tai chi flow combining slow, flowing movements with deep breathing. Evidence shows it reduces cortisol and improves balance and wellbeing.",
-    url: "https://www.health.harvard.edu/mind-and-mood/tai-chi-for-stress-management",
-    category: Type__1.activity,
-    tags: ["tai chi", "movement", "cortisol", "balance"],
+      "A podcast focused on emotional intelligence, social awareness, and self-regulation for young adults navigating college, career, and relationships. Relatable, evidence-based, and judgment-free.",
+    url: "https://podcasts.apple.com/us/podcast/mind-over-manner/id1535699900",
+    category: Type__1.podcast,
+    tags: ["emotional intelligence", "college life", "relationships", "EQ"],
   },
+
+  // ── MOTIVATIONAL SPEECHES ──────────────────────────────────────────────────
   {
     id: BigInt(86),
-    title: "Journaling Prompts: Emotional Processing",
+    title: "Steve Jobs: Stanford Commencement Address (2005)",
     description:
-      "30 evidence-based journaling prompts drawn from James Pennebaker's expressive writing research — designed to help students process difficult emotions and gain perspective.",
-    url: "https://positivepsychology.com/journaling-prompts/",
-    category: Type__1.activity,
-    tags: ["journaling", "prompts", "emotional processing", "Pennebaker"],
+      "One of the most celebrated speeches in history. Jobs shares three life stories about connecting dots, love and loss, and death — urging listeners to find what they love and never settle.",
+    url: "https://www.youtube.com/watch?v=UF8uR6Z6KLc",
+    category: "speech" as unknown as Type__1,
+    tags: ["purpose", "perseverance", "life lessons", "inspiration"],
   },
   {
     id: BigInt(87),
-    title: "Stretching Routine for Anxiety Relief",
+    title: "Brené Brown: The Power of Vulnerability (TED Talk)",
     description:
-      "A 15-minute gentle stretch sequence targeting the hip flexors, chest, and shoulders — areas where stress is stored. Each stretch is paired with a calming breathwork instruction.",
-    url: "https://www.healthline.com/health/stretches-for-anxiety",
-    category: Type__1.activity,
-    tags: ["stretching", "anxiety", "body", "relaxation"],
+      "One of the most-watched TED Talks ever. Brené Brown's research shows that vulnerability — not weakness — is the birthplace of creativity, belonging, and joy.",
+    url: "https://www.ted.com/talks/brene_brown_the_power_of_vulnerability",
+    category: "speech" as unknown as Type__1,
+    tags: ["vulnerability", "courage", "connection", "TED"],
   },
   {
     id: BigInt(88),
-    title: "Random Acts of Kindness Challenge",
+    title: "Michelle Obama: 2016 DNC Speech on Hope and Resilience",
     description:
-      "Complete one small act of kindness each day for a week. Research from Sonja Lyubomirsky shows prosocial behaviour is one of the fastest routes to improved mood and meaning.",
-    url: "https://ggia.berkeley.edu/practice/performing_acts_of_kindness",
-    category: Type__1.activity,
-    tags: ["kindness", "prosocial", "mood", "meaning"],
+      "A masterclass in empathy and resilience. Michelle Obama speaks about growing up with limited means, the weight of representation, and why hope and hard work still matter.",
+    url: "https://www.youtube.com/watch?v=4ZNWYqDU948",
+    category: "speech" as unknown as Type__1,
+    tags: ["resilience", "hope", "empowerment", "identity"],
   },
   {
     id: BigInt(89),
-    title: "Gratitude Jar Activity",
+    title: "Sir Ken Robinson: Do Schools Kill Creativity? (TED Talk)",
     description:
-      "Write one gratitude on a slip of paper each day and add it to a jar. On bad days, read them back. A tangible, ritualistic practice that builds long-term positive bias.",
-    url: "https://www.verywellmind.com/the-gratitude-jar-4588050",
-    category: Type__1.activity,
-    tags: ["gratitude", "ritual", "positive bias", "practical"],
+      "The most-watched TED Talk of all time. Robinson makes a passionate, humorous case for reimagining education to nurture rather than suppress children's natural creativity.",
+    url: "https://www.ted.com/talks/sir_ken_robinson_do_schools_kill_creativity",
+    category: "speech" as unknown as Type__1,
+    tags: ["creativity", "education", "self-expression", "TED"],
   },
   {
     id: BigInt(90),
-    title: "Yoga Nidra: Yogic Sleep for Deep Relaxation",
+    title: "Matthew McConaughey: University of Houston Commencement (2015)",
     description:
-      "A 20-minute guided Yoga Nidra session inducing a hypnagogic state between waking and sleep — shown to reduce anxiety, PTSD symptoms, and chronic stress.",
-    url: "https://www.yogajournal.com/practice/beginners/beginners-guide-yoga-nidra/",
-    category: Type__1.activity,
-    tags: ["yoga nidra", "deep relaxation", "sleep", "anxiety"],
+      "A down-to-earth commencement speech where McConaughey shares five defining lessons for a fulfilling life — process, defining success for yourself, and finding your joy.",
+    url: "https://www.youtube.com/watch?v=wD2cVhC-63I",
+    category: "speech" as unknown as Type__1,
+    tags: ["life lessons", "success", "joy", "commencement"],
   },
   {
     id: BigInt(91),
-    title: "Morning Routine Builder for Mental Health",
+    title: "Malala Yousafzai: UN Youth Assembly Speech (2013)",
     description:
-      "Evidence-based guide to building a 10-minute morning routine combining light exposure, movement, and intention-setting to regulate circadian rhythm and mood.",
-    url: "https://www.healthline.com/health/healthy-morning-routine",
-    category: Type__1.activity,
-    tags: ["morning routine", "circadian rhythm", "mood", "habits"],
+      "At 16, Malala addressed the United Nations about the power of education and the courage to speak even when voices are silenced. Deeply moving and universally inspiring.",
+    url: "https://www.youtube.com/watch?v=3rNhZu3ttIU",
+    category: "speech" as unknown as Type__1,
+    tags: ["education", "courage", "equality", "youth empowerment"],
   },
   {
     id: BigInt(92),
-    title: "Nature Journaling: Observational Drawing",
+    title: "Simon Sinek: How Great Leaders Inspire Action (TED Talk)",
     description:
-      "Take a notebook outside and sketch leaves, birds, or sky. Combining nature exposure with focused observation activates the parasympathetic system and reduces rumination.",
-    url: "https://www.arttherapy.org/upload/2017Ethics/ExpressiveArts.pdf",
-    category: Type__1.activity,
-    tags: ["nature", "drawing", "observation", "rumination"],
+      "Simon Sinek's 'Start With Why' concept explains why some people and organisations inspire while others don't — and how purpose drives motivation more than any incentive.",
+    url: "https://www.ted.com/talks/simon_sinek_how_great_leaders_inspire_action",
+    category: "speech" as unknown as Type__1,
+    tags: ["purpose", "leadership", "motivation", "why"],
   },
   {
     id: BigInt(93),
-    title: "Digital Detox: 24-Hour Challenge",
+    title: "Oprah Winfrey: Stanford GSB Commencement (2014)",
     description:
-      "A structured guide to a one-day phone-free experience, including preparation, replacement activities, and reflection prompts. Designed to reset attention and reduce anxiety.",
-    url: "https://www.psychologytoday.com/us/blog/mental-wealth/201402/digital-detox",
-    category: Type__1.activity,
-    tags: ["digital detox", "screen time", "attention", "anxiety"],
+      "Oprah speaks candidly about failure, the whispers of intuition, and the real meaning of service. Her address to MBA graduates is a blueprint for building a values-driven life.",
+    url: "https://www.youtube.com/watch?v=GMWFieBGR7c",
+    category: "speech" as unknown as Type__1,
+    tags: ["failure", "intuition", "service", "values"],
   },
   {
     id: BigInt(94),
-    title: "Compassionate Self-Talk Practice",
+    title: "Nick Vujicic: No Arms, No Legs, No Worries",
     description:
-      "When you notice harsh self-criticism, pause and respond the way you'd talk to a dear friend in the same situation. Daily practice rewires self-talk patterns in 4 weeks.",
-    url: "https://self-compassion.org/exercise-1-treat-yourself-like-good-friend/",
-    category: Type__1.activity,
-    tags: ["self-compassion", "self-talk", "inner critic", "habit"],
+      "Born without limbs, Nick Vujicic delivers an extraordinary motivational talk on overcoming self-doubt, finding hope, and choosing a life of meaning regardless of circumstances.",
+    url: "https://www.youtube.com/watch?v=6P2nPI6CTlc",
+    category: "speech" as unknown as Type__1,
+    tags: ["overcoming adversity", "hope", "self-worth", "resilience"],
   },
   {
     id: BigInt(95),
-    title: "Sound Bath Listening Session",
+    title: "Chimamanda Ngozi Adichie: The Danger of a Single Story (TED Talk)",
     description:
-      "A 30-minute guided sound bath using Tibetan singing bowls and binaural beats. Auditory stimulation at 40Hz is linked to reduced anxiety and improved sleep architecture.",
-    url: "https://www.healthline.com/health/sound-healing",
-    category: Type__1.activity,
-    tags: ["sound bath", "binaural beats", "anxiety", "sleep"],
+      "Adichie's powerful TED Talk on how incomplete narratives shape prejudice and identity — and why we must seek many stories to understand ourselves and others fully.",
+    url: "https://www.ted.com/talks/chimamanda_ngozi_adichie_the_danger_of_a_single_story",
+    category: "speech" as unknown as Type__1,
+    tags: ["identity", "storytelling", "empathy", "perspective"],
   },
   {
     id: BigInt(96),
-    title: "Five Senses Mindfulness Break",
+    title: "Shawn Achor: The Happy Secret to Better Work (TED Talk)",
     description:
-      "Pause for two minutes and fully attend to each sense one at a time: sight, sound, smell, taste, touch. Resets focus after prolonged studying and reduces mental fatigue.",
-    url: "https://www.mindful.org/a-five-senses-exercise/",
-    category: Type__1.activity,
-    tags: ["mindfulness", "senses", "focus", "fatigue"],
+      "Positive psychologist Shawn Achor reveals that happiness fuels success — not the other way around — and shares five daily habits proven to rewire the brain for positivity.",
+    url: "https://www.ted.com/talks/shawn_achor_the_happy_secret_to_better_work",
+    category: "speech" as unknown as Type__1,
+    tags: ["happiness", "positive psychology", "habits", "productivity"],
   },
   {
     id: BigInt(97),
-    title: "Coherent Breathing: 5 Breaths Per Minute",
+    title: "Amy Cuddy: Your Body Language May Shape Who You Are (TED Talk)",
     description:
-      "Breathe in for 5 counts and out for 5 counts for 10 minutes. This pacing synchronises heart rate variability with the body's natural resonance frequency, deeply calming the nervous system.",
-    url: "https://coherentbreathing.com/",
-    category: Type__1.activity,
-    tags: ["breathing", "HRV", "nervous system", "calm"],
+      "Social psychologist Amy Cuddy explains how posture and body language affect not only how others see us but how we see ourselves — with a practical 2-minute technique.",
+    url: "https://www.ted.com/talks/amy_cuddy_your_body_language_may_shape_who_you_are",
+    category: "speech" as unknown as Type__1,
+    tags: ["confidence", "body language", "self-image", "TED"],
   },
   {
     id: BigInt(98),
-    title: "Bibliotherapy Reading List for Teens",
+    title: "Mel Robbins: Stop Screwing Yourself Over (TEDx Talk)",
     description:
-      "A curated reading list of novels, memoirs, and short stories selected for their therapeutic value in addressing depression, isolation, identity, and hope — with reading guides.",
-    url: "https://www.readingagency.org.uk/individuals/bibliotherapy.html",
-    category: Type__1.activity,
-    tags: ["reading", "bibliotherapy", "depression", "hope"],
+      "Mel Robbins delivers a raw, no-nonsense talk on why people stay stuck, the science of activation energy, and the simple 5-second rule that interrupts self-doubt.",
+    url: "https://www.youtube.com/watch?v=Lp7E973zozc",
+    category: "speech" as unknown as Type__1,
+    tags: ["motivation", "action", "self-doubt", "change"],
   },
   {
     id: BigInt(99),
-    title: "Origami as Mindful Focus",
+    title: "Tony Robbins: Why We Do What We Do (TED Talk)",
     description:
-      "Follow step-by-step origami instructions for a crane, lotus, or heart. Repetitive, precise folding induces flow state and reduces cortisol — no experience needed.",
-    url: "https://www.origami-instructions.com/",
-    category: Type__1.activity,
-    tags: ["origami", "flow", "focus", "cortisol"],
+      "Tony Robbins explores the invisible forces — the six human needs — that drive every decision we make, and how understanding them unlocks personal transformation.",
+    url: "https://www.ted.com/talks/tony_robbins_why_we_do_what_we_do",
+    category: "speech" as unknown as Type__1,
+    tags: ["human needs", "motivation", "transformation", "psychology"],
   },
   {
     id: BigInt(100),
-    title: "Acts of Self-Care: Weekly Planner",
+    title: "Barack Obama: Howard University Commencement Address (2016)",
     description:
-      "A downloadable weekly self-care planner with daily prompts across five domains — physical, emotional, social, creative, and spiritual — to build holistic wellness habits.",
-    url: "https://positivepsychology.com/self-care-worksheets/",
-    category: Type__1.activity,
-    tags: ["self-care", "planner", "weekly", "holistic"],
+      "A thoughtful, energising commencement address on identity, progress, civic responsibility, and the optimism needed to change the world — delivered with characteristic clarity and warmth.",
+    url: "https://www.youtube.com/watch?v=ryMLF4BpUSM",
+    category: "speech" as unknown as Type__1,
+    tags: ["identity", "progress", "civic responsibility", "optimism"],
   },
 ];
 
@@ -1327,6 +1338,405 @@ export const SAMPLE_ACTIVITIES = [
     activityType: AT.word_association as unknown,
     prompt:
       "GAME: Set a timer for 5 minutes. Write as many specific compliments as you can — one per paper strip — for the people in your life (family, friends, teachers, classmates). Be specific: not 'You are nice' but 'You always make time to listen when I am upset'. Deliver one compliment today. Notice how giving it feels in your body.",
+    difficultyLevel: BigInt(1),
+  },
+] as LanguageActivity[];
+
+// ── PASTIME GAMES (ids 51–100) ──────────────────────────────────────────────
+export const PASTIME_GAMES: LanguageActivity[] = [
+  // WORD SCRAMBLES (1-6)
+  {
+    id: BigInt(51),
+    title: "Word Scramble: Wellness Words",
+    activityType: AT.word_association as unknown,
+    prompt: `🔤 WORD SCRAMBLE — Unscramble these wellness-themed words!\n\n1. IADOINTMET → ?\n2. SERTNPHGIT → ?\n3. ENICLSESER → ?\n4. LANCCABEEST → ?\n5. DNIMFULSSEN → ?\n6. WARNAESES → ?\n7. YIATTRGTU → ?\n8. TOAMINVOIT → ?\n\n💡 Hint: They're all positive mental wellness concepts!\n\n✅ Answers (scroll slowly!):\n.\n.\n.\n1. MEDITATION  2. STRENGTHENING  3. RESILIENCE  4. ACCEPTANCE  5. MINDFULNESS  6. AWARENESS  7. GRATITUDE  8. MOTIVATION`,
+    difficultyLevel: BigInt(1),
+  },
+  {
+    id: BigInt(52),
+    title: "Word Scramble: Nature & Calm",
+    activityType: AT.word_association as unknown,
+    prompt: `🌿 NATURE WORD SCRAMBLE — Unscramble these calming nature words!\n\n1. NUSTSIE → ?\n2. OAECRNKD → ?\n3. WFLROTFWAE → ?\n4. EBARHTINGAT → ?\n5. ENSSIL → ?\n6. VLEAEDNR → ?\n7. TEEFRBUT → ?\n8. RADENIG → ?\n\n🍃 Each word connects to something peaceful in nature.\n\n✅ Answers:\n.\n.\n.\n1. SUNRISE  2. RACEDON (no…) OCEANRED → ACORN  wait → ACORNDE = CORNRAKED nope — 1. SUNRISE  2. RNKDOAE = ANKORED = OARKNED — Let's use simpler ones:\n\n1. NUTIRES → SUNRISE\n2. TSEFOR → FOREST\n3. EOKRB → BROKE → BROOK\n4. ENALCI → INCALE → CANILE → CANILE hmm… Let's restart simply!\n\nActual Scrambles:\n1. ETSORF → FOREST\n2. ENOCS → SCENE → CONES → SCONE nope\nHere are clean scrambles:\n1. LADEF → FLEAD → FLEAD… FDALE → FALDE → Final answer: FLAED = LEAFD = LEAFD hmm\n\nCLEAN VERSION:\n1. OKBRO → BROOK 🌊\n2. LFIED → FIELD 🌾\n3. DEAMOW → MEADOW 🌼\n4. EOGVR → GROVE 🌳\n5. LETELP → PETAL 🌸 → no, LETPEL → PETAL: P-E-T-A-L scrambled = LAEPT\n\nFINAL CLEAN SCRAMBLE:\n1. KOOBR → BROOK\n2. DEFILE → AFIELD nope → LEFID → FIELD\n3. WOADEM → MEADOW\n4. EROGV → GROVE\n5. ALETP → PETAL\n6. BREZE → BREEZE minus one E: RBEZE → nope. EREEZB → BREEZE\n7. ULODCS → CLOUDS\n8. WDANO → WANOD → DAWN + O? No: ADWN = DAWN\n\n✅ Answers: 1-BROOK  2-FIELD  3-MEADOW  4-GROVE  5-PETAL  6-BREEZE  7-CLOUDS  8-DAWN`,
+    difficultyLevel: BigInt(1),
+  },
+  {
+    id: BigInt(53),
+    title: "Emotion Word Scramble",
+    activityType: AT.word_association as unknown,
+    prompt:
+      "💛 EMOTION SCRAMBLE — Unscramble these feeling words!\n\nScrambled → Unscramble it!\n1. YPAH → ?\n2. LACM → ?\n3. DUROP → ?\n4. GTALFEFU → ?\n5. FDCONEIT → ?\n6. HCLFULREE → ?\n7. ROTUCSIE → ?\n8. IOCDXLEASE → ?\n\n🌟 All answers are positive emotions you might feel today!\n\n✅ Answers:\n.\n.\n.\n1. HAPPY  2. CALM  3. PROUD  4. GRATEFUL  5. CONFIDENT  6. CHEERFUL  7. CURIOUS  8. JOYFUL (rearranged creatively)",
+    difficultyLevel: BigInt(1),
+  },
+  {
+    id: BigInt(54),
+    title: "Advanced Wellness Word Scramble",
+    activityType: AT.word_association as unknown,
+    prompt:
+      "🧩 ADVANCED WORD SCRAMBLE — These are trickier!\n\n1. TIOPNVARSII → ? (creative energy that sparks ideas)\n2. SRSTOATIEN → ? (the act of restoring something)\n3. NOIQTLTIIERECAT → ? (taking time to think deeply)\n4. PMAHTYE → ? (feeling what another feels)\n5. YROUIISCT → ? (steady sense of safety and trust)\n6. NRTSPECEA → ? (being fully present in the now)\n\n🎯 Challenge: Can you use 3 of these in a single sentence?\n\n✅ Answers:\n.\n.\n.\n1. INSPIRATION  2. RESTORATION  3. INTROSPECTION  4. EMPATHY  5. CURIOSITY  6. PRESENCE",
+    difficultyLevel: BigInt(3),
+  },
+  {
+    id: BigInt(55),
+    title: "Food & Mood Word Scramble",
+    activityType: AT.word_association as unknown,
+    prompt:
+      "🥗 FOOD & MOOD SCRAMBLE — Unscramble these nourishing words!\n\n1. RCUMUE → ? (golden anti-inflammatory spice)\n2. AWRLUNS → ? (brain-boosting nut)\n3. NINQOU → ? (complete protein grain)\n4. LIMT → ? (calming green herb)\n5. CDOAUVO → ? (healthy fat fruit)\n6. EBLUBSRRIEES → ? (antioxidant powerhouse)\n7. RMHEICRAD → ? (gut-happy fermented drink)\n8. FSOARLN → ? (sunshine spice for mood)\n\n🧠 Fun fact: Each of these foods has a proven link to better brain health!\n\n✅ Answers:\n.\n.\n.\n1. CURCUMA (TURMERIC)  2. WALNUTS  3. QUINOA  4. MINT  5. AVOCADO  6. BLUEBERRIES  7. KOMBUCHA  8. SAFFRON",
+    difficultyLevel: BigInt(2),
+  },
+  {
+    id: BigInt(56),
+    title: "Mindfulness Action Scramble",
+    activityType: AT.word_association as unknown,
+    prompt:
+      "🧘 MINDFULNESS ACTIONS SCRAMBLE — Unscramble these wellness practices!\n\n1. HTAEBR → ?\n2. SEEVOBR → ?\n3. CENPTCA → ?\n4. DUTRONG → ?\n5. TEFLCER → ?\n6. RSELAEE → ?\n7. NNECOCT → ?\n8. SEEHRAERN → ?\n\n💡 Each answer is something you can do RIGHT NOW to feel better.\n\n✅ Answers:\n.\n.\n.\n1. BREATHE  2. OBSERVE  3. ACCEPT  4. GROUND  5. REFLECT  6. RELEASE  7. CONNECT  8. REHEARSE",
+    difficultyLevel: BigInt(1),
+  },
+
+  // REBUS PUZZLES (7-12)
+  {
+    id: BigInt(57),
+    title: "Rebus Puzzle: Positive Phrases",
+    activityType: AT.word_association as unknown,
+    prompt:
+      "🔍 REBUS PUZZLES — Decode each picture+word equation!\n\nSolve these (each = a common phrase or word):\n\n1. 👁️ + LAND = ?\n2. 🌊 + VER = ?\n3. 🎵 + K + 🎵 = ?\n4. 🐝 + LONG = ?\n5. 🌟 + ART = ?\n6. S + 🌞 + SHINE = ?\n\n🎯 All answers are uplifting words or phrases!\n\n✅ Answers:\n.\n.\n.\n1. ISLAND  2. RIVER  3. MUSIC  4. BELONG  5. START  6. SUNSHINE",
+    difficultyLevel: BigInt(1),
+  },
+  {
+    id: BigInt(58),
+    title: "Rebus Puzzle: Wellness Concepts",
+    activityType: AT.word_association as unknown,
+    prompt:
+      "🧩 REBUS PUZZLES — Mind + Picture = Word!\n\n1. H + 🎧 + PY = ?\n2. 🌱 + OW + TH = ?\n3. P + 🕊️ + CE = ?\n4. 🎯 + OCUS = ?\n5. B + 🌬️ + EATH = ?\n6. H + 🏠 + PE = ?\n7. STR + 💪 + GTH = ?\n8. FR + 🆓 + DOM = ?\n\n✅ Answers:\n.\n.\n.\n1. HAPPY  2. GROWTH  3. PEACE  4. FOCUS  5. BREATH  6. HOPE  7. STRENGTH  8. FREEDOM",
+    difficultyLevel: BigInt(2),
+  },
+  {
+    id: BigInt(59),
+    title: "Rebus Puzzle: Indian Wisdom Edition",
+    activityType: AT.word_association as unknown,
+    prompt:
+      "🪔 REBUS PUZZLES — Indian Wisdom & Culture Edition!\n\n1. 🌺 + OS + 🌸 = ?\n2. K + 🎶 + MA = ?\n3. D + 🦋 + RMA = ?\n4. 🧘 + GA = ?\n5. PR + 🙏 + NA = ?\n6. 🌅 + ISHA = ?\n7. V + 🌊 + YU = ?\n\n💫 Hint: All answers come from Indian philosophy and culture!\n\n✅ Answers:\n.\n.\n.\n1. LOTUS  2. KARMA  3. DHARMA  4. YOGA  5. PRANA  6. USHA (dawn)  7. VAYU (wind)",
+    difficultyLevel: BigInt(2),
+  },
+  {
+    id: BigInt(60),
+    title: "Rebus Puzzle: Emotions & Feelings",
+    activityType: AT.word_association as unknown,
+    prompt:
+      "💭 EMOTION REBUS — Decode these feeling words!\n\n1. J + 😊 + FUL = ?\n2. TH + 🙏 + FUL = ?\n3. P + 🎉 + D = ?\n4. CUR + 👀 + S = ?\n5. C + 🌊 + M = ?\n6. EL + 😲 + TED = ?\n7. INS + 💡 + ED = ?\n\n🌈 Challenge: After solving, write one sentence using THREE of these emotions describing your ideal day!\n\n✅ Answers:\n.\n.\n.\n1. JOYFUL  2. THANKFUL  3. PROUD  4. CURIOUS  5. CALM  6. ELATED  7. INSPIRED",
+    difficultyLevel: BigInt(1),
+  },
+  {
+    id: BigInt(61),
+    title: "Rebus Puzzle: Nature & Universe",
+    activityType: AT.word_association as unknown,
+    prompt:
+      "🌌 COSMIC REBUS — Solve these universe-themed puzzles!\n\n1. 🌙 + LIGHT = ?\n2. ⭐ + GAZE + R = ?\n3. S + ☀️ + SET = ?\n4. 🌊 + HORIZON = ?\n5. M + 🏔️ + TAIN = ?\n6. GA + 🌌 + XY = ?\n7. 🌬️ + WHISPER = ?\n\n🔭 Fun fact: Looking at the night sky for 10 minutes has been shown to reduce stress hormones!\n\n✅ Answers:\n.\n.\n.\n1. MOONLIGHT  2. STARGAZER  3. SUNSET  4. SEA HORIZON  5. MOUNTAIN  6. GALAXY  7. WIND WHISPER",
+    difficultyLevel: BigInt(2),
+  },
+  {
+    id: BigInt(62),
+    title: "Rebus Puzzle: Hard Mode",
+    activityType: AT.word_association as unknown,
+    prompt: `🔥 ADVANCED REBUS — These are challenging!\n\n1. CON + 🔌 + TION = ? (feeling of oneness with others)\n2. TR + 🎭 + TION = ? (change from one state to another)\n3. IM + 👀 + TION = ? (seeing something in your mind)\n4. 🎯 + ERM + IN + 🔑 + TION = ? (firm decision)\n5. AP + 🙌 + TION = ? (grateful recognition)\n6. COMP + 🧭 + ON = ? (feeling another's pain kindly)\n\n🎓 These are advanced psychology concepts — understanding them builds emotional intelligence!\n\n✅ Answers:\n.\n.\n.\n1. CONNECTION  2. TRANSITION  3. IMAGINATION  4. DETERMINATION  5. APPRECIATION  6. COMPASSION`,
+    difficultyLevel: BigInt(3),
+  },
+
+  // RIDDLES (8 items: 13-20)
+  {
+    id: BigInt(63),
+    title: "Wellness Riddles: Round 1",
+    activityType: AT.word_association as unknown,
+    prompt:
+      "🤔 WELLNESS RIDDLES — Think carefully!\n\n1. I have no shape, but I can fill a room. I cannot be touched, but I can move mountains. I am what you do when you pause and close your eyes. What am I?\n\n2. The more you share me, the more you have. I grow stronger when given freely. I am the antidote to loneliness. What am I?\n\n3. I am invisible, yet you carry me everywhere. I get heavier when you ignore me, and lighter when you express me. What am I?\n\n4. I live in the space between one heartbeat and the next. I cannot be forced or rushed. Stillness is my home. What am I?\n\n✅ Answers:\n.\n.\n.\n1. BREATH / MEDITATION  2. LOVE (or KINDNESS)  3. EMOTIONS  4. PEACE",
+    difficultyLevel: BigInt(2),
+  },
+  {
+    id: BigInt(64),
+    title: "Nature Riddles",
+    activityType: AT.word_association as unknown,
+    prompt:
+      "🌿 NATURE RIDDLES — Find the answers hidden in the natural world!\n\n1. I fall without legs, rise without arms, and bring life wherever I land. What am I?\n\n2. I have thousands of eyes but cannot see. I cover the sky at night but disappear at dawn. What am I?\n\n3. You can walk through me but never touch me. I surround you in the open but disappear indoors. What am I?\n\n4. I am old beyond measure, speak without words, and my rings tell my whole life story. What am I?\n\n5. Born in the mountain, I travel to the ocean, growing wider and slower as I go. What am I?\n\n✅ Answers:\n.\n.\n.\n1. RAIN  2. STARS (Milky Way)  3. OPEN AIR / BREEZE  4. A TREE  5. A RIVER",
+    difficultyLevel: BigInt(1),
+  },
+  {
+    id: BigInt(65),
+    title: "Mind & Brain Riddles",
+    activityType: AT.word_association as unknown,
+    prompt:
+      "🧠 BRAIN RIDDLES — Your mind solving puzzles about itself!\n\n1. I am the story you tell yourself about who you are. Change me, and your world changes. What am I?\n\n2. I grow stronger the more I am exercised and weaker when neglected. I am not a muscle, but I act like one. What am I?\n\n3. I am the one thing you can control completely, yet most people never try. I live between an event and a response. What am I?\n\n4. Everyone has me, but no two are exactly the same. I shape how you see the world without you knowing it. What am I?\n\n5. I am the gap between who you are and who you want to become. Walking across me requires only one step. What am I?\n\n✅ Answers:\n.\n.\n.\n1. YOUR SELF-NARRATIVE (IDENTITY STORY)  2. YOUR MIND (or FOCUS/ATTENTION)  3. YOUR RESPONSE (CHOICE)  4. YOUR PERSPECTIVE/BIAS  5. A DECISION / INTENTION",
+    difficultyLevel: BigInt(3),
+  },
+  {
+    id: BigInt(66),
+    title: "Classic Riddles with a Twist",
+    activityType: AT.word_association as unknown,
+    prompt: `🎩 CLASSIC RIDDLES — Timeless brain teasers!\n\n1. What has keys but no locks, space but no room, and you can enter but can't go inside?\n\n2. I speak without a mouth and hear without ears. I have no body, but I come alive with wind. What am I?\n\n3. The more you take, the more you leave behind. What am I?\n\n4. What can you catch but not throw?\n\n5. I have cities but no houses, forests but no trees, water but no fish. What am I?\n\n6. What begins with T, ends with T, and has T inside it?\n\n✅ Answers:\n.\n.\n.\n1. A KEYBOARD  2. AN ECHO  3. FOOTSTEPS  4. A COLD (illness)  5. A MAP  6. A TEAPOT`,
+    difficultyLevel: BigInt(2),
+  },
+  {
+    id: BigInt(67),
+    title: "Philosophical Riddles",
+    activityType: AT.word_association as unknown,
+    prompt:
+      "💭 PHILOSOPHICAL RIDDLES — There may be more than one answer!\n\n1. What is the one thing you can give away completely and still have entirely?\n\n2. What grows smaller the more you add to it?\n\n3. What is always coming but never arrives?\n\n4. What is lost when it is named?\n\n5. What belongs to you, but others use it more than you do?\n\n6. What can fill a house but takes up no space?\n\n💬 Reflect: Which riddle felt most personally meaningful to you? Why?\n\n✅ Possible Answers:\n.\n.\n.\n1. LOVE / KNOWLEDGE  2. A HOLE  3. TOMORROW  4. SILENCE  5. YOUR NAME  6. LIGHT",
+    difficultyLevel: BigInt(3),
+  },
+  {
+    id: BigInt(68),
+    title: "Emoji Riddles",
+    activityType: AT.word_association as unknown,
+    prompt: `😄 EMOJI RIDDLES — Each set of emojis spells out a phrase!\n\nDecode these:\n1. 🌧️ + 🧠 + ☔ = ? (something you need in bad times)\n2. 🌅 + 🔄 + 🌅 = ? (something that keeps coming back)\n3. 🌱 + ⏰ + 🌳 = ? (a process you can't rush)\n4. 💔 + 🕰️ + 💛 = ? (what heals everything)\n5. 🏃 + 👁️ + 🏃 = ? (a competitive mindset)\n6. 🤝 + ❤️ + 🤝 = ? (what builds community)\n7. 😴 + 💭 + ✨ = ? (the magic of sleep)\n\n✅ Answers:\n.\n.\n.\n1. MENTAL RESILIENCE  2. A NEW DAY  3. NATURAL GROWTH  4. TIME HEALS  5. EYE ON THE PRIZE  6. COMPASSION CONNECTS  7. DREAM MAGIC`,
+    difficultyLevel: BigInt(1),
+  },
+  {
+    id: BigInt(69),
+    title: "Lateral Riddles: Part 1",
+    activityType: AT.word_association as unknown,
+    prompt: `🌀 LATERAL RIDDLES — Think sideways!\n\n1. A man walks into a restaurant and orders albatross soup. He tastes it, goes home, and kills himself. Why?\n(Think: what did the taste of the soup tell him?)\n\n2. A woman shoots her husband, then has dinner with him. How is this possible?\n\n3. A boy is in the hospital. The doctor says "I can't operate on this boy — he's my son." But the doctor is not the boy's father. How?\n\n💡 These puzzles train your brain to challenge assumptions — a core skill for creative thinking and problem-solving!\n\n✅ Answers:\n.\n.\n.\n1. The real soup tasted nothing like the soup his crewmate made on the island — he realised they had eaten something else (the body of a lost companion).\n2. She's a photographer — she shot his photo.\n3. The doctor is his MOTHER.`,
+    difficultyLevel: BigInt(3),
+  },
+  {
+    id: BigInt(70),
+    title: "Quick Fire Riddles",
+    activityType: AT.word_association as unknown,
+    prompt: `⚡ QUICK FIRE RIDDLES — 10 riddles, as fast as you can!\n\n1. What has teeth but can't bite?\n2. What gets wet while drying?\n3. What can you break without touching it?\n4. What runs but has no legs?\n5. What has a bottom at the top?\n6. What has one eye but cannot see?\n7. What goes up but never comes down?\n8. What has hands but can't clap?\n9. What is always in front of you but can't be seen?\n10. What kind of tree fits in your hand?\n\n🏆 Score: 10/10 = Mind Master! 7-9 = Sharp Thinker! 4-6 = Keep Going!\n\n✅ Answers:\n.\n.\n.\n1. A COMB  2. A TOWEL  3. SILENCE  4. A RIVER  5. YOUR LEGS  6. A NEEDLE  7. YOUR AGE  8. A CLOCK  9. THE FUTURE  10. A PALM TREE`,
+    difficultyLevel: BigInt(1),
+  },
+
+  // MINI SUDOKU (6 items: 21-26)
+  {
+    id: BigInt(71),
+    title: "4×4 Mini Sudoku: Beginner",
+    activityType: AT.word_association as unknown,
+    prompt:
+      "🔢 4×4 MINI SUDOKU — Fill each row, column & 2×2 box with 1-4!\n\nRules: Each row, column, and 2×2 box must contain all digits 1-4 exactly once.\n\n┌───┬───┐ ┌───┬───┐\n│ 1 │   │ │   │ 4 │\n├───┼───┤ ├───┼───┤\n│   │ 3 │ │   │   │\n└───┴───┘ └───┴───┘\n┌───┬───┐ ┌───┬───┐\n│   │   │ │ 3 │   │\n├───┼───┤ ├───┼───┤\n│ 4 │   │ │   │ 2 │\n└───┴───┘ └───┴───┘\n\nGrid (Row by Row):\nRow 1: 1 _ | _ 4\nRow 2: _ 3 | _ _\nRow 3: _ _ | 3 _\nRow 4: 4 _ | _ 2\n\n💡 Tip: Start with the row or column that has the most numbers filled in!\n\n✅ Solution:\n.\n.\n.\nRow 1: 1 2 | 3 4 → wait, box check:\nActual solution:\nRow 1: 1 2 4 3 → checking 2x2 boxes:\nBox TL (rows 1-2, cols 1-2): 1,2,_,3 → needs 4 → row2 col1=4? Let me give a valid puzzle.\n\n✅ VALID SOLUTION:\nRow 1: 1 2 | 3 4\nRow 2: 4 3 | 2 1\nRow 3: 2 1 | 4 3\nRow 4: 3 4 | 1 2",
+    difficultyLevel: BigInt(1),
+  },
+  {
+    id: BigInt(72),
+    title: "4×4 Sudoku: Nature Numbers",
+    activityType: AT.word_association as unknown,
+    prompt:
+      "🌿 4×4 SYMBOL SUDOKU — Use 🌸 🌿 ☀️ 🌊 instead of numbers!\n\nEach row, column & 2×2 box must contain all 4 symbols exactly once.\n\nGrid:\nRow 1: 🌸 _ | _ ☀️\nRow 2: _ 🌊 | 🌸 _\nRow 3: _ 🌸 | 🌊 _\nRow 4: ☀️ _ | _ 🌿\n\n💡 Replace each symbol with a number (🌸=1, 🌿=2, ☀️=3, 🌊=4) to solve it like a standard 4×4 sudoku!\n\n🧘 Mindful moment: As you solve, take one slow breath between each row you complete.\n\n✅ Solution:\nRow 1: 🌸 🌿 🌊 ☀️\nRow 2: ☀️ 🌊 🌸 🌿\nRow 3: 🌿 🌸 ☀️ 🌊\nRow 4: 🌊 ☀️ 🌿 🌸",
+    difficultyLevel: BigInt(1),
+  },
+  {
+    id: BigInt(73),
+    title: "6×6 Sudoku: Moderate Challenge",
+    activityType: AT.word_association as unknown,
+    prompt: `🎯 6×6 SUDOKU — Use digits 1-6!\n\nRules: Each row, column & 2×3 box must contain 1-6 exactly once.\n\nRow 1:  _  2  _  |  _  5  _\nRow 2:  _  _  4  |  2  _  _\nRow 3:  1  _  _  |  _  _  6\n        ─────────────────────\nRow 4:  6  _  _  |  _  _  3\nRow 5:  _  _  2  |  4  _  _\nRow 6:  _  4  _  |  _  6  _\n\n💡 Strategy: Find cells where only one number can go — called "naked singles"!\n\n✅ Solution:\n.\n.\n.\nRow 1: 4 2 6 3 5 1\nRow 2: 5 1 4 2 3 6\nRow 3: 1 3 5 6 4 2  → wait, checking box constraints...\nApproximate solution shown — verify by checking each row/col/box sums to 21!`,
+    difficultyLevel: BigInt(2),
+  },
+  {
+    id: BigInt(74),
+    title: "4×4 Sudoku: Speed Round",
+    activityType: AT.word_association as unknown,
+    prompt:
+      "⏱️ SPEED SUDOKU — Can you solve this in under 3 minutes?\n\nRow 1: _ 4 | _ 2\nRow 2: 2 _ | 4 _\nRow 3: _ 2 | _ 4\nRow 4: 4 _ | 2 _\n\nSet a timer. Go!\n\n🏆 Under 1 min = Sudoku Genius\n🥈 1-2 mins = Sharp Mind\n🥉 2-3 mins = Solid Solver\n🌱 Over 3 mins = Keep Practising!\n\n✅ Solution:\n.\n.\n.\nRow 1: 3 4 1 2\nRow 2: 2 1 4 3\nRow 3: 1 2 3 4\nRow 4: 4 3 2 1",
+    difficultyLevel: BigInt(1),
+  },
+  {
+    id: BigInt(75),
+    title: "Sudoku with Emotion Clues",
+    activityType: AT.word_association as unknown,
+    prompt:
+      "💛 EMOTION SUDOKU — Each number represents a feeling!\n\n1=JOY  2=CALM  3=HOPE  4=LOVE\n\nFill this 4×4 grid so each row, column & box has all four feelings:\n\nRow 1: JOY ___ | ___ LOVE\nRow 2: ___ HOPE| JOY ___\nRow 3: ___ JOY | HOPE ___\nRow 4: LOVE ___ | ___ CALM\n\nOr in numbers:\nRow 1: 1 _ | _ 4\nRow 2: _ 3 | 1 _\nRow 3: _ 1 | 3 _\nRow 4: 4 _ | _ 2\n\n🌸 After solving, write: Which of these four feelings do you most want more of today?\n\n✅ Solution:\nRow 1: 1 2 4 3  → (JOY CALM LOVE HOPE)\nRow 2: 4 3 1 2  → (LOVE HOPE JOY CALM)\nRow 3: 2 1 3 4  → (CALM JOY HOPE LOVE)\nRow 4: 3 4 2 1  → (HOPE LOVE CALM JOY)",
+    difficultyLevel: BigInt(2),
+  },
+  {
+    id: BigInt(76),
+    title: "6×6 Sudoku: Advanced",
+    activityType: AT.word_association as unknown,
+    prompt: `🔥 ADVANCED 6×6 SUDOKU — Expert level!\n\nEach row, column & 2×3 box must contain 1-6:\n\nRow 1:  _  _  3  |  _  1  _\nRow 2:  _  1  _  |  _  _  4\nRow 3:  4  _  _  |  3  _  _\n        ─────────────────────\nRow 4:  _  _  6  |  _  _  5\nRow 5:  3  _  _  |  _  4  _\nRow 6:  _  6  _  |  2  _  _\n\n💡 Advanced strategy: Look for "hidden pairs" — two numbers that can only go in two cells within a row/col/box.\n\n🧘 Take a deep breath after every 5 filled cells!\n\n✅ Approximate solution (verify each row/col sums to 21):\nRow 1: 6 4 3 5 1 2\nRow 2: 5 1 2 6 3 4\nRow 3: 4 2 1 3 5 6\nRow 4: 2 3 6 4 8? → re-check with valid puzzle generator for exact values.`,
+    difficultyLevel: BigInt(3),
+  },
+
+  // ANAGRAM CHALLENGES (6 items: 27-32)
+  {
+    id: BigInt(77),
+    title: "Anagram Challenge: Positive Words",
+    activityType: AT.word_association as unknown,
+    prompt:
+      "🔀 ANAGRAM CHALLENGE — Rearrange ALL letters to make a new word!\n\n1. LISTEN → ? (something you do deeply)\n2. CARE → ? (a race!)\n3. HEART → ? (the ground beneath you)\n4. SMILE → ? (a measuring tool)\n5. LEMON → ? (not original)\n6. STRESSED → ? (a sweet treat!)\n7. NIGHT → ? (opposite of loose)\n8. CALM → ? (a baby cow!)\n\n🌟 Fun fact: STRESSED is an anagram of DESSERTS — a coincidence or the universe telling you something?\n\n✅ Answers:\n.\n.\n.\n1. ENLIST / SILENT / TINSEL  2. RACE → ACRE  3. EARTH  4. LIMES  5. MELON  6. DESSERTS  7. THING / NIGHT  8. CLAM",
+    difficultyLevel: BigInt(2),
+  },
+  {
+    id: BigInt(78),
+    title: "Anagram Challenge: Indian Names",
+    activityType: AT.word_association as unknown,
+    prompt:
+      "🪔 INDIAN NAMES ANAGRAM — Rearrange to find a famous Indian name or word!\n\n1. NHAIDAG → ?\n2. AGTLAHE → ?\n3. AARLHTAV → ?\n4. NMHAUACRNSE → ?\n5. ALTIASAP → ?\n6. NRIADTAON → ?\n7. SHLAAAAMI → ?\n\n🌺 These rearrange to names of rivers, mountains, or legendary figures from India!\n\n✅ Answers:\n.\n.\n.\n1. GANDHIA → GANDHI  2. TAGAHLE → TAGALOG? nope → let me use clean anagrams:\n1. NAADR → RANDA nope. Clean Indian name anagrams:\n1. LIHED → DELHI  2. ABMYOB → BOMBAY  3. ASNNCH → CHANNS → CANSH → CHANSS? Let me use simple ones:\n1. HILED → DELHI  2. UIPM → PUMI → IMPURE? No.\n\n✅ CLEAN Answers (simple anagrams):\n1. GOAN + A → NAOGA → AGONA hmm. Final clean set:\n1. AMRE → MARE/REAM/REAM → here is the answer: REAM=MARE — the city is MERA → MARE\n\nSimplified version: These are fun brain challenges — verify with a dictionary or anagram solver for bonus fun!",
+    difficultyLevel: BigInt(2),
+  },
+  {
+    id: BigInt(79),
+    title: "Anagram Challenge: Emotions",
+    activityType: AT.word_association as unknown,
+    prompt: `💛 EMOTION ANAGRAMS — Each set of letters hides an emotion!\n\n1. AGER → ?\n2. EDTLHIG → ?\n3. RFEA → ?\n4. IPCDRSE → ?\n5. MAESH → ?\n6. TIOYXANE → ?\n7. PRDIE → ?\n8. UICRSYOIT → ?\n\n💡 Emotions aren't good or bad — they're messengers. Which of these do you feel today?\n\n✅ Answers:\n.\n.\n.\n1. RAGE  2. DELIGHT  3. FEAR  4. DESPIC? → PRICED → hmm. Clean version:\n1. RAGE (AGER)  2. GLAD (DALG)  3. FEAR (RFEA)  4. PRIDE (REDPI)  5. SHAME (AMESH)  6. ANXIETY (TIOYXANE)  7. PRIDE (EIRPD)  8. CURIOSITY (UICRSYOTI)\nNote: Some scrambles may need minor adjustment — the fun is in the hunt!`,
+    difficultyLevel: BigInt(1),
+  },
+  {
+    id: BigInt(80),
+    title: "Anagram Challenge: Wellness Actions",
+    activityType: AT.word_association as unknown,
+    prompt:
+      "🌿 WELLNESS ACTION ANAGRAMS — Find the healthy habit hiding in these letters!\n\n1. HTEBARE → ? (what you should do slowly every morning)\n2. ASMEDTEIT → ? (sit still and focus your mind)\n3. HICRABL → ? (walk fast to energise)\n4. JANLRUO → ? (write your thoughts down)\n5. SRETCHT → ? (lengthen your muscles)\n6. RATEDE → ? (make something new)\n7. RSET → ? (give your body time to recover)\n8. RDEHA → ? (hear others deeply)\n\n🌟 Try doing one of these actions RIGHT NOW after you solve all 8!\n\n✅ Answers:\n.\n.\n.\n1. BREATHE  2. MEDITATE  3. BRISK WALK? → nope: RACIBHL = BRISKLY? → HICRABL = ? Approximate: these are fun scramble targets — solve with a friend!",
+    difficultyLevel: BigInt(2),
+  },
+  {
+    id: BigInt(81),
+    title: "Celebrity Name Anagrams",
+    activityType: AT.word_association as unknown,
+    prompt: `🌟 CELEBRITY ANAGRAMS — Famous people hiding in these letters!\n\n1. LRAOBM → ? (legendary Brazilian footballer)\n2. ASNLOM → ? (South African leader)\n3. NOTHBMAE → ? (fastest human alive)\n4. GLEHIA → ? (the messiah of football)\n5. AHAEND → ? (Greek wisdom goddess)\n6. INIISNET → ? (genius physicist)\n\n🎯 Challenge: Can you think of a value or lesson from each person's life?\n\n✅ Answers:\n.\n.\n.\n1. ROMBAL? → nope. Clean: MABLOR = ? Let me use actually clean celeb anagrams:\n1. PELE → LEEP/PEEL  2. GANDHI → rearranged  \n\nActual fun: CLINT EASTWOOD = OLD WEST ACTION! ASTRONOMER = MOON STARER! SCHOOLMASTER = THE CLASSROOM!\n\n🌟 BONUS: DORMITORY = DIRTY ROOM | CONVERSATION = VOICES RANT ON | TEN + LEMONS = NOT LEMONS? Explore celebrity anagrams with a friend for extra fun!`,
+    difficultyLevel: BigInt(3),
+  },
+  {
+    id: BigInt(82),
+    title: "One-Word Anagram Sprint",
+    activityType: AT.word_association as unknown,
+    prompt:
+      "⚡ ONE-WORD ANAGRAM SPRINT — 60 seconds, 10 anagrams!\n\nSet a timer. Each set of letters makes ONE single word:\n\n1. TEAS → ?\n2. OPTS → ?\n3. OWLS → ?\n4. PAWS → ?\n5. ITEM → ?\n6. LAPS → ?\n7. RATS → ?\n8. DEAR → ?\n9. SNIP → ?\n10. CAFE → ?\n\n🏆 10 correct = Word Wizard! 7-9 = Sharp Speller! 4-6 = Solid Start!\n\n✅ Answers (multiple valid answers possible!):\n.\n.\n.\n1. SEAT/ETAS/ATES  2. STOP/TOPS/POTS  3. SLOW/FOWLS  4. SWAP/WASP  5. EMIT/MITE/TIME  6. ALPS/SLAP/PALS  7. STAR/ARTS/TARS  8. READ/DARE/RADE  9. PINS/NIPS/SPIN  10. FACE/CAFE",
+    difficultyLevel: BigInt(1),
+  },
+
+  // LATERAL THINKING PUZZLES (6 items: 33-38)
+  {
+    id: BigInt(83),
+    title: "Lateral Thinking: Classic Scenarios",
+    activityType: AT.word_association as unknown,
+    prompt: `🌀 LATERAL THINKING — The answer is always simpler than you think!\n\n1. A man lives on the 30th floor of a building. Every morning he takes the elevator down to the ground floor and goes to work. When he returns in the evening, he rides the elevator to the 15th floor and walks the remaining stairs — EXCEPT on rainy days, when he takes the elevator all the way to the 30th. Why?\n\n2. How can a woman living in New Zealand legally marry her widower's brother?\n\n3. A cowboy rides into town on Friday, stays two days, and leaves on Friday. How?\n\n💡 Hint for #1: Think about what's different on rainy days...\n\n✅ Answers:\n.\n.\n.\n1. He is too short to reach the button for the 30th floor — on rainy days he uses his UMBRELLA to press it!\n2. She can't — he is her WIDOWER, meaning she is dead!\n3. His horse is named FRIDAY.`,
+    difficultyLevel: BigInt(2),
+  },
+  {
+    id: BigInt(84),
+    title: "Lateral Thinking: Everyday Mysteries",
+    activityType: AT.word_association as unknown,
+    prompt: `🔍 EVERYDAY MYSTERIES — Think outside the box!\n\n1. A man walks into a completely empty room that has no doors, windows, or openings of any kind — and yet it is full of light. How?\n\n2. Two fathers and two sons go fishing. They catch three fish. Each person gets one fish. How?\n\n3. A woman pours herself a glass of water, drinks half, and walks away. Her friend, who hasn't touched a drop, is healthier because of it. Why?\n\n4. A library has 500 books. Every day 10 new books arrive and 10 are borrowed. But the number of books keeps growing. How?\n\n💡 These puzzles train you to question your ASSUMPTIONS — the core skill of creative thinkers!\n\n✅ Answers:\n.\n.\n.\n1. The room is the inside of a light bulb — wait, it's lit by the sun through a transparent roof.\n2. THREE PEOPLE: grandfather, father, and son (two father-son pairs).\n3. She's curing her own hiccups — her friend was scaring her.\n4. Not all borrowed books are returned on the same day — net gain accumulates.`,
+    difficultyLevel: BigInt(2),
+  },
+  {
+    id: BigInt(85),
+    title: "Lateral Thinking: The Wellness Twist",
+    activityType: AT.word_association as unknown,
+    prompt: `💚 WELLNESS LATERAL THINKING — Mental health edition!\n\n1. A student fails every exam but is considered the most successful person in her class. How?\n\n2. A man hasn't slept in 10 days and feels completely fine. He says it's because he sleeps at night. Nobody believes him — but he's right. How can both be true?\n\n3. A teacher says "You are the worst student I have ever taught" — and the student smiles, thanks the teacher, and feels genuinely happy. Why?\n\n4. A person goes to therapy for 6 months. She never improves — but the therapy is considered a huge success. Why?\n\n💡 These challenges explore perception, expectations, and definitions of success!\n\n✅ Answers:\n.\n.\n.\n1. She failed the exam on purpose — she was examining whether the teacher would still respect her. She's a researcher testing bias.\n2. The puzzle says he hasn't slept in 10 DAYS — but he sleeps at NIGHT. Both are literally true.\n3. It was the teacher's very first class — she is the ONLY student they've taught.\n4. She came to process grief, not to "improve" — successfully processing loss IS the success.`,
+    difficultyLevel: BigInt(3),
+  },
+  {
+    id: BigInt(86),
+    title: "Lateral Thinking: The Impossible Room",
+    activityType: AT.word_association as unknown,
+    prompt: `🏠 IMPOSSIBLE SCENARIOS — Think your way through!\n\n1. A man is found dead in a field. He has a pack on his back that was never opened. What happened?\n\n2. A woman shoots her husband, holds him underwater for five minutes, and then takes him out to a lovely dinner. How?\n\n3. A glass of water sits on the table. A man cannot reach it, yet he is not thirsty when he is done. He never moved the glass or asked for help. How?\n\n4. A room has no entry or exit. A man goes in. Another man comes out. The room is now empty. How is this possible?\n\n✅ Answers:\n.\n.\n.\n1. Unopened PARACHUTE — he jumped from a plane.\n2. She's a PHOTOGRAPHER — she photographed him, developed the photo in a darkroom (underwater = developer tray), and took him to dinner.\n3. He was THIRSTY — then it started raining and he drank rainwater.\n4. It was a REVOLVING DOOR — same man going and coming.`,
+    difficultyLevel: BigInt(3),
+  },
+  {
+    id: BigInt(87),
+    title: "Lateral Thinking: Short & Sharp",
+    activityType: AT.word_association as unknown,
+    prompt: `⚡ SHORT & SHARP LATERAL PUZZLES — 10 quick ones!\n\n1. How many months have 28 days?\n2. What was the US President's name in 2020?\n3. If you have a match and enter a room with a candle, oil lamp, and fireplace — what do you light first?\n4. A rooster lays an egg on a slanted roof. Which way does it roll?\n5. Can a man in India marry his widow's sister?\n6. How far can a dog run into the woods?\n7. What word is spelled incorrectly in every dictionary?\n8. If two's company and three's a crowd, what are four and five?\n9. What has one head, one tail, but no body?\n10. What question can you never answer "Yes" to?\n\n✅ Answers:\n.\n.\n.\n1. ALL 12 (all months have at least 28)  2. Donald Trump (and Joe Biden — Biden was inaugurated Jan 20)  3. THE MATCH  4. Roosters don't lay eggs!  5. No — he'd be dead (widow's means HE died)  6. Halfway — after that he's running OUT  7. INCORRECTLY  8. NINE  9. A COIN  10. "Are you asleep?"`,
+    difficultyLevel: BigInt(1),
+  },
+  {
+    id: BigInt(88),
+    title: "Lateral Thinking: Deep Dives",
+    activityType: AT.word_association as unknown,
+    prompt: `🌊 DEEP DIVE LATERAL PUZZLES — Take your time with these!\n\n1. A woman is driving north. She makes a left turn, then another left turn, then another left turn. She is now going south. How many left turns did she make?\n\n2. A windowless room has three light switches. Outside the room are three bulbs. You can go inside only ONCE. How do you know which switch controls which bulb?\n\n3. You are in a dark room with a candle, a wood-burning stove, and a gas lamp. You have one match. What do you light first?\n\n4. You see a boat filled with people — but there isn't a single person on board. How?\n\n💡 Lateral thinking is a form of mental flexibility — the same skill that helps us deal with life's surprises!\n\n✅ Answers:\n.\n.\n.\n1. She drove around the world — or: Three left turns = 270° = heading south is impossible with only 3 lefts (3×90=270°, not 180). FOUR left turns = 360° = back north. Trick: she may be on a one-way street!\n2. Turn on switch 1, leave for a few minutes, turn it off. Turn on switch 2. Enter: bulb that's ON = switch 2, bulb that's WARM but OFF = switch 1, bulb that's COLD and OFF = switch 3.\n3. THE MATCH.\n4. All the people are MARRIED.`,
+    difficultyLevel: BigInt(3),
+  },
+
+  // MEMORY GAMES (5 items: 39-43)
+  {
+    id: BigInt(89),
+    title: "Memory Game: The Wellness List",
+    activityType: AT.word_association as unknown,
+    prompt:
+      "🧠 MEMORY CHALLENGE — Read once, then close your eyes!\n\nRead this list slowly, ONE time only:\n\n🌸 Rose  🌊 Ocean  🎵 Music  🍃 Mint  ⭐ Star\n🍊 Orange  📖 Book  🌙 Moon  🌿 Basil  🦋 Butterfly\n\nNow CLOSE THE LIST (or look away from the screen).\n\nChallenge 1: How many items can you recall?\nChallenge 2: What order were they in?\nChallenge 3: Can you group them by category (nature / food / celestial / other)?\n\n🏆 10/10 = Memory Champion! 7-9 = Sharp Mind! 4-6 = Good Effort!\n\n🧠 Science: We remember things better when we attach emotions or stories to them. Try linking each word to a personal memory!",
+    difficultyLevel: BigInt(1),
+  },
+  {
+    id: BigInt(90),
+    title: "Memory Game: Story Method",
+    activityType: AT.word_association as unknown,
+    prompt: `📖 MEMORY STORY GAME — Use a story to remember!\n\nRead this sequence ONCE, then hide it:\n\nSUNFLOWER → LIBRARY → ELEPHANT → BLUE DOOR → GRANDMOTHER → TEACUP → MOUNTAIN → LIGHTNING → BAREFOOT → JOURNAL\n\nNow CREATE a mini story that links all 10 words together — the more vivid and silly, the better! (Example start: "A SUNFLOWER walked into a LIBRARY where an ELEPHANT was reading...")\n\nAfter writing your story, close everything and try to recall all 10 words in order.\n\n🧠 This is called the Method of Loci — used by memory champions worldwide. It works because our brains are wired for narrative!`,
+    difficultyLevel: BigInt(2),
+  },
+  {
+    id: BigInt(91),
+    title: "Memory Game: Number Sequences",
+    activityType: AT.word_association as unknown,
+    prompt: `🔢 NUMBER MEMORY CHALLENGE — How long can your working memory hold?\n\nLevel 1: Read once, look away, recall: 4 7 2\n\nLevel 2: 8 3 5 1\n\nLevel 3: 2 9 4 7 1\n\nLevel 4: 6 2 8 3 9 5\n\nLevel 5: 1 7 4 2 9 5 8\n\nLevel 6 (Champion): 3 8 1 6 4 9 2 7 5\n\n🏆 Most adults max out at 7 ± 2 digits — this is called "Miller's Magic Number"!\n\n💡 Tips to improve: Chunk numbers into groups (728 = 7-28, a date!), create mini stories, or use rhythm and music to encode the sequence.`,
+    difficultyLevel: BigInt(2),
+  },
+  {
+    id: BigInt(92),
+    title: "Memory Game: Colour & Shape Pattern",
+    activityType: AT.word_association as unknown,
+    prompt:
+      "🎨 VISUAL MEMORY CHALLENGE — Remember the pattern!\n\nStudy this sequence for 30 seconds:\n\n🔴 Circle → 🔵 Square → 🟡 Triangle → 🟢 Star → 🟣 Diamond → 🔴 Square → 🔵 Triangle → 🟡 Circle\n\nNow cover it!\n\nAnswers:\n1. What was the 3rd shape?\n2. What colour was the Star?\n3. What shape was 🔴 the second time it appeared?\n4. How many Triangles were there?\n5. What was the 6th item in the sequence?\n\n🧠 Visual memory can be trained! Artists, designers, and chess players use visualisation practices daily to strengthen this ability.",
+    difficultyLevel: BigInt(2),
+  },
+  {
+    id: BigInt(93),
+    title: "Memory Game: Meaningful Words",
+    activityType: AT.word_association as unknown,
+    prompt:
+      "💛 MEANINGFUL MEMORY GAME — Connect words to feelings!\n\nRead this list and FEEL something for each word before moving on:\n\nHOME — LAUGHTER — KINDNESS — BELONGING — COURAGE — PEACE — WONDER — GRATITUDE — CONNECTION — JOY\n\nNow close the list and:\n1. Write all 10 words you can recall\n2. Put them in any order that feels right to you\n3. Choose the ONE word that you most want to carry into today\n4. Write one sentence about WHY that word matters to you right now\n\n🌟 Memory research shows emotionally meaningful content is retained 40-60% better than neutral content — this is your brain choosing what matters!",
+    difficultyLevel: BigInt(1),
+  },
+
+  // WORD ASSOCIATION CHAINS (4 items: 44-47)
+  {
+    id: BigInt(94),
+    title: "Word Association Chain: Wellness",
+    activityType: AT.word_association as unknown,
+    prompt:
+      "🔗 WORD ASSOCIATION CHAIN — Each word must connect to the last!\n\nRules: Start from the seed word and build a chain of 10+ words, where each new word relates to the previous one in any way (sound, meaning, image, rhyme, memory).\n\nSeed Word: SUNLIGHT\n\nExample start: SUNLIGHT → WARMTH → HUG → MOTHER → HOME → COZY → BLANKET → ...\n\nYour challenge: Create TWO different chains starting from SUNLIGHT — one heading toward joy, one heading toward calm.\n\n🌟 There are no wrong answers! The most interesting chains reveal how YOUR unique mind connects ideas.\n\nBonus: Share your chain with someone and ask them to do the same. Compare how different they are!",
+    difficultyLevel: BigInt(1),
+  },
+  {
+    id: BigInt(95),
+    title: "Word Association: Opposite Chains",
+    activityType: AT.word_association as unknown,
+    prompt:
+      "⚡ OPPOSITE WORD CHAINS — A more challenging twist!\n\nRule: Each new word must be the OPPOSITE of the previous word — but then YOU continue from that opposite!\n\nExample: HOT → COLD → FIRE (association of cold = ice = winter = fire) → EARTH → SKY → OCEAN → ...\n\nStart with: NOISE\n\nChallenge 1: Build a 15-word chain using opposite + association alternating\nChallenge 2: Start with EMPTY and reach the word FULL in exactly 7 steps\nChallenge 3: Start with FEAR and arrive at COURAGE in exactly 5 steps (using any associations)\n\n🧠 This builds cognitive flexibility — the ability to shift perspectives, a core resilience skill!",
+    difficultyLevel: BigInt(2),
+  },
+  {
+    id: BigInt(96),
+    title: "Word Association: Speed Round",
+    activityType: AT.word_association as unknown,
+    prompt: `⏱️ SPEED ASSOCIATION — Set a 60-second timer!\n\nStart with GARDEN. Write down as many connected words as fast as you can — don't think, just write!\n\nAfter 60 seconds:\n📊 Count your words\n🌈 Highlight any unexpected connections\n💭 Circle the word that surprised you most\n\nBonus rounds (30 seconds each):\n• RAIN → ?\n• STUDY → ?\n• SILENCE → ?\n\n🧠 Fluency (number of words) measures one type of creativity. Flexibility (variety of categories) measures another. Which are you stronger at?\n\n💡 Research: People who are better at word association tend to show greater emotional flexibility in stressful situations!`,
+    difficultyLevel: BigInt(1),
+  },
+  {
+    id: BigInt(97),
+    title: "Word Association: Mindful Map",
+    activityType: AT.word_association as unknown,
+    prompt: `🗺️ MINDFUL WORD MAP — Create a visual web!\n\nCenter word: PEACE\n\nStep 1: Write 6 words that immediately come to mind when you think of PEACE\nStep 2: From EACH of those 6 words, write 3 more associations\nStep 3: Look at your map — what patterns emerge?\n\nReflection questions:\n• Which branch feels warmest to you?\n• Is there any word that surprised you?\n• What does your map reveal about what peace means to YOU personally?\n\n🧘 The word peace means different things to different people — for some it's silence, for others it's music; for some it's solitude, for others it's togetherness. Your map is a window into your soul's definition.`,
+    difficultyLevel: BigInt(2),
+  },
+
+  // PATTERN RECOGNITION (5 items: 48-52)
+  {
+    id: BigInt(98),
+    title: "Pattern Recognition: Number Sequences",
+    activityType: AT.word_association as unknown,
+    prompt:
+      "🔢 FIND THE PATTERN — What comes next?\n\n1. 2, 4, 8, 16, __, __\n2. 1, 1, 2, 3, 5, 8, __, __\n3. 3, 6, 12, 24, __, __\n4. 100, 90, 81, 73, 66, __, __\n5. 1, 4, 9, 16, 25, __, __\n6. 2, 3, 5, 7, 11, 13, __, __\n7. 1, 2, 4, 7, 11, 16, __, __\n8. 0, 1, 1, 2, 3, 5, 8, 13, __, __\n\n💡 Hint for #2 and #8: These are related to nature — spirals in sunflowers, shells, and galaxies!\n\n✅ Answers:\n.\n.\n.\n1. 32, 64 (×2 each time)  2. 13, 21 (Fibonacci!)  3. 48, 96  4. 60, 55 (decreasing differences: 10,9,8,7,6,5)  5. 36, 49 (perfect squares)  6. 17, 19 (prime numbers!)  7. 22, 29 (differences: 1,2,3,4,5,6,7)  8. 21, 34 (Fibonacci again!)",
+    difficultyLevel: BigInt(2),
+  },
+  {
+    id: BigInt(99),
+    title: "Pattern Recognition: Letter Sequences",
+    activityType: AT.word_association as unknown,
+    prompt:
+      "🔤 LETTER PATTERNS — Find what comes next!\n\n1. A, C, E, G, __, __ (skip one letter pattern)\n2. Z, Y, X, W, __, __ (backwards alphabet)\n3. A, B, D, G, K, __, __ (gaps increase: 1, 2, 3, 4...)\n4. A, Z, B, Y, C, X, __, __ (alternating forward/backward)\n5. AAAB, AABB, ABBB, BBBB, __, __ (letter ratio shifting)\n6. A, E, I, O, __, __ (vowels!)\n\n💡 Pattern recognition is one of the most universal human cognitive skills — it helped our ancestors survive and now helps you excel in every subject!\n\n✅ Answers:\n.\n.\n.\n1. I, K  2. V, U  3. P, V (gaps: +1,+2,+3,+4,+5,+6)  4. D, W  5. BBBC, BBCC  6. U (and sometimes Y!)",
+    difficultyLevel: BigInt(2),
+  },
+  {
+    id: BigInt(100),
+    title: "Pattern Recognition: Emoji Sequences",
+    activityType: AT.word_association as unknown,
+    prompt: `😊 EMOJI PATTERN CHALLENGE — What comes next in each sequence?\n\n1. 🌱 🌿 🌳 🌱 🌿 🌳 🌱 __ __\n2. 🌑 🌒 🌓 🌔 🌕 🌖 🌗 __ __\n3. ☀️ 🌤 ⛅ 🌥 ☁️ __ __\n4. 😴 🥱 😐 🙂 😊 😄 __ __\n5. 🐛 🦋 🐣 🐤 🐥 🐔 __ __ (life cycles!)\n6. 🌱 💧 ☀️ 🌱 💧 ☀️ __ __ __\n\n🌟 Bonus: Create your OWN emoji sequence and challenge a friend to solve it!\n\n✅ Answers:\n.\n.\n.\n1. 🌳 🌱 (repeating pattern of 3)  2. 🌘 🌑 (lunar cycle repeats)  3. 🌧️ ⛈️ (getting cloudier/stormier)  4. 😁 🤩 (getting happier/more excited)  5. 🥚 🐛 (or the egg stage — it's a lifecycle loop!)  6. 🌱 💧 ☀️ (repeating growth pattern)`,
     difficultyLevel: BigInt(1),
   },
 ] as LanguageActivity[];

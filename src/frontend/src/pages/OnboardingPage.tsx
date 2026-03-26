@@ -4,12 +4,15 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "@tanstack/react-router";
 import {
+  Activity,
   BookOpen,
   Brain,
   CheckCircle,
+  ChefHat,
   GraduationCap,
   Heart,
   Loader2,
+  Moon,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
@@ -52,6 +55,36 @@ const roles = [
   },
 ];
 
+const walkthroughSteps = [
+  {
+    icon: Brain,
+    emoji: "🧠",
+    title: "Your Dashboard",
+    description:
+      "Check in with your mood every day using our animated brain emoji selector. Receive a fresh wellness tip each morning and track how you feel over time.",
+    color: "from-teal-100 to-cyan-100 border-teal-200",
+    iconBg: "bg-teal-100 text-teal-600",
+  },
+  {
+    icon: Moon,
+    emoji: "🌙",
+    title: "Daily Habits",
+    description:
+      "Log your sleep quality, exercise sessions, and outdoor activities every day. Earn XP, unlock badges, and build streaks to stay motivated.",
+    color: "from-indigo-100 to-purple-100 border-indigo-200",
+    iconBg: "bg-indigo-100 text-indigo-600",
+  },
+  {
+    icon: Activity,
+    emoji: "🌱",
+    title: "Explore & Grow",
+    description:
+      "Browse 100 wellness resources, 50 therapeutic activities and games, and 58 Mindful Kitchen recipes crafted for student wellbeing. Your journey starts now.",
+    color: "from-rose-100 to-orange-100 border-rose-200",
+    iconBg: "bg-rose-100 text-rose-600",
+  },
+];
+
 export default function OnboardingPage() {
   const navigate = useNavigate();
   const { identity } = useInternetIdentity();
@@ -60,6 +93,7 @@ export default function OnboardingPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [step, setStep] = useState(1);
+  const [walkthroughStep, setWalkthroughStep] = useState(0); // 0 = not started
   const [errors, setErrors] = useState<{ name?: string; email?: string }>({});
 
   const createStudent = useCreateStudentProfile();
@@ -94,21 +128,35 @@ export default function OnboardingPage() {
       }
       setUserRole(selectedRole);
       setStep(3);
-      setTimeout(() => {
-        if (selectedRole === "student") {
-          navigate({ to: "/dashboard" });
-        } else {
+      if (selectedRole === "student") {
+        // Show walkthrough for students
+        setTimeout(() => setWalkthroughStep(1), 1200);
+      } else {
+        setTimeout(() => {
           navigate({ to: "/guardian-dashboard" });
-        }
-      }, 1500);
+        }, 1500);
+      }
     } catch {
       toast.error("Something went wrong. Please try again.");
+    }
+  };
+
+  const handleWalkthroughNext = () => {
+    if (walkthroughStep < walkthroughSteps.length) {
+      setWalkthroughStep((prev) => prev + 1);
+    } else {
+      navigate({ to: "/dashboard" });
     }
   };
 
   if (!identity) {
     return null;
   }
+
+  const showWalkthrough =
+    step === 3 && walkthroughStep > 0 && selectedRole === "student";
+  const currentWalkStep =
+    walkthroughStep > 0 ? walkthroughSteps[walkthroughStep - 1] : null;
 
   return (
     <div className="min-h-screen bg-background mesh-bg flex items-center justify-center px-4 py-12">
@@ -126,23 +174,25 @@ export default function OnboardingPage() {
             Welcome to Lumi Arc
           </h1>
           <p className="text-muted-foreground">
-            Let's set up your profile in just a few steps
+            Let&apos;s set up your profile in just a few steps
           </p>
         </motion.div>
 
-        {/* Progress */}
-        <div className="flex items-center gap-2 mb-8 px-4">
-          {[1, 2].map((s) => (
-            <div key={s} className="flex-1">
-              <div
-                className={cn(
-                  "h-1.5 rounded-full transition-all duration-300",
-                  step >= s ? "bg-primary" : "bg-muted",
-                )}
-              />
-            </div>
-          ))}
-        </div>
+        {/* Progress - only shown during steps 1 & 2 */}
+        {!showWalkthrough && (
+          <div className="flex items-center gap-2 mb-8 px-4">
+            {[1, 2].map((s) => (
+              <div key={s} className="flex-1">
+                <div
+                  className={cn(
+                    "h-1.5 rounded-full transition-all duration-300",
+                    step >= s ? "bg-primary" : "bg-muted",
+                  )}
+                />
+              </div>
+            ))}
+          </div>
+        )}
 
         <AnimatePresence mode="wait">
           {/* Step 1: Choose Role */}
@@ -312,10 +362,10 @@ export default function OnboardingPage() {
             </motion.div>
           )}
 
-          {/* Step 3: Success */}
-          {step === 3 && (
+          {/* Step 3: Success / Walkthrough */}
+          {step === 3 && !showWalkthrough && (
             <motion.div
-              key="step3"
+              key="step3-success"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               className="glass-card rounded-3xl p-8 shadow-md text-center"
@@ -333,8 +383,71 @@ export default function OnboardingPage() {
                 Welcome, {name}!
               </h2>
               <p className="text-muted-foreground">
-                Your profile is ready. Redirecting you now...
+                {selectedRole === "student"
+                  ? "Your profile is ready. Preparing your journey..."
+                  : "Your profile is ready. Redirecting you now..."}
               </p>
+            </motion.div>
+          )}
+
+          {/* Walkthrough for students */}
+          {showWalkthrough && currentWalkStep && (
+            <motion.div
+              key={`walkthrough-${walkthroughStep}`}
+              initial={{ opacity: 0, x: 40 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -40 }}
+              transition={{ duration: 0.35 }}
+              className="glass-card rounded-3xl p-8 shadow-md"
+              data-ocid="onboarding.walkthrough.panel"
+            >
+              {/* Step indicators */}
+              <div className="flex items-center gap-2 mb-6">
+                {walkthroughSteps.map((ws, i) => (
+                  <div
+                    key={ws.title}
+                    className={cn(
+                      "h-1.5 flex-1 rounded-full transition-all duration-300",
+                      i + 1 <= walkthroughStep ? "bg-primary" : "bg-muted",
+                    )}
+                  />
+                ))}
+              </div>
+
+              <div
+                className={`rounded-2xl bg-gradient-to-br ${currentWalkStep.color} border p-6 mb-6`}
+              >
+                <div
+                  className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-4 ${currentWalkStep.iconBg}`}
+                >
+                  <span className="text-3xl">{currentWalkStep.emoji}</span>
+                </div>
+                <h3 className="font-display text-2xl font-bold text-foreground mb-3">
+                  {currentWalkStep.title}
+                </h3>
+                <p className="text-sm text-foreground/80 leading-relaxed">
+                  {currentWalkStep.description}
+                </p>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">
+                  Step {walkthroughStep} of {walkthroughSteps.length}
+                </span>
+                <Button
+                  onClick={handleWalkthroughNext}
+                  className="h-11 px-6 rounded-xl bg-primary text-primary-foreground shadow-teal"
+                  data-ocid={
+                    walkthroughStep < walkthroughSteps.length
+                      ? "onboarding.walkthrough.next_button"
+                      : "onboarding.walkthrough.done_button"
+                  }
+                >
+                  {walkthroughStep < walkthroughSteps.length
+                    ? "Next →"
+                    : "Let's Go! 🚀"}
+                </Button>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>

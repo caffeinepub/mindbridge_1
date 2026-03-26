@@ -13,17 +13,23 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Principal } from "@icp-sdk/core/principal";
+import { GraduationCap, Mail, Phone, User } from "lucide-react";
 import {
   AlertCircle,
   Calendar,
+  Clock,
+  Heart,
   Loader2,
+  MessageSquareQuote,
   Search,
   SmilePlus,
+  Sparkles,
   TrendingUp,
   Users,
+  X,
 } from "lucide-react";
-import { motion } from "motion/react";
-import { useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
+import { useMemo, useState } from "react";
 import {
   Bar,
   BarChart,
@@ -38,8 +44,11 @@ import {
   YAxis,
 } from "recharts";
 import type { DASS21Assessment } from "../backend.d";
+import { getTodaysTip } from "../data/wellnessTips";
 import { useActor } from "../hooks/useActor";
 import { useGuardianHabitData } from "../hooks/useGuardianHabitData";
+import { useInternetIdentity } from "../hooks/useInternetIdentity";
+import { useProfile } from "../hooks/useProfile";
 import { useGetStudentAssessments } from "../hooks/useQueries";
 import {
   formatSeverityLabel,
@@ -62,7 +71,7 @@ function getSocialScore(a: DASS21Assessment): number {
   return 0;
 }
 
-// ─── Mood History Helpers ─────────────────────────────────────────────────────
+// ─── Mood History Helpers ──────────────────────────────────────────────────────────────────────────
 
 const MOOD_LABELS: Record<number, string> = {
   1: "Very Sad",
@@ -170,7 +179,196 @@ function HabitTooltip({
   );
 }
 
-// ─── Daily Habits Section ─────────────────────────────────────────────────────
+// ─── Encouraging Messages ──────────────────────────────────────────────────────────────────────────
+
+const GUARDIAN_MESSAGES = [
+  "You being here makes a difference. Stay connected, stay caring.",
+  "A parent who checks in is a parent who cares deeply.",
+  "Your presence in your child's wellness journey matters more than you know.",
+  "Small gestures of love create lifelong resilience in young minds.",
+  "Showing up for your child's mental health is an act of profound love.",
+  "Every time you check in, you strengthen the invisible thread between you.",
+  "Your child's wellbeing is a garden — and you are tending it with care.",
+  "The fact that you are here says everything about the parent you are.",
+  "Connection is the greatest gift you can give your child.",
+  "Mental wellness begins at home — you are building that foundation.",
+  "Your child may not always say it, but your care reaches them deeply.",
+  "Empathy and attention are the most powerful tools a guardian has.",
+  "You are raising a resilient soul — one mindful moment at a time.",
+  "Love expressed through attention is the most healing force there is.",
+  "Your child is lucky to have someone who cares this much.",
+  "Checking in today is planting seeds of trust for tomorrow.",
+  "A calm guardian creates a calm mind in their child.",
+  "You can't pour from an empty cup — take care of yourself too.",
+  "The most important conversations happen when you simply show up.",
+  "Behind every thriving student is a guardian who pays attention.",
+  "Compassion is not a weakness — it is the greatest strength.",
+  "Your child's light shines brighter because of your steady presence.",
+  "Noticing how your child feels is the first step to helping them flourish.",
+  "Every check-in you do today is a gift to the person they'll become.",
+  "You are doing something extraordinary just by being engaged.",
+  "Your love is the most powerful mental health intervention there is.",
+  "Being present in your child's life is never wasted time.",
+  "You are not just a parent — you are their first safe space.",
+  "Small consistent check-ins build unshakeable bonds over time.",
+  "Your child's journey to wellness is a journey you walk together.",
+];
+
+function getDayOfYear(): number {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), 0, 0);
+  const diff = now.getTime() - start.getTime();
+  return Math.floor(diff / 86400000);
+}
+
+// ─── DASS-21 Helpers ──────────────────────────────────────────────────────────────────────────────
+
+type PlainSeverity = {
+  level: string;
+  description: string;
+  color: string;
+  bg: string;
+};
+
+function getDassPlainSeverity(
+  type: "depression" | "anxiety" | "stress",
+  score: number,
+): PlainSeverity {
+  if (type === "depression") {
+    if (score < 10)
+      return {
+        level: "Normal",
+        description: "Your child appears emotionally settled.",
+        color: "text-teal-700",
+        bg: "bg-teal-50 border-teal-200",
+      };
+    if (score < 14)
+      return {
+        level: "Mild",
+        description: "Mild low mood at times — generally managing well.",
+        color: "text-amber-700",
+        bg: "bg-amber-50 border-amber-200",
+      };
+    if (score < 21)
+      return {
+        level: "Moderate",
+        description: "Some signs of low mood worth a gentle conversation.",
+        color: "text-orange-700",
+        bg: "bg-orange-50 border-orange-200",
+      };
+    if (score < 28)
+      return {
+        level: "Severe",
+        description: "Notable depressive signs — consider additional support.",
+        color: "text-red-700",
+        bg: "bg-red-50 border-red-200",
+      };
+    return {
+      level: "Extremely Severe",
+      description:
+        "Significant concern — professional support is strongly recommended.",
+      color: "text-red-800",
+      bg: "bg-red-100 border-red-300",
+    };
+  }
+  if (type === "anxiety") {
+    if (score < 8)
+      return {
+        level: "Normal",
+        description: "Anxiety is within a healthy, manageable range.",
+        color: "text-teal-700",
+        bg: "bg-teal-50 border-teal-200",
+      };
+    if (score < 10)
+      return {
+        level: "Mild",
+        description: "Occasional worry present — normal for students.",
+        color: "text-amber-700",
+        bg: "bg-amber-50 border-amber-200",
+      };
+    if (score < 15)
+      return {
+        level: "Moderate",
+        description: "Noticeable anxiety. Breathing exercises may help.",
+        color: "text-orange-700",
+        bg: "bg-orange-50 border-orange-200",
+      };
+    if (score < 20)
+      return {
+        level: "Severe",
+        description: "High anxiety levels — a caring check-in is important.",
+        color: "text-red-700",
+        bg: "bg-red-50 border-red-200",
+      };
+    return {
+      level: "Extremely Severe",
+      description:
+        "Intense anxiety — professional support is strongly recommended.",
+      color: "text-red-800",
+      bg: "bg-red-100 border-red-300",
+    };
+  }
+  // stress
+  if (score < 15)
+    return {
+      level: "Normal",
+      description: "Stress levels appear healthy and manageable.",
+      color: "text-teal-700",
+      bg: "bg-teal-50 border-teal-200",
+    };
+  if (score < 19)
+    return {
+      level: "Mild",
+      description: "Some everyday pressures — your child is managing.",
+      color: "text-amber-700",
+      bg: "bg-amber-50 border-amber-200",
+    };
+  if (score < 26)
+    return {
+      level: "Moderate",
+      description: "Moderate stress. Encourage breaks and sleep.",
+      color: "text-orange-700",
+      bg: "bg-orange-50 border-orange-200",
+    };
+  if (score < 34)
+    return {
+      level: "Severe",
+      description:
+        "High stress — consider reducing workload or seeking support.",
+      color: "text-red-700",
+      bg: "bg-red-50 border-red-200",
+    };
+  return {
+    level: "Extremely Severe",
+    description: "Very high stress — urgent support is strongly recommended.",
+    color: "text-red-800",
+    bg: "bg-red-100 border-red-300",
+  };
+}
+
+// ─── Last Active Helper ───────────────────────────────────────────────────────────────────────────
+
+function getLastActiveLabel(): string {
+  try {
+    const raw = localStorage.getItem("lumiLastActive");
+    if (!raw) return "Not yet active";
+    const ts = new Date(raw);
+    const now = new Date();
+    const diffMs = now.getTime() - ts.getTime();
+    const diffDays = Math.floor(diffMs / 86400000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffMins = Math.floor(diffMs / 60000);
+    if (diffMins < 5) return "Just now";
+    if (diffHours < 1) return `${diffMins} minutes ago`;
+    if (diffHours < 24) return `Today (${diffHours}h ago)`;
+    if (diffDays === 1) return "Yesterday";
+    return `${diffDays} days ago`;
+  } catch {
+    return "Unknown";
+  }
+}
+
+// ─── Daily Habits Section ───────────────────────────────────────────────────────────────────────────
 
 function DailyHabitsSection() {
   const {
@@ -220,7 +418,7 @@ function DailyHabitsSection() {
           🏃 Daily Habits Overview
         </h2>
         <span className="text-xs text-muted-foreground italic bg-muted/50 px-2 py-1 rounded-full">
-          Viewing this student's device habit data
+          Viewing this student&apos;s device habit data
         </span>
       </div>
 
@@ -356,6 +554,84 @@ function DailyHabitsSection() {
   );
 }
 
+// ─── Weekly Wellness Summary ────────────────────────────────────────────────────────────────────────
+
+function WeeklyWellnessSummary() {
+  const { sleepStreak, exerciseStreak, outdoorStreak } = useGuardianHabitData();
+  const STORAGE_KEY = "lumi_arc_daily_logs";
+
+  const { sleepDays, exerciseDays } = useMemo(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      const logs: Record<
+        string,
+        { sleep?: unknown; exercise?: unknown; outdoor?: unknown }
+      > = raw ? JSON.parse(raw) : {};
+      const today = new Date();
+      let sleepDays = 0;
+      let exerciseDays = 0;
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(today);
+        d.setDate(today.getDate() - i);
+        const key = d.toISOString().slice(0, 10);
+        if (logs[key]?.sleep) sleepDays++;
+        if (logs[key]?.exercise) exerciseDays++;
+      }
+      return { sleepDays, exerciseDays };
+    } catch {
+      return { sleepDays: 0, exerciseDays: 0, moodDominant: null };
+    }
+  }, []);
+
+  // Determine dominant mood from last 7 days
+  const dominantMood = useMemo(() => {
+    const moodData = getRealWeeklyMoodData();
+    const counts: Record<number, number> = {};
+    for (const { mood } of moodData) {
+      if (mood > 0) counts[mood] = (counts[mood] ?? 0) + 1;
+    }
+    const best = Object.entries(counts).sort(
+      (a, b) => Number(b[1]) - Number(a[1]),
+    )[0];
+    if (!best) return "Calm";
+    return MOOD_LABELS[Number(best[0])] ?? "Calm";
+  }, []);
+
+  const bestStreak = Math.max(sleepStreak, exerciseStreak, outdoorStreak);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.1 }}
+      data-ocid="guardian.wellness_summary.card"
+    >
+      <div className="rounded-2xl bg-gradient-to-br from-teal-50 to-sage-50 border-l-4 border-l-teal-400 border border-teal-200 p-5 shadow-sm">
+        <div className="flex items-start gap-3">
+          <MessageSquareQuote className="w-5 h-5 text-teal-600 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-xs font-semibold text-teal-700 uppercase tracking-wide mb-1">
+              Weekly Wellness Summary
+            </p>
+            <p className="text-sm text-foreground leading-relaxed">
+              This week, your child logged sleep{" "}
+              <span className="font-semibold">{sleepDays}/7 days</span>,
+              exercised{" "}
+              <span className="font-semibold">{exerciseDays} times</span>, and
+              was mostly feeling{" "}
+              <span className="font-semibold">{dominantMood}</span>. Streak is
+              holding at{" "}
+              <span className="font-semibold">🔥 {bestStreak} days</span>.
+            </p>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+// ─── Main Dashboard ────────────────────────────────────────────────────────────────────────────────
+
 export default function GuardianDashboard() {
   const { actor } = useActor();
   const [studentIdInput, setStudentIdInput] = useState("");
@@ -363,6 +639,7 @@ export default function GuardianDashboard() {
     null,
   );
   const [inputError, setInputError] = useState("");
+  const [moodAlertDismissed, setMoodAlertDismissed] = useState(false);
 
   const {
     data: assessments,
@@ -399,414 +676,641 @@ export default function GuardianDashboard() {
 
   const weeklyMoodData = getRealWeeklyMoodData();
 
+  // Mood alert: 2+ consecutive sad days
+  const moodAlertActive = useMemo(() => {
+    let consecutive = 0;
+    for (let i = weeklyMoodData.length - 1; i >= 0; i--) {
+      const m = weeklyMoodData[i].mood;
+      if (m === 1 || m === 2) {
+        consecutive++;
+        if (consecutive >= 2) return true;
+      } else if (m > 0) {
+        break;
+      }
+    }
+    return false;
+  }, [weeklyMoodData]);
+
+  // Guardian encouraging message (daily rotation)
+  const todayMessage =
+    GUARDIAN_MESSAGES[getDayOfYear() % GUARDIAN_MESSAGES.length];
+
+  // Today's wellness tip
+  const todayTip = getTodaysTip();
+
+  // Last active
+  const lastActiveLabel = getLastActiveLabel();
+
+  const { identity: guardianIdentity } = useInternetIdentity();
+  const { profile: guardianProfile } = useProfile(guardianIdentity);
+
   return (
-    <div className="container mx-auto px-4 py-8 max-w-5xl">
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mb-8"
-      >
-        <div className="flex items-center gap-2 text-muted-foreground text-sm mb-2">
-          <Users className="w-4 h-4" />
-          Guardian View
-        </div>
-        <h1 className="font-display text-3xl font-bold text-foreground">
-          Student Wellbeing Tracker
-        </h1>
-        <p className="text-muted-foreground mt-1 text-sm">
-          Enter a student's Principal ID to view their mental health assessment
-          history.
-        </p>
-      </motion.div>
-
-      {/* Search */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="glass-card rounded-2xl p-6 shadow-sm mb-8"
-      >
-        <Label className="text-sm font-medium mb-2 block">
-          Student Principal ID
-        </Label>
-        <div className="flex gap-3">
-          <Input
-            value={studentIdInput}
-            onChange={(e) => {
-              setStudentIdInput(e.target.value);
-              if (inputError) setInputError("");
-            }}
-            placeholder="e.g. abc12-def34-..."
-            className="h-11 rounded-xl flex-1"
-            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-            data-ocid="guardian.search.input"
-          />
-          <Button
-            onClick={handleSearch}
-            disabled={!actor || isLoading}
-            className="h-11 px-5 rounded-xl bg-primary text-primary-foreground shadow-teal"
-            data-ocid="guardian.search.button"
+    <>
+      <div className="container mx-auto px-4 py-8 max-w-5xl">
+        {/* Teacher Contact Card (from profile) */}
+        {(guardianProfile?.linkedTeacherEmailForGuardian ||
+          guardianProfile?.linkedTeacherNameForGuardian) && (
+          <div
+            className="mb-4 bg-teal-50 border border-teal-200 rounded-2xl px-5 py-4 flex items-center gap-4"
+            data-ocid="guardian.teacher_contact.panel"
           >
-            {isLoading ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Search className="w-4 h-4" />
-            )}
-            <span className="ml-2">Search</span>
-          </Button>
-        </div>
-        {inputError && (
-          <p
-            className="text-destructive text-xs mt-2"
-            data-ocid="guardian.search.error_state"
-          >
-            {inputError}
-          </p>
+            <div className="w-9 h-9 rounded-full bg-teal-100 flex items-center justify-center flex-shrink-0">
+              <GraduationCap className="w-4 h-4 text-teal-700" />
+            </div>
+            <div className="flex-1">
+              <p className="text-xs font-semibold text-teal-700 uppercase tracking-wide mb-0.5">
+                Your Child's Mentor Teacher
+              </p>
+              <p className="text-sm font-medium text-foreground">
+                {guardianProfile.linkedTeacherNameForGuardian || "Teacher"}
+              </p>
+              {guardianProfile.linkedTeacherEmailForGuardian && (
+                <a
+                  href={`mailto:${guardianProfile.linkedTeacherEmailForGuardian}`}
+                  className="flex items-center gap-1 text-xs text-teal-600 hover:underline mt-0.5"
+                >
+                  <Mail className="w-3 h-3" />
+                  {guardianProfile.linkedTeacherEmailForGuardian}
+                </a>
+              )}
+            </div>
+          </div>
         )}
-      </motion.div>
-
-      {/* Results */}
-      {isLoading && (
-        <div
-          className="flex items-center justify-center py-16"
-          data-ocid="guardian.loading_state"
-        >
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          <span className="ml-3 text-muted-foreground">
-            Loading assessments...
-          </span>
-        </div>
-      )}
-
-      {isError && (
-        <div className="text-center py-16" data-ocid="guardian.error_state">
-          <AlertCircle className="w-8 h-8 text-destructive mx-auto mb-2" />
-          <p className="text-destructive font-medium">
-            Could not load student data.
-          </p>
-          <p className="text-muted-foreground text-sm mt-1">
-            Ensure the student has linked you as their guardian.
-          </p>
-        </div>
-      )}
-
-      {assessments && !isLoading && (
-        <div>
-          {assessments.length === 0 ? (
-            <div
-              className="text-center py-16"
-              data-ocid="guardian.assessments.empty_state"
+        {!guardianProfile?.linkedTeacherEmailForGuardian && (
+          <div
+            className="mb-4 bg-muted/30 border border-border/40 rounded-2xl px-5 py-3 flex items-center gap-3"
+            data-ocid="guardian.teacher_contact.panel"
+          >
+            <GraduationCap className="w-4 h-4 text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">
+              Teacher contact not yet available. Your child's teacher
+              information will appear here once linked.
+            </p>
+          </div>
+        )}
+        {/* Mood alert banner */}
+        <AnimatePresence>
+          {moodAlertActive && !moodAlertDismissed && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="mb-4 overflow-hidden"
+              data-ocid="guardian.mood_alert.panel"
             >
-              <Calendar className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
-              <h3 className="font-display text-lg font-semibold mb-1">
-                No assessments yet
-              </h3>
-              <p className="text-muted-foreground text-sm">
-                This student has not completed any assessments, or you may not
-                have guardian access.
+              <div className="flex items-start gap-3 bg-rose-50 border border-rose-200 rounded-2xl px-4 py-3">
+                <Heart className="w-4 h-4 text-rose-500 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-rose-800 flex-1">
+                  <span className="font-semibold">A gentle note:</span> Your
+                  child may need some extra support this week. Consider reaching
+                  out with warmth and care.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setMoodAlertDismissed(true)}
+                  className="text-rose-400 hover:text-rose-600 flex-shrink-0"
+                  data-ocid="guardian.mood_alert.close_button"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Encouraging message card */}
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-6"
+          data-ocid="guardian.encouraging.card"
+        >
+          <div
+            className="rounded-2xl bg-gradient-to-br from-lavender-50 to-rose-50 border border-purple-100 p-5 shadow-sm"
+            style={{
+              background:
+                "linear-gradient(135deg, oklch(0.95 0.03 300 / 0.5), oklch(0.96 0.03 10 / 0.5))",
+            }}
+          >
+            <div className="flex items-start gap-3">
+              <span className="text-2xl flex-shrink-0">🧡</span>
+              <p className="text-sm text-foreground/80 leading-relaxed italic">
+                &ldquo;{todayMessage}&rdquo;
               </p>
             </div>
-          ) : (
-            <div className="space-y-6">
-              {/* Summary cards */}
-              {latest && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="grid grid-cols-2 md:grid-cols-4 gap-4"
-                >
-                  {[
-                    {
-                      label: "Depression",
-                      score: Number(latest.depression.rawScore),
-                      severity: latest.depression.severity,
-                    },
-                    {
-                      label: "Anxiety",
-                      score: Number(latest.anxiety.rawScore),
-                      severity: latest.anxiety.severity,
-                    },
-                    {
-                      label: "Stress",
-                      score: Number(latest.stress.rawScore),
-                      severity: latest.stress.severity,
-                    },
-                    {
-                      label: "Social Risk",
-                      score: getSocialScore(latest),
-                      severity: null,
-                      risk: getSocialIsolationRisk(getSocialScore(latest)).risk,
-                    },
-                  ].map((item, i) => (
-                    <Card
-                      key={item.label}
-                      className="rounded-2xl border-border/40 shadow-sm"
-                      data-ocid={`guardian.summary.item.${i + 1}`}
-                    >
-                      <CardContent className="p-4 text-center">
-                        <div className="font-display text-3xl font-bold mb-1">
-                          {item.score}
-                        </div>
-                        <div className="text-xs text-muted-foreground mb-2">
-                          {item.label}
-                        </div>
-                        {item.severity ? (
-                          <Badge
-                            className={`text-xs rounded-full ${severityBgClass(item.severity)}`}
-                          >
-                            {formatSeverityLabel(item.severity)}
-                          </Badge>
-                        ) : (
-                          <Badge
-                            className={`text-xs rounded-full ${
-                              item.risk === "low"
-                                ? "bg-green-100 text-green-800"
+          </div>
+        </motion.div>
+
+        {/* Today's Wellness Tip */}
+        <motion.div
+          initial={{ opacity: 0, y: -6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.06 }}
+          className="mb-6"
+          data-ocid="guardian.wellness_tip.card"
+        >
+          <div className="rounded-2xl bg-gradient-to-br from-primary/5 to-sage-100/40 border border-primary/20 p-4 flex gap-3 items-start shadow-sm">
+            <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <Sparkles className="w-4 h-4 text-primary" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-primary uppercase tracking-wide mb-0.5">
+                Today&apos;s Wellness Tip
+              </p>
+              <p className="text-sm text-foreground leading-relaxed">
+                {todayTip}
+              </p>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.08 }}
+          className="mb-8"
+        >
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-3 text-muted-foreground text-sm">
+              <Users className="w-4 h-4" />
+              Guardian View
+              <span className="inline-flex items-center gap-1.5 bg-muted/60 px-2.5 py-1 rounded-full text-xs">
+                <Clock className="w-3 h-3" />
+                Last active: {lastActiveLabel}
+              </span>
+            </div>
+          </div>
+          <h1 className="font-display text-3xl font-bold text-foreground">
+            Student Wellbeing Tracker
+          </h1>
+          <p className="text-muted-foreground mt-1 text-sm">
+            Enter a student&apos;s Principal ID to view their mental health
+            assessment history.
+          </p>
+        </motion.div>
+
+        {/* Search */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.12 }}
+          className="glass-card rounded-2xl p-6 shadow-sm mb-8"
+        >
+          <Label className="text-sm font-medium mb-2 block">
+            Student Principal ID
+          </Label>
+          <div className="flex gap-3">
+            <Input
+              value={studentIdInput}
+              onChange={(e) => {
+                setStudentIdInput(e.target.value);
+                if (inputError) setInputError("");
+              }}
+              placeholder="e.g. abc12-def34-..."
+              className="h-11 rounded-xl flex-1"
+              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+              data-ocid="guardian.search.input"
+            />
+            <Button
+              onClick={handleSearch}
+              disabled={!actor || isLoading}
+              className="h-11 px-5 rounded-xl bg-primary text-primary-foreground shadow-teal"
+              data-ocid="guardian.search.button"
+            >
+              {isLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Search className="w-4 h-4" />
+              )}
+              <span className="ml-2">Search</span>
+            </Button>
+          </div>
+          {inputError && (
+            <p
+              className="text-destructive text-xs mt-2"
+              data-ocid="guardian.search.error_state"
+            >
+              {inputError}
+            </p>
+          )}
+        </motion.div>
+
+        {/* Results */}
+        {isLoading && (
+          <div
+            className="flex items-center justify-center py-16"
+            data-ocid="guardian.loading_state"
+          >
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            <span className="ml-3 text-muted-foreground">
+              Loading assessments...
+            </span>
+          </div>
+        )}
+
+        {isError && (
+          <div className="text-center py-16" data-ocid="guardian.error_state">
+            <AlertCircle className="w-8 h-8 text-destructive mx-auto mb-2" />
+            <p className="text-destructive font-medium">
+              Could not load student data.
+            </p>
+            <p className="text-muted-foreground text-sm mt-1">
+              Ensure the student has linked you as their guardian.
+            </p>
+          </div>
+        )}
+
+        {assessments && !isLoading && (
+          <div>
+            {assessments.length === 0 ? (
+              <div
+                className="text-center py-16"
+                data-ocid="guardian.assessments.empty_state"
+              >
+                <Calendar className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
+                <h3 className="font-display text-lg font-semibold mb-1">
+                  No assessments yet
+                </h3>
+                <p className="text-muted-foreground text-sm">
+                  This student has not completed any assessments, or you may not
+                  have guardian access.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {/* Weekly Wellness Summary */}
+                <WeeklyWellnessSummary />
+
+                {/* Summary cards */}
+                {latest && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="grid grid-cols-2 md:grid-cols-4 gap-4"
+                  >
+                    {[
+                      {
+                        label: "Depression",
+                        score: Number(latest.depression.rawScore),
+                        severity: latest.depression.severity,
+                      },
+                      {
+                        label: "Anxiety",
+                        score: Number(latest.anxiety.rawScore),
+                        severity: latest.anxiety.severity,
+                      },
+                      {
+                        label: "Stress",
+                        score: Number(latest.stress.rawScore),
+                        severity: latest.stress.severity,
+                      },
+                      {
+                        label: "Social Risk",
+                        score: getSocialScore(latest),
+                        severity: null,
+                        risk: getSocialIsolationRisk(getSocialScore(latest))
+                          .risk,
+                      },
+                    ].map((item, i) => (
+                      <Card
+                        key={item.label}
+                        className="rounded-2xl border-border/40 shadow-sm"
+                        data-ocid={`guardian.summary.item.${i + 1}`}
+                      >
+                        <CardContent className="p-4 text-center">
+                          <div className="font-display text-3xl font-bold mb-1">
+                            {item.score}
+                          </div>
+                          <div className="text-xs text-muted-foreground mb-2">
+                            {item.label}
+                          </div>
+                          {item.severity ? (
+                            <Badge
+                              className={`text-xs rounded-full ${severityBgClass(item.severity)}`}
+                            >
+                              {formatSeverityLabel(item.severity)}
+                            </Badge>
+                          ) : (
+                            <Badge
+                              className={`text-xs rounded-full ${
+                                item.risk === "low"
+                                  ? "bg-green-100 text-green-800"
+                                  : item.risk === "moderate"
+                                    ? "bg-yellow-100 text-yellow-800"
+                                    : item.risk === "high"
+                                      ? "bg-orange-100 text-orange-800"
+                                      : "bg-red-100 text-red-800"
+                              }`}
+                            >
+                              {item.risk === "low"
+                                ? "Low"
                                 : item.risk === "moderate"
-                                  ? "bg-yellow-100 text-yellow-800"
+                                  ? "Moderate"
                                   : item.risk === "high"
-                                    ? "bg-orange-100 text-orange-800"
-                                    : "bg-red-100 text-red-800"
-                            }`}
-                          >
-                            {item.risk === "low"
-                              ? "Low"
-                              : item.risk === "moderate"
-                                ? "Moderate"
-                                : item.risk === "high"
-                                  ? "High"
-                                  : "Very High"}
-                          </Badge>
-                        )}
+                                    ? "High"
+                                    : "Very High"}
+                            </Badge>
+                          )}
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </motion.div>
+                )}
+
+                {/* DASS-21 Simplified Summary */}
+                {latest && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.08 }}
+                    data-ocid="guardian.dass_summary.card"
+                  >
+                    <Card className="rounded-2xl border-border/40 shadow-sm">
+                      <CardHeader className="pb-3">
+                        <CardTitle className="font-display text-base flex items-center gap-2">
+                          <TrendingUp className="w-4 h-4 text-primary" />
+                          What the DASS-21 Scores Mean
+                        </CardTitle>
+                        <p className="text-xs text-muted-foreground">
+                          A plain-language guide to your child&apos;s latest
+                          results.
+                        </p>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        {[
+                          {
+                            type: "depression" as const,
+                            label: "Depression",
+                            score: Number(latest.depression.rawScore),
+                          },
+                          {
+                            type: "anxiety" as const,
+                            label: "Anxiety",
+                            score: Number(latest.anxiety.rawScore),
+                          },
+                          {
+                            type: "stress" as const,
+                            label: "Stress",
+                            score: Number(latest.stress.rawScore),
+                          },
+                        ].map(({ type, label, score }) => {
+                          const sev = getDassPlainSeverity(type, score);
+                          return (
+                            <div
+                              key={type}
+                              className={`rounded-xl border p-3 ${sev.bg}`}
+                            >
+                              <div className="flex items-center justify-between mb-0.5">
+                                <span className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                                  {label}
+                                </span>
+                                <span
+                                  className={`text-xs font-semibold ${sev.color}`}
+                                >
+                                  {sev.level}
+                                </span>
+                              </div>
+                              <p
+                                className={`text-sm leading-relaxed ${sev.color}`}
+                              >
+                                {sev.description}
+                              </p>
+                            </div>
+                          );
+                        })}
                       </CardContent>
                     </Card>
-                  ))}
-                </motion.div>
-              )}
+                  </motion.div>
+                )}
 
-              {/* Trend chart */}
-              {chartData.length > 1 && (
+                {/* Trend chart */}
+                {chartData.length > 1 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.15 }}
+                  >
+                    <Card className="rounded-2xl border-border/40 shadow-sm">
+                      <CardHeader>
+                        <CardTitle className="font-display text-base flex items-center gap-2">
+                          <TrendingUp className="w-4 h-4 text-primary" />
+                          Assessment Trends
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <ResponsiveContainer width="100%" height={280}>
+                          <LineChart data={chartData}>
+                            <CartesianGrid
+                              strokeDasharray="3 3"
+                              stroke="oklch(0.9 0.02 180)"
+                            />
+                            <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                            <YAxis tick={{ fontSize: 11 }} domain={[0, 42]} />
+                            <Tooltip
+                              contentStyle={{
+                                borderRadius: "12px",
+                                border: "1px solid oklch(0.88 0.025 180)",
+                                fontSize: "12px",
+                              }}
+                            />
+                            <Legend wrapperStyle={{ fontSize: "12px" }} />
+                            <Line
+                              type="monotone"
+                              dataKey="Depression"
+                              stroke="oklch(0.55 0.18 25)"
+                              strokeWidth={2}
+                              dot={{ r: 4 }}
+                            />
+                            <Line
+                              type="monotone"
+                              dataKey="Anxiety"
+                              stroke="oklch(0.58 0.18 55)"
+                              strokeWidth={2}
+                              dot={{ r: 4 }}
+                            />
+                            <Line
+                              type="monotone"
+                              dataKey="Stress"
+                              stroke="oklch(0.42 0.09 195)"
+                              strokeWidth={2}
+                              dot={{ r: 4 }}
+                            />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                )}
+
+                {/* Weekly Mood History chart */}
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.15 }}
+                  transition={{ delay: 0.2 }}
+                  data-ocid="guardian.mood.panel"
                 >
                   <Card className="rounded-2xl border-border/40 shadow-sm">
                     <CardHeader>
                       <CardTitle className="font-display text-base flex items-center gap-2">
-                        <TrendingUp className="w-4 h-4 text-primary" />
-                        Assessment Trends
+                        <SmilePlus className="w-4 h-4 text-primary" />
+                        Weekly Mood Check-Ins
                       </CardTitle>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Mood score: 1 = Very Sad · 2 = Sad · 3 = Okay · 4 =
+                        Happy · 5 = Very Happy
+                      </p>
                     </CardHeader>
                     <CardContent>
-                      <ResponsiveContainer width="100%" height={280}>
-                        <LineChart data={chartData}>
+                      <ResponsiveContainer width="100%" height={220}>
+                        <BarChart
+                          data={weeklyMoodData}
+                          barCategoryGap="28%"
+                          margin={{ top: 4, right: 8, left: -10, bottom: 0 }}
+                        >
                           <CartesianGrid
                             strokeDasharray="3 3"
-                            stroke="oklch(0.9 0.02 180)"
+                            vertical={false}
+                            stroke="oklch(0.92 0.015 195)"
                           />
-                          <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-                          <YAxis tick={{ fontSize: 11 }} domain={[0, 42]} />
+                          <XAxis
+                            dataKey="day"
+                            tick={{ fontSize: 11 }}
+                            axisLine={false}
+                            tickLine={false}
+                          />
+                          <YAxis
+                            domain={[0, 5]}
+                            ticks={[1, 2, 3, 4, 5]}
+                            tick={{ fontSize: 11 }}
+                            axisLine={false}
+                            tickLine={false}
+                          />
                           <Tooltip
-                            contentStyle={{
-                              borderRadius: "12px",
-                              border: "1px solid oklch(0.88 0.025 180)",
-                              fontSize: "12px",
-                            }}
+                            content={<MoodTooltip />}
+                            cursor={{ fill: "oklch(0.96 0.02 195 / 0.5)" }}
                           />
-                          <Legend wrapperStyle={{ fontSize: "12px" }} />
-                          <Line
-                            type="monotone"
-                            dataKey="Depression"
-                            stroke="oklch(0.55 0.18 25)"
-                            strokeWidth={2}
-                            dot={{ r: 4 }}
-                          />
-                          <Line
-                            type="monotone"
-                            dataKey="Anxiety"
-                            stroke="oklch(0.58 0.18 55)"
-                            strokeWidth={2}
-                            dot={{ r: 4 }}
-                          />
-                          <Line
-                            type="monotone"
-                            dataKey="Stress"
-                            stroke="oklch(0.42 0.09 195)"
-                            strokeWidth={2}
-                            dot={{ r: 4 }}
-                          />
-                        </LineChart>
+                          <Bar
+                            dataKey="mood"
+                            radius={[6, 6, 0, 0]}
+                            maxBarSize={48}
+                          >
+                            {weeklyMoodData.map((entry) => (
+                              <Cell
+                                key={`mood-bar-${entry.day}`}
+                                fill={
+                                  MOOD_BAR_COLORS[entry.mood] ??
+                                  MOOD_BAR_COLORS[0]
+                                }
+                              />
+                            ))}
+                          </Bar>
+                        </BarChart>
                       </ResponsiveContainer>
+                      <p className="text-xs text-muted-foreground/70 mt-3 text-center italic">
+                        Showing this device&apos;s logged mood check-ins for the
+                        last 7 days.
+                      </p>
                     </CardContent>
                   </Card>
                 </motion.div>
-              )}
 
-              {/* Weekly Mood History chart */}
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                data-ocid="guardian.mood.panel"
-              >
-                <Card className="rounded-2xl border-border/40 shadow-sm">
-                  <CardHeader>
-                    <CardTitle className="font-display text-base flex items-center gap-2">
-                      <SmilePlus className="w-4 h-4 text-primary" />
-                      Weekly Mood Check-Ins
-                    </CardTitle>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      Mood score: 1 = Very Sad · 2 = Sad · 3 = Okay · 4 = Happy
-                      · 5 = Very Happy
-                    </p>
-                  </CardHeader>
-                  <CardContent>
-                    <ResponsiveContainer width="100%" height={220}>
-                      <BarChart
-                        data={weeklyMoodData}
-                        barCategoryGap="28%"
-                        margin={{ top: 4, right: 8, left: -10, bottom: 0 }}
-                      >
-                        <CartesianGrid
-                          strokeDasharray="3 3"
-                          vertical={false}
-                          stroke="oklch(0.92 0.015 195)"
-                        />
-                        <XAxis
-                          dataKey="day"
-                          tick={{ fontSize: 11 }}
-                          axisLine={false}
-                          tickLine={false}
-                        />
-                        <YAxis
-                          domain={[0, 5]}
-                          ticks={[1, 2, 3, 4, 5]}
-                          tick={{ fontSize: 11 }}
-                          axisLine={false}
-                          tickLine={false}
-                        />
-                        <Tooltip
-                          content={<MoodTooltip />}
-                          cursor={{ fill: "oklch(0.96 0.02 195 / 0.5)" }}
-                        />
-                        <Bar
-                          dataKey="mood"
-                          radius={[6, 6, 0, 0]}
-                          maxBarSize={48}
-                        >
-                          {weeklyMoodData.map((entry) => (
-                            <Cell
-                              key={`mood-bar-${entry.day}`}
-                              fill={
-                                MOOD_BAR_COLORS[entry.mood] ??
-                                MOOD_BAR_COLORS[0]
-                              }
-                            />
-                          ))}
-                        </Bar>
-                      </BarChart>
-                    </ResponsiveContainer>
-                    <p className="text-xs text-muted-foreground/70 mt-3 text-center italic">
-                      Showing this device's logged mood check-ins for the last 7
-                      days.
-                    </p>
-                  </CardContent>
-                </Card>
-              </motion.div>
+                {/* Daily Habits Section */}
+                <DailyHabitsSection />
 
-              {/* Daily Habits Section */}
-              <DailyHabitsSection />
+                {/* History table */}
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.28 }}
+                >
+                  <Card className="rounded-2xl border-border/40 shadow-sm">
+                    <CardHeader>
+                      <CardTitle className="font-display text-base flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-muted-foreground" />
+                        Assessment History ({assessments.length} records)
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                      <div className="overflow-x-auto">
+                        <Table data-ocid="guardian.assessments.table">
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Date</TableHead>
+                              <TableHead>Depression</TableHead>
+                              <TableHead>Anxiety</TableHead>
+                              <TableHead>Stress</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {assessments
+                              .slice()
+                              .sort((a, b) =>
+                                a.timestamp > b.timestamp ? -1 : 1,
+                              )
+                              .map((a, i) => (
+                                <TableRow
+                                  key={a.id.toString()}
+                                  data-ocid={`guardian.assessments.row.${i + 1}`}
+                                >
+                                  <TableCell className="text-sm">
+                                    {formatDate(a.timestamp)}
+                                  </TableCell>
+                                  <TableCell>
+                                    <Badge
+                                      className={`text-xs rounded-full ${severityBgClass(a.depression.severity)}`}
+                                    >
+                                      {Number(a.depression.rawScore)} —{" "}
+                                      {formatSeverityLabel(
+                                        a.depression.severity,
+                                      )}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell>
+                                    <Badge
+                                      className={`text-xs rounded-full ${severityBgClass(a.anxiety.severity)}`}
+                                    >
+                                      {Number(a.anxiety.rawScore)} —{" "}
+                                      {formatSeverityLabel(a.anxiety.severity)}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell>
+                                    <Badge
+                                      className={`text-xs rounded-full ${severityBgClass(a.stress.severity)}`}
+                                    >
+                                      {Number(a.stress.rawScore)} —{" "}
+                                      {formatSeverityLabel(a.stress.severity)}
+                                    </Badge>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              </div>
+            )}
+          </div>
+        )}
 
-              {/* History table */}
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.28 }}
-              >
-                <Card className="rounded-2xl border-border/40 shadow-sm">
-                  <CardHeader>
-                    <CardTitle className="font-display text-base flex items-center gap-2">
-                      <Calendar className="w-4 h-4 text-muted-foreground" />
-                      Assessment History ({assessments.length} records)
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-0">
-                    <div className="overflow-x-auto">
-                      <Table data-ocid="guardian.assessments.table">
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Date</TableHead>
-                            <TableHead>Depression</TableHead>
-                            <TableHead>Anxiety</TableHead>
-                            <TableHead>Stress</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {assessments
-                            .slice()
-                            .sort((a, b) =>
-                              a.timestamp > b.timestamp ? -1 : 1,
-                            )
-                            .map((a, i) => (
-                              <TableRow
-                                key={a.id.toString()}
-                                data-ocid={`guardian.assessments.row.${i + 1}`}
-                              >
-                                <TableCell className="text-sm">
-                                  {formatDate(a.timestamp)}
-                                </TableCell>
-                                <TableCell>
-                                  <Badge
-                                    className={`text-xs rounded-full ${severityBgClass(a.depression.severity)}`}
-                                  >
-                                    {Number(a.depression.rawScore)} —{" "}
-                                    {formatSeverityLabel(a.depression.severity)}
-                                  </Badge>
-                                </TableCell>
-                                <TableCell>
-                                  <Badge
-                                    className={`text-xs rounded-full ${severityBgClass(a.anxiety.severity)}`}
-                                  >
-                                    {Number(a.anxiety.rawScore)} —{" "}
-                                    {formatSeverityLabel(a.anxiety.severity)}
-                                  </Badge>
-                                </TableCell>
-                                <TableCell>
-                                  <Badge
-                                    className={`text-xs rounded-full ${severityBgClass(a.stress.severity)}`}
-                                  >
-                                    {Number(a.stress.rawScore)} —{" "}
-                                    {formatSeverityLabel(a.stress.severity)}
-                                  </Badge>
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {!studentPrincipal && !isLoading && (
-        <div
-          className="text-center py-16 text-muted-foreground"
-          data-ocid="guardian.empty_state"
-        >
-          <Search className="w-10 h-10 mx-auto mb-3 opacity-40" />
-          <p className="font-display text-lg font-semibold mb-1 text-foreground">
-            Enter a student's ID to begin
-          </p>
-          <p className="text-sm">
-            Students can share their Principal ID from the "Link Guardian" page.
-          </p>
-        </div>
-      )}
-    </div>
+        {!studentPrincipal && !isLoading && (
+          <div
+            className="text-center py-16 text-muted-foreground"
+            data-ocid="guardian.empty_state"
+          >
+            <Search className="w-10 h-10 mx-auto mb-3 opacity-40" />
+            <p className="font-display text-lg font-semibold mb-1 text-foreground">
+              Enter a student&apos;s ID to begin
+            </p>
+            <p className="text-sm">
+              Students can share their Principal ID from the &ldquo;Link
+              Guardian&rdquo; page.
+            </p>
+          </div>
+        )}
+      </div>
+    </>
   );
 }

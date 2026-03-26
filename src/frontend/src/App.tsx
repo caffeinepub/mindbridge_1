@@ -8,8 +8,10 @@ import {
 } from "@tanstack/react-router";
 import Layout from "./components/Layout";
 import LoginPrompt from "./components/LoginPrompt";
+import ProfileSetupWizard from "./components/ProfileSetupWizard";
 import { AppProvider } from "./context/AppContext";
 import { useInternetIdentity } from "./hooks/useInternetIdentity";
+import { useProfile } from "./hooks/useProfile";
 import ActivitiesPage from "./pages/ActivitiesPage";
 import AssessmentPage from "./pages/AssessmentPage";
 import GuardianDashboard from "./pages/GuardianDashboard";
@@ -24,7 +26,8 @@ import TeacherDashboard from "./pages/TeacherDashboard";
 
 // Root layout component
 function RootComponent() {
-  const { isInitializing } = useInternetIdentity();
+  const { isInitializing, identity } = useInternetIdentity();
+  const { profile, hasProfile, saveProfile } = useProfile(identity);
 
   if (isInitializing) {
     return (
@@ -40,8 +43,35 @@ function RootComponent() {
         <Outlet />
       </Layout>
       <Toaster position="top-right" richColors />
+      {/* Profile setup wizard shown as full-screen overlay when logged in but no profile */}
+      {identity && !hasProfile && (
+        <ProfileSetupWizard
+          identity={identity}
+          onComplete={(p) => {
+            saveProfile(p);
+          }}
+        />
+      )}
+      {/* Show role-relevant info once profile is set (passed via context for consumers) */}
+      {identity && hasProfile && profile && (
+        <ProfileReadyBanner profile={profile} />
+      )}
     </AppProvider>
   );
+}
+
+// Invisible component that stores profile role in a global for dashboards to consume
+function ProfileReadyBanner({
+  profile,
+}: {
+  profile: { role: string; name: string };
+}) {
+  // Store in sessionStorage so dashboards can read without prop drilling
+  if (typeof window !== "undefined") {
+    sessionStorage.setItem("lumiProfileRole", profile.role);
+    sessionStorage.setItem("lumiProfileName", profile.name);
+  }
+  return null;
 }
 
 // Auth-guarded wrapper
@@ -118,11 +148,15 @@ const guardianDashboardRoute = createRoute({
   ),
 });
 
-// Teacher Dashboard (no auth guard — accessible directly)
+// Teacher Dashboard
 const teacherDashboardRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/teacher-dashboard",
-  component: TeacherDashboard,
+  component: () => (
+    <AuthGuarded>
+      <TeacherDashboard />
+    </AuthGuarded>
+  ),
 });
 
 // Resources

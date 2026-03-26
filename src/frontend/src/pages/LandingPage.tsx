@@ -17,6 +17,7 @@ import {
 const LOGO_SRC = "/assets/generated/lumi-arc-logo-transparent.dim_400x400.png";
 import { motion } from "motion/react";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
+import { useProfile } from "../hooks/useProfile";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
@@ -134,6 +135,7 @@ const roles = [
 
 export default function LandingPage() {
   const { identity, login, isLoggingIn } = useInternetIdentity();
+  const { profile } = useProfile(identity);
   const navigate = useNavigate();
 
   const handleCTA = () => {
@@ -372,11 +374,29 @@ export default function LandingPage() {
                     {role.description}
                   </p>
                   <Button
-                    onClick={() => navigate({ to: role.path })}
+                    onClick={() => {
+                      if (!identity) {
+                        login();
+                      } else if (profile) {
+                        // Navigate to the user's actual role dashboard
+                        const rolePaths: Record<string, string> = {
+                          student: "/dashboard",
+                          teacher: "/teacher-dashboard",
+                          guardian: "/guardian-dashboard",
+                        };
+                        navigate({
+                          to: rolePaths[profile.role] || "/dashboard",
+                        });
+                      } else {
+                        // Logged in but no profile — wizard will show
+                        navigate({ to: "/" });
+                      }
+                    }}
                     data-ocid={role.ocid}
+                    disabled={isLoggingIn}
                     className={`w-full rounded-xl font-medium ${role.btnClass}`}
                   >
-                    {role.buttonLabel}
+                    {!identity ? "Sign In to Continue" : role.buttonLabel}
                     <ArrowRight className="ml-2 w-4 h-4" />
                   </Button>
                 </motion.div>
@@ -518,6 +538,23 @@ export default function LandingPage() {
           </motion.div>
         </div>
       </section>
+      {/* DASS-21 Acknowledgement */}
+      <footer className="py-8 bg-muted/30 border-t border-border">
+        <div className="container mx-auto px-4">
+          <p className="text-xs text-muted-foreground text-center leading-relaxed max-w-3xl mx-auto">
+            <span className="font-semibold">Acknowledgement:</span> The DASS-21
+            (Depression Anxiety Stress Scales – 21 item version) used in this
+            application is based on the work of Lovibond, S.H. &amp; Lovibond,
+            P.F. (1995).{" "}
+            <em>Manual for the Depression Anxiety Stress Scales</em> (2nd ed.).
+            Sydney: Psychology Foundation of Australia. The DASS is a clinically
+            validated, freely available psychometric instrument widely used in
+            research and clinical settings. It is reproduced here for
+            educational and self-awareness purposes only, in accordance with its
+            open-access usage terms.
+          </p>
+        </div>
+      </footer>
     </div>
   );
 }
