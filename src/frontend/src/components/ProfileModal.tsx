@@ -44,6 +44,7 @@ export default function ProfileModal({ open, onClose }: Props) {
   const { profile, saveProfile } = useUserProfile();
   const [name, setName] = useState("");
   const [age, setAge] = useState("");
+  const [email, setEmail] = useState("");
   const [fieldOfStudy, setFieldOfStudy] = useState("");
   const [goal, setGoal] = useState("");
   const [avatar, setAvatar] = useState(AVATARS[0].id);
@@ -53,6 +54,7 @@ export default function ProfileModal({ open, onClose }: Props) {
     if (open) {
       setName(profile.name ?? "");
       setAge(profile.age ?? "");
+      setEmail(profile.email ?? "");
       setFieldOfStudy(profile.fieldOfStudy ?? "");
       setGoal(profile.goal ?? "");
       setAvatar(profile.avatar ?? AVATARS[0].id);
@@ -61,7 +63,7 @@ export default function ProfileModal({ open, onClose }: Props) {
   }, [open, profile]);
 
   function handleSave() {
-    saveProfile({ name, age, fieldOfStudy, goal, avatar });
+    saveProfile({ name, age, email, fieldOfStudy, goal, avatar });
     setSaved(true);
     setTimeout(() => {
       setSaved(false);
@@ -182,6 +184,26 @@ export default function ProfileModal({ open, onClose }: Props) {
                   type="number"
                   min={16}
                   max={40}
+                />
+              </div>
+
+              {/* University Email */}
+              <div>
+                <label
+                  htmlFor="profile-email"
+                  className="text-xs font-semibold text-foreground/70 uppercase tracking-wide mb-1.5 block"
+                >
+                  University Email
+                </label>
+                <Input
+                  id="profile-email"
+                  data-ocid="profile.email.input"
+                  placeholder="your@university.edu"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="rounded-xl border-border/60"
+                  maxLength={80}
+                  type="email"
                 />
               </div>
 

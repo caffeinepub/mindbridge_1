@@ -16,8 +16,6 @@ import {
 
 const LOGO_SRC = "/assets/generated/lumi-arc-logo-transparent.dim_400x400.png";
 import { motion } from "motion/react";
-import { useInternetIdentity } from "../hooks/useInternetIdentity";
-import { useProfile } from "../hooks/useProfile";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
@@ -134,17 +132,7 @@ const roles = [
 ];
 
 export default function LandingPage() {
-  const { identity, login, isLoggingIn } = useInternetIdentity();
-  const { profile } = useProfile(identity);
   const navigate = useNavigate();
-
-  const handleCTA = () => {
-    if (identity) {
-      navigate({ to: "/dashboard" });
-    } else {
-      login();
-    }
-  };
 
   return (
     <div className="overflow-hidden">
@@ -222,13 +210,12 @@ export default function LandingPage() {
                 className="flex flex-col sm:flex-row gap-3"
               >
                 <Button
-                  onClick={handleCTA}
-                  disabled={isLoggingIn}
+                  onClick={() => navigate({ to: "/dashboard" })}
                   size="lg"
                   className="h-12 px-8 rounded-xl bg-primary text-primary-foreground shadow-teal hover:shadow-teal-lg font-medium text-base"
                   data-ocid="landing.primary_button"
                 >
-                  {identity ? "Go to Dashboard" : "Get Started Free"}
+                  Get Started Free
                   <ArrowRight className="ml-2 w-4 h-4" />
                 </Button>
                 <Button
@@ -374,29 +361,11 @@ export default function LandingPage() {
                     {role.description}
                   </p>
                   <Button
-                    onClick={() => {
-                      if (!identity) {
-                        login();
-                      } else if (profile) {
-                        // Navigate to the user's actual role dashboard
-                        const rolePaths: Record<string, string> = {
-                          student: "/dashboard",
-                          teacher: "/teacher-dashboard",
-                          guardian: "/guardian-dashboard",
-                        };
-                        navigate({
-                          to: rolePaths[profile.role] || "/dashboard",
-                        });
-                      } else {
-                        // Logged in but no profile — wizard will show
-                        navigate({ to: "/" });
-                      }
-                    }}
+                    onClick={() => navigate({ to: role.path })}
                     data-ocid={role.ocid}
-                    disabled={isLoggingIn}
                     className={`w-full rounded-xl font-medium ${role.btnClass}`}
                   >
-                    {!identity ? "Sign In to Continue" : role.buttonLabel}
+                    {role.buttonLabel}
                     <ArrowRight className="ml-2 w-4 h-4" />
                   </Button>
                 </motion.div>
@@ -527,12 +496,12 @@ export default function LandingPage() {
               get personalized insights and resources.
             </p>
             <Button
-              onClick={handleCTA}
+              onClick={() => navigate({ to: "/dashboard" })}
               size="lg"
               className="h-14 px-10 rounded-xl bg-primary text-primary-foreground shadow-teal-lg font-medium text-lg"
               data-ocid="landing.cta_button"
             >
-              {identity ? "Continue to Dashboard" : "Begin Assessment"}
+              Begin Assessment
               <ArrowRight className="ml-2 w-5 h-5" />
             </Button>
           </motion.div>
