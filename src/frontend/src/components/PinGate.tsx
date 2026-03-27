@@ -25,39 +25,59 @@ import { toast } from "sonner";
 const STORAGE_KEYS = {
   teacher: { pin: "lumiArc_teacherPin", session: "lumiArc_teacherUnlocked" },
   guardian: { pin: "lumiArc_guardianPin", session: "lumiArc_guardianUnlocked" },
+  student: { pin: "lumiArc_studentPin", session: "lumiArc_studentUnlocked" },
 } as const;
 
 const DEFAULT_PINS = {
   teacher: "2468",
   guardian: "1357",
+  student: "1234",
 } as const;
 
-function getStoredPin(userRole: "teacher" | "guardian"): string {
+type UserRole = "teacher" | "guardian" | "student";
+
+function getStoredPin(userRole: UserRole): string {
   return (
     localStorage.getItem(STORAGE_KEYS[userRole].pin) ?? DEFAULT_PINS[userRole]
   );
 }
 
-function isSessionUnlocked(userRole: "teacher" | "guardian"): boolean {
+function isSessionUnlocked(userRole: UserRole): boolean {
   return sessionStorage.getItem(STORAGE_KEYS[userRole].session) === "true";
 }
 
-function setSessionUnlocked(userRole: "teacher" | "guardian"): void {
+function setSessionUnlocked(userRole: UserRole): void {
   sessionStorage.setItem(STORAGE_KEYS[userRole].session, "true");
+}
+
+function getRoleLabel(userRole: UserRole): string {
+  if (userRole === "teacher") return "Teacher";
+  if (userRole === "guardian") return "Guardian";
+  return "Student";
 }
 
 // ── ChangePinDialog ──────────────────────────────────────────────────────────
 
-export function ChangePinDialog({
-  userRole,
-}: { userRole: "teacher" | "guardian" }) {
+export function ChangePinDialog({ userRole }: { userRole: UserRole }) {
   const [open, setOpen] = useState(false);
   const [currentPin, setCurrentPin] = useState("");
   const [newPin, setNewPin] = useState("");
   const [confirmPin, setConfirmPin] = useState("");
   const [error, setError] = useState("");
 
-  const accent = userRole === "teacher" ? "text-teal-600" : "text-rose-600";
+  const accent =
+    userRole === "teacher"
+      ? "text-teal-600"
+      : userRole === "guardian"
+        ? "text-rose-600"
+        : "text-violet-600";
+
+  const btnClass =
+    userRole === "teacher"
+      ? "bg-teal-600 hover:bg-teal-700 text-white"
+      : userRole === "guardian"
+        ? "bg-rose-500 hover:bg-rose-600 text-white"
+        : "bg-violet-600 hover:bg-violet-700 text-white";
 
   const handleSave = useCallback(() => {
     const stored = getStoredPin(userRole);
@@ -109,7 +129,7 @@ export function ChangePinDialog({
         <DialogHeader>
           <DialogTitle className={`flex items-center gap-2 ${accent}`}>
             <Lock className="w-4 h-4" />
-            Change {userRole === "teacher" ? "Teacher" : "Guardian"} PIN
+            Change {getRoleLabel(userRole)} PIN
           </DialogTitle>
           <DialogDescription>
             Enter your current PIN, then choose a new 4-digit PIN.
@@ -201,11 +221,7 @@ export function ChangePinDialog({
               confirmPin.length < 4
             }
             data-ocid="pin_gate.save_pin_button"
-            className={
-              userRole === "teacher"
-                ? "bg-teal-600 hover:bg-teal-700 text-white"
-                : "bg-rose-500 hover:bg-rose-600 text-white"
-            }
+            className={btnClass}
           >
             Save PIN
           </Button>
@@ -221,7 +237,7 @@ export default function PinGate({
   userRole,
   children,
 }: {
-  userRole: "teacher" | "guardian";
+  userRole: UserRole;
   children: React.ReactNode;
 }) {
   const [unlocked, setUnlocked] = useState(() => isSessionUnlocked(userRole));
@@ -230,12 +246,47 @@ export default function PinGate({
   const [error, setError] = useState("");
   const shakeTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const isTeacher = userRole === "teacher";
-  const accentBg = isTeacher
-    ? "bg-teal-600 hover:bg-teal-700"
-    : "bg-rose-500 hover:bg-rose-600";
-  const accentText = isTeacher ? "text-teal-600" : "text-rose-500";
-  const accentBorder = isTeacher ? "border-teal-300" : "border-rose-300";
+  const accentBg =
+    userRole === "teacher"
+      ? "bg-teal-600 hover:bg-teal-700"
+      : userRole === "guardian"
+        ? "bg-rose-500 hover:bg-rose-600"
+        : "bg-violet-600 hover:bg-violet-700";
+
+  const accentText =
+    userRole === "teacher"
+      ? "text-teal-600"
+      : userRole === "guardian"
+        ? "text-rose-500"
+        : "text-violet-600";
+
+  const accentBorder =
+    userRole === "teacher"
+      ? "border-teal-300"
+      : userRole === "guardian"
+        ? "border-rose-300"
+        : "border-violet-300";
+
+  const blob1 =
+    userRole === "teacher"
+      ? "bg-teal-300"
+      : userRole === "guardian"
+        ? "bg-rose-300"
+        : "bg-violet-300";
+
+  const blob2 =
+    userRole === "teacher"
+      ? "bg-cyan-200"
+      : userRole === "guardian"
+        ? "bg-pink-200"
+        : "bg-purple-200";
+
+  const iconBg =
+    userRole === "teacher"
+      ? "bg-teal-50"
+      : userRole === "guardian"
+        ? "bg-rose-50"
+        : "bg-violet-50";
 
   const handleUnlock = useCallback(() => {
     const stored = getStoredPin(userRole);
@@ -257,15 +308,11 @@ export default function PinGate({
     <div className="min-h-screen bg-background flex items-center justify-center px-4 relative overflow-hidden">
       {/* Soft background blobs */}
       <div
-        className={`absolute top-0 left-0 w-96 h-96 rounded-full blur-3xl opacity-20 pointer-events-none ${
-          isTeacher ? "bg-teal-300" : "bg-rose-300"
-        }`}
+        className={`absolute top-0 left-0 w-96 h-96 rounded-full blur-3xl opacity-20 pointer-events-none ${blob1}`}
         style={{ transform: "translate(-30%, -30%)" }}
       />
       <div
-        className={`absolute bottom-0 right-0 w-80 h-80 rounded-full blur-3xl opacity-20 pointer-events-none ${
-          isTeacher ? "bg-cyan-200" : "bg-pink-200"
-        }`}
+        className={`absolute bottom-0 right-0 w-80 h-80 rounded-full blur-3xl opacity-20 pointer-events-none ${blob2}`}
         style={{ transform: "translate(30%, 30%)" }}
       />
 
@@ -283,9 +330,7 @@ export default function PinGate({
             className="w-16 h-16 object-contain"
           />
           <div
-            className={`w-12 h-12 rounded-full flex items-center justify-center ${
-              isTeacher ? "bg-teal-50" : "bg-rose-50"
-            }`}
+            className={`w-12 h-12 rounded-full flex items-center justify-center ${iconBg}`}
           >
             <ShieldCheck className={`w-6 h-6 ${accentText}`} />
           </div>
@@ -294,7 +339,7 @@ export default function PinGate({
         {/* Title */}
         <div className="text-center">
           <h1 className="font-display text-2xl font-bold text-foreground">
-            {isTeacher ? "Teacher Access" : "Guardian Access"}
+            {getRoleLabel(userRole)} Access
           </h1>
           <p className="text-muted-foreground text-sm mt-1">
             Enter your PIN to continue

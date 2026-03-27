@@ -44,6 +44,7 @@ import {
   YAxis,
 } from "recharts";
 import type { DASS21Assessment } from "../backend.d";
+import PinGate, { ChangePinDialog } from "../components/PinGate";
 import { getTodaysTip } from "../data/wellnessTips";
 import { useActor } from "../hooks/useActor";
 import { useGuardianHabitData } from "../hooks/useGuardianHabitData";
@@ -705,8 +706,12 @@ export default function GuardianDashboard() {
   const { profile: guardianProfile } = useProfile(guardianIdentity);
 
   return (
-    <>
+    <PinGate userRole="guardian">
       <div className="container mx-auto px-4 py-8 max-w-5xl">
+        {/* Change PIN */}
+        <div className="flex justify-end mb-2">
+          <ChangePinDialog userRole="guardian" />
+        </div>
         {/* Teacher Contact Card (from profile) */}
         {(guardianProfile?.linkedTeacherEmailForGuardian ||
           guardianProfile?.linkedTeacherNameForGuardian) && (
@@ -1311,6 +1316,6 @@ export default function GuardianDashboard() {
           </div>
         )}
       </div>
-    </>
+    </PinGate>
   );
 }
