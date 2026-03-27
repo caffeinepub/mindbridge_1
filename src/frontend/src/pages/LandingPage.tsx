@@ -8,7 +8,6 @@ import {
   GraduationCap,
   Heart,
   Shield,
-  Sparkles,
   Star,
   TrendingUp,
   Users,
@@ -99,7 +98,7 @@ const roles = [
     description:
       "Access your personal dashboard, track your mood daily, complete DASS-21 assessments, and explore 100+ curated wellness resources.",
     buttonLabel: "Student Portal",
-    path: "/dashboard",
+    roleParam: "student",
     bg: "bg-teal-50 border-teal-200",
     iconBg: "bg-teal-100 text-teal-600",
     btnClass: "bg-teal-600 hover:bg-teal-700 text-white",
@@ -111,7 +110,7 @@ const roles = [
     description:
       "View class-level wellness reports, identify at-risk students at a glance, and click into individual profiles for a detailed view.",
     buttonLabel: "Teacher Dashboard",
-    path: "/teacher-dashboard",
+    roleParam: "teacher",
     bg: "bg-sage-50 border-sage-200",
     iconBg: "bg-sage-100 text-sage-600",
     btnClass: "bg-sage-600 hover:bg-sage-700 text-white",
@@ -123,7 +122,7 @@ const roles = [
     description:
       "Monitor your child's mood history, daily habit streaks, XP progress, and wellness badges — all updated in real time.",
     buttonLabel: "Guardian View",
-    path: "/guardian-dashboard",
+    roleParam: "guardian",
     bg: "bg-rose-50 border-rose-200",
     iconBg: "bg-rose-100 text-rose-600",
     btnClass: "bg-rose-500 hover:bg-rose-600 text-white",
@@ -133,6 +132,10 @@ const roles = [
 
 export default function LandingPage() {
   const navigate = useNavigate();
+
+  const goToLogin = (roleParam: string) => {
+    navigate({ to: "/login/$role", params: { role: roleParam } });
+  };
 
   return (
     <div className="overflow-hidden">
@@ -210,7 +213,7 @@ export default function LandingPage() {
                 className="flex flex-col sm:flex-row gap-3"
               >
                 <Button
-                  onClick={() => navigate({ to: "/dashboard" })}
+                  onClick={() => goToLogin("student")}
                   size="lg"
                   className="h-12 px-8 rounded-xl bg-primary text-primary-foreground shadow-teal hover:shadow-teal-lg font-medium text-base"
                   data-ocid="landing.primary_button"
@@ -361,7 +364,7 @@ export default function LandingPage() {
                     {role.description}
                   </p>
                   <Button
-                    onClick={() => navigate({ to: role.path })}
+                    onClick={() => goToLogin(role.roleParam)}
                     data-ocid={role.ocid}
                     className={`w-full rounded-xl font-medium ${role.btnClass}`}
                   >
@@ -496,7 +499,7 @@ export default function LandingPage() {
               get personalized insights and resources.
             </p>
             <Button
-              onClick={() => navigate({ to: "/dashboard" })}
+              onClick={() => goToLogin("student")}
               size="lg"
               className="h-14 px-10 rounded-xl bg-primary text-primary-foreground shadow-teal-lg font-medium text-lg"
               data-ocid="landing.cta_button"

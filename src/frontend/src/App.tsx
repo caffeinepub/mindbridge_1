@@ -8,6 +8,7 @@ import {
 } from "@tanstack/react-router";
 import Layout from "./components/Layout";
 import { AppProvider } from "./context/AppContext";
+import { InternetIdentityProvider } from "./hooks/useInternetIdentity";
 import ActivitiesPage from "./pages/ActivitiesPage";
 import AssessmentPage from "./pages/AssessmentPage";
 import GuardianDashboard from "./pages/GuardianDashboard";
@@ -16,6 +17,7 @@ import MindfulKitchenPage from "./pages/MindfulKitchenPage";
 import OnboardingPage from "./pages/OnboardingPage";
 import ResourcesPage from "./pages/ResourcesPage";
 import ResultsPage from "./pages/ResultsPage";
+import RoleLoginPage from "./pages/RoleLoginPage";
 import StudentDashboard from "./pages/StudentDashboard";
 import TeacherDashboard from "./pages/TeacherDashboard";
 
@@ -41,6 +43,13 @@ const landingRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
   component: LandingPage,
+});
+
+// Role Login
+const roleLoginRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/login/$role",
+  component: RoleLoginPage,
 });
 
 // Onboarding
@@ -108,6 +117,7 @@ const mindfulKitchenRoute = createRoute({
 
 const routeTree = rootRoute.addChildren([
   landingRoute,
+  roleLoginRoute,
   onboardingRoute,
   dashboardRoute,
   assessmentRoute,
@@ -128,5 +138,9 @@ declare module "@tanstack/react-router" {
 }
 
 export default function App() {
-  return <RouterProvider router={router} />;
+  return (
+    <InternetIdentityProvider>
+      <RouterProvider router={router} />
+    </InternetIdentityProvider>
+  );
 }
