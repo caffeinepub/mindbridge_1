@@ -3,6 +3,7 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
+import { useAppContext } from "../context/AppContext";
 import { useUserProfile } from "../hooks/useUserProfile";
 
 const AVATARS = [
@@ -24,7 +25,7 @@ const AVATARS = [
   { id: "gem", emoji: "💎", label: "Gem" },
 ];
 
-const WELLNESS_GOALS = [
+const STUDENT_WELLNESS_GOALS = [
   "I want to feel less stressed during exams",
   "I want to manage my anxiety better",
   "I want to sleep more peacefully",
@@ -35,6 +36,17 @@ const WELLNESS_GOALS = [
   "I want to feel happier every day",
 ];
 
+const TEACHER_WELLNESS_GOALS = [
+  "I want to support my students' emotional well-being",
+  "I want to build stronger mentor-mentee relationships",
+  "I want to recognize signs of stress in my students",
+  "I want to create a more supportive classroom environment",
+  "I want to manage my own work-life balance better",
+  "I want to foster resilience in the students I mentor",
+  "I want to stay emotionally available for my mentees",
+  "I want to grow as a compassionate educator",
+];
+
 interface Props {
   open: boolean;
   onClose: () => void;
@@ -42,6 +54,7 @@ interface Props {
 
 export default function ProfileModal({ open, onClose }: Props) {
   const { profile, saveProfile } = useUserProfile();
+  const { userRole } = useAppContext();
   const [name, setName] = useState("");
   const [age, setAge] = useState("");
   const [email, setEmail] = useState("");
@@ -232,7 +245,10 @@ export default function ProfileModal({ open, onClose }: Props) {
                   My Wellness Goal
                 </p>
                 <div className="flex flex-col gap-1.5">
-                  {WELLNESS_GOALS.map((g) => (
+                  {(userRole === "teacher"
+                    ? TEACHER_WELLNESS_GOALS
+                    : STUDENT_WELLNESS_GOALS
+                  ).map((g) => (
                     <button
                       key={g}
                       type="button"

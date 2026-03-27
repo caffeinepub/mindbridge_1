@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
+import { useAppContext } from "../context/AppContext";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
 
 const LOGO_SRC = "/assets/generated/lumi-arc-logo-transparent.dim_400x400.png";
@@ -75,11 +76,15 @@ const roleConfig: Record<
 export default function RoleLoginPage() {
   const { role } = useParams({ strict: false }) as { role: string };
   const navigate = useNavigate();
+  const { setUserRole } = useAppContext();
   const { identity, login, isLoggingIn, isInitializing } =
     useInternetIdentity();
   const [phase, setPhase] = useState<"login" | "consent">("login");
 
   const safeRole = (role in roleConfig ? role : "student") as Role;
+  const userRoleMapped = (
+    safeRole === "guardian" ? "parent" : safeRole
+  ) as import("../context/AppContext").UserRole;
   const config = roleConfig[safeRole];
   const consentKey = `lumiArc_consent_${safeRole}`;
 
@@ -90,14 +95,23 @@ export default function RoleLoginPage() {
 
     const consentGiven = localStorage.getItem(consentKey) === "true";
     if (consentGiven) {
+      setUserRole(userRoleMapped);
       navigate({ to: config.dashboardPath });
     } else {
       setPhase("consent");
     }
-  }, [identity, consentKey, config.dashboardPath, navigate]);
+  }, [
+    identity,
+    consentKey,
+    config.dashboardPath,
+    navigate,
+    userRoleMapped,
+    setUserRole,
+  ]);
 
   const handleAcceptConsent = () => {
     localStorage.setItem(consentKey, "true");
+    setUserRole(userRoleMapped);
     navigate({ to: config.dashboardPath });
   };
 

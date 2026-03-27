@@ -161,7 +161,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                       </div>
                       <div className="min-w-0">
                         <div className="text-sm font-semibold text-foreground truncate">
-                          {profile.name || "Student"}
+                          {profile.name ||
+                            (userRole === "teacher"
+                              ? "Teacher"
+                              : userRole === "parent"
+                                ? "Guardian"
+                                : "Student")}
                         </div>
                         {profile.fieldOfStudy && (
                           <div className="text-xs text-muted-foreground truncate">

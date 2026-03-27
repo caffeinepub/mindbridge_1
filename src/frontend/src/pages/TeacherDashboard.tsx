@@ -760,10 +760,10 @@ export default function TeacherDashboard() {
                   <Copy className="w-3.5 h-3.5" />
                   Copy Invite Link
                 </button>
-                <ChangePinDialog userRole="teacher" />
               </div>
             </div>
           )}
+          <ChangePinDialog userRole="teacher" />
           <AnimatePresence mode="wait">
             {selectedStudent ? (
               <motion.div

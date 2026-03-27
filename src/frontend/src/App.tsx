@@ -13,6 +13,7 @@ import ActivitiesPage from "./pages/ActivitiesPage";
 import AssessmentPage from "./pages/AssessmentPage";
 import GuardianDashboard from "./pages/GuardianDashboard";
 import LandingPage from "./pages/LandingPage";
+import LinkGuardianPage from "./pages/LinkGuardianPage";
 import MindfulKitchenPage from "./pages/MindfulKitchenPage";
 import OnboardingPage from "./pages/OnboardingPage";
 import ResourcesPage from "./pages/ResourcesPage";
@@ -115,6 +116,13 @@ const mindfulKitchenRoute = createRoute({
   component: MindfulKitchenPage,
 });
 
+// Link Guardian
+const linkGuardianRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/link-guardian",
+  component: LinkGuardianPage,
+});
+
 const routeTree = rootRoute.addChildren([
   landingRoute,
   roleLoginRoute,
@@ -127,6 +135,7 @@ const routeTree = rootRoute.addChildren([
   resourcesRoute,
   activitiesRoute,
   mindfulKitchenRoute,
+  linkGuardianRoute,
 ]);
 
 const router = createRouter({ routeTree });
