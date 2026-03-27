@@ -13,7 +13,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Principal } from "@icp-sdk/core/principal";
-import { GraduationCap, Mail, Phone, User } from "lucide-react";
+import { Copy, GraduationCap, Mail, Phone, User } from "lucide-react";
 import {
   AlertCircle,
   Calendar,
@@ -43,6 +43,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { toast } from "sonner";
 import type { DASS21Assessment } from "../backend.d";
 import PinGate, { ChangePinDialog } from "../components/PinGate";
 import { getTodaysTip } from "../data/wellnessTips";
@@ -708,8 +709,32 @@ export default function GuardianDashboard() {
   return (
     <PinGate userRole="guardian">
       <div className="container mx-auto px-4 py-8 max-w-5xl">
-        {/* Change PIN */}
-        <div className="flex justify-end mb-2">
+        {/* Change PIN + Principal ID */}
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+          {guardianIdentity && (
+            <div className="flex items-center gap-2 bg-rose-50 border border-rose-100 rounded-xl px-3 py-2 text-xs">
+              <span className="text-muted-foreground whitespace-nowrap">
+                Your Principal ID:
+              </span>
+              <span className="font-mono text-rose-700 truncate max-w-[160px]">
+                {guardianIdentity.getPrincipal().toString()}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(
+                    guardianIdentity.getPrincipal().toString(),
+                  );
+                  toast.success("Principal ID copied!");
+                }}
+                className="ml-1 text-rose-400 hover:text-rose-600 transition-colors flex-shrink-0"
+                title="Copy Principal ID"
+                data-ocid="guardian.principal_id.button"
+              >
+                <Copy className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
           <ChangePinDialog userRole="guardian" />
         </div>
         {/* Teacher Contact Card (from profile) */}

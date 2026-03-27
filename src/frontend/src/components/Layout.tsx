@@ -57,6 +57,13 @@ const studentNav = [
   { to: "/link-guardian", label: "Link Guardian", icon: Link2 },
 ];
 
+const teacherNav = [
+  { to: "/teacher-dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/activities", label: "Activities", icon: Activity },
+  { to: "/resources", label: "Resources", icon: BookOpen },
+  { to: "/mindful-kitchen", label: "Mindful Kitchen", icon: UtensilsCrossed },
+];
+
 const guardianNav = [
   { to: "/guardian-dashboard", label: "Student Tracker", icon: Users },
   { to: "/resources", label: "Resources", icon: BookOpen },
@@ -73,7 +80,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   const isLoggedIn = !!identity;
   const navItems =
-    userRole === "teacher" || userRole === "parent" ? guardianNav : studentNav;
+    userRole === "teacher"
+      ? teacherNav
+      : userRole === "parent"
+        ? guardianNav
+        : studentNav;
 
   const principal = identity?.getPrincipal().toString() ?? "";
   const shortPrincipal = principal

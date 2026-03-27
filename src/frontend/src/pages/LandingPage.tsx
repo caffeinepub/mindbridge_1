@@ -235,29 +235,6 @@ export default function LandingPage() {
                   Who is it for?
                 </Button>
               </motion.div>
-
-              <motion.div
-                initial="hidden"
-                animate="visible"
-                custom={4}
-                variants={fadeUp}
-                className="flex items-center gap-6 mt-10"
-              >
-                {[
-                  { label: "Students Supported", value: "2,400+" },
-                  { label: "Resources Available", value: "100+" },
-                  { label: "Universities Connected", value: "38" },
-                ].map((stat) => (
-                  <div key={stat.label} className="text-center">
-                    <div className="font-display text-2xl font-bold text-teal-700">
-                      {stat.value}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {stat.label}
-                    </div>
-                  </div>
-                ))}
-              </motion.div>
             </div>
 
             <motion.div

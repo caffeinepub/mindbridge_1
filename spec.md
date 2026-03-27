@@ -1,33 +1,28 @@
 # Lumi Arc
 
 ## Current State
-The app has a full homepage (LandingPage.tsx) with role cards for Student, Teacher, and Guardian. Clicking a role card navigates directly to the respective dashboard. Teacher and Guardian dashboards are PIN-protected via PinGate component. All data is stored in browser local storage. Consent screens exist but are only shown as part of onboarding flow, not tied to login.
+- Teacher Dashboard renders the invite link and teacher banner only when `useProfile(identity)` returns a non-null value (Internet Identity profile)
+- Teacher name/email are saved by ProfileModal into `lumi_arc_user_profile` via `useUserProfile()`, a completely different storage key from the II-based `useProfile`
+- So the II-based `profile` is almost always null, the invite link section is never shown
+- There is no mechanism for guardian/parent contact details to appear in the Teacher Dashboard
 
 ## Requested Changes (Diff)
 
 ### Add
-- Internet Identity authentication integrated after role selection: when a user clicks Student, Teacher, or Guardian portal button, they are redirected to an Internet Identity login screen first
-- After successful login, first-time users see the consent form before entering their dashboard
-- Consent form for Students: warm affirming statement about joining for emotional wellbeing
-- Consent form for Guardians: warm affirming statement about supporting their child's mental health
-- Teacher consent: simple acknowledgement screen
-- Store consent acceptance in backend (per user principal) so it only shows once
-- Role stored in backend linked to the user's Internet Identity principal
+- A persistent unique teacher code (TCH-XXXX) stored in localStorage under `lumi_teacher_code`, generated once on first visit, not tied to Internet Identity
+- An invite link based on this code: `<origin>/?tc=TCH-XXXX`
+- A `useTeacherStudents` hook managing a list of student-guardian contacts in localStorage (studentName, studentEmail, guardianName, guardianEmail, guardianPhone optional)
+- A "My Students" section in Teacher Dashboard showing this contact list, with an "Add Student" button opening a form to add new student + guardian entry
+- Invite link and teacher code always visible in Teacher Dashboard profile area (not gated on II profile)
 
 ### Modify
-- Role card buttons on LandingPage now trigger login flow instead of direct navigation
-- After login + consent, users land on their respective dashboard (Student → /dashboard, Teacher → /teacher-dashboard, Guardian → /guardian-dashboard)
-- Teacher and Guardian dashboards retain PIN gate on top of the Internet Identity login
+- `TeacherDashboard.tsx`: Read name/email from `useUserProfile()` not `useProfile(identity)`. Show invite link panel regardless of II profile. Replace `{profile && (...)}` gate with always-visible teacher banner.
+- `TeacherDashboard.tsx`: Add "My Students" section with the contact list below the class overview
 
 ### Remove
-- Direct unprotected navigation to dashboards from landing page
+- Dependency on `useProfile(identity)` for the invite link and teacher banner visibility
 
 ## Implementation Plan
-1. Use authorization component to enable Internet Identity login
-2. Create a LoginFlow component that wraps each portal entry: checks auth → if not logged in, show II login → if logged in but no consent, show consent screen → if consented, navigate to dashboard
-3. Create RoleLoginPage component that accepts role as param and handles the full flow
-4. Add route /login/:role to the router
-5. Update LandingPage role card buttons to navigate to /login/student, /login/teacher, /login/guardian
-6. Store consent state per principal in backend
-7. After consent, store role in backend/local and redirect to appropriate dashboard
-8. Keep homepage (LandingPage.tsx) completely unchanged in appearance
+1. Create `useTeacherCode` hook: generates/persists TCH-XXXX in localStorage, derives invite link
+2. Create `useTeacherStudents` hook: CRUD for student-guardian contact list in localStorage
+3. Update `TeacherDashboard.tsx` to use `useUserProfile()` for name/email, `useTeacherCode()` for invite link (always visible), add My Students section with guardian contact details

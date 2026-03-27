@@ -1,31 +1,37 @@
 import {
   AlertTriangle,
   ArrowLeft,
-  ChevronRight,
   Dumbbell,
   Flame,
   Moon,
+  Plus,
   Smile,
+  Trash2,
   TreePine,
   TrendingUp,
   Users,
   Zap,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import {
   ALL_BADGES,
   type MoodValue,
   type StudentRecord,
-  teacherStudents,
 } from "../data/teacherSampleData";
 
 import { Copy, Link2, Mail, User } from "lucide-react";
 import { toast } from "sonner";
 import PinGate, { ChangePinDialog } from "../components/PinGate";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
-import { generateTeacherInviteLink, useProfile } from "../hooks/useProfile";
-// ── Mood helpers ─────────────────────────────────────────────────────────────────────────────
+import { useTeacherCode } from "../hooks/useTeacherCode";
+import {
+  type TeacherStudentEntry,
+  useTeacherStudents,
+} from "../hooks/useTeacherStudents";
+import { useUserProfile } from "../hooks/useUserProfile";
+
+// ── Mood helpers ──────────────────────────────────────────────────────────────
 
 const MOOD_CONFIG: Record<
   MoodValue,
@@ -71,8 +77,6 @@ const MOOD_SCORE: Record<MoodValue, number> = {
   "Very Sad": 1,
 };
 
-const MOOD_EMOJIS_BY_SCORE: string[] = ["", "😢", "😕", "😐", "🙂", "😄"];
-
 const SEVERITY_CONFIG: Record<string, { label: string; color: string }> = {
   Normal: { label: "Normal", color: "bg-teal-100 text-teal-700" },
   Mild: { label: "Mild", color: "bg-amber-100 text-amber-700" },
@@ -95,39 +99,348 @@ function SeverityBadge({ severity }: { severity: string }) {
   );
 }
 
-// ── Class Overview ─────────────────────────────────────────────────────────────────────────────
+// ── Add Student Form ──────────────────────────────────────────────────────────
 
-type FilterType = "all" | "at-risk" | "active";
+interface AddStudentFormProps {
+  onAdd: (entry: Omit<TeacherStudentEntry, "id">) => void;
+  onCancel: () => void;
+}
+
+function AddStudentForm({ onAdd, onCancel }: AddStudentFormProps) {
+  const [studentName, setStudentName] = useState("");
+  const [studentEmail, setStudentEmail] = useState("");
+  const [guardianName, setGuardianName] = useState("");
+  const [guardianEmail, setGuardianEmail] = useState("");
+  const [guardianPhone, setGuardianPhone] = useState("");
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  function validate() {
+    const e: Record<string, string> = {};
+    if (!studentName.trim()) e.studentName = "Student name is required";
+    if (!guardianName.trim()) e.guardianName = "Guardian name is required";
+    if (!guardianEmail.trim()) e.guardianEmail = "Guardian email is required";
+    else if (!/^[^@]+@[^@]+\.[^@]+$/.test(guardianEmail.trim()))
+      e.guardianEmail = "Please enter a valid email";
+    return e;
+  }
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const errs = validate();
+    if (Object.keys(errs).length > 0) {
+      setErrors(errs);
+      return;
+    }
+    onAdd({
+      studentName: studentName.trim(),
+      studentEmail: studentEmail.trim() || undefined,
+      guardianName: guardianName.trim(),
+      guardianEmail: guardianEmail.trim(),
+      guardianPhone: guardianPhone.trim() || undefined,
+    });
+  }
+
+  const inputCls =
+    "w-full border border-teal-200 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-teal-400";
+
+  return (
+    <motion.form
+      initial={{ opacity: 0, y: -8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8 }}
+      onSubmit={handleSubmit}
+      className="bg-teal-50 border border-teal-200 rounded-2xl p-5 space-y-4"
+      data-ocid="teacher.add_student.panel"
+    >
+      <h4 className="font-semibold text-foreground text-sm">
+        Add Student &amp; Guardian Details
+      </h4>
+      <div className="grid sm:grid-cols-2 gap-4">
+        {/* Student Name */}
+        <div>
+          <label
+            htmlFor="add-student-name"
+            className="block text-xs font-medium text-foreground mb-1"
+          >
+            Student Name <span className="text-red-500">*</span>
+          </label>
+          <input
+            id="add-student-name"
+            type="text"
+            value={studentName}
+            onChange={(e) => setStudentName(e.target.value)}
+            placeholder="e.g. Priya Sharma"
+            data-ocid="teacher.student_name.input"
+            className={inputCls}
+          />
+          {errors.studentName && (
+            <p
+              className="text-xs text-red-500 mt-1"
+              data-ocid="teacher.student_name.error_state"
+            >
+              {errors.studentName}
+            </p>
+          )}
+        </div>
+        {/* Student Email */}
+        <div>
+          <label
+            htmlFor="add-student-email"
+            className="block text-xs font-medium text-foreground mb-1"
+          >
+            Student Email{" "}
+            <span className="text-muted-foreground">(optional)</span>
+          </label>
+          <input
+            id="add-student-email"
+            type="email"
+            value={studentEmail}
+            onChange={(e) => setStudentEmail(e.target.value)}
+            placeholder="student@university.edu"
+            data-ocid="teacher.student_email.input"
+            className={inputCls}
+          />
+        </div>
+        {/* Guardian Name */}
+        <div>
+          <label
+            htmlFor="add-guardian-name"
+            className="block text-xs font-medium text-foreground mb-1"
+          >
+            Guardian / Parent Name <span className="text-red-500">*</span>
+          </label>
+          <input
+            id="add-guardian-name"
+            type="text"
+            value={guardianName}
+            onChange={(e) => setGuardianName(e.target.value)}
+            placeholder="e.g. Meena Sharma"
+            data-ocid="teacher.guardian_name.input"
+            className={inputCls}
+          />
+          {errors.guardianName && (
+            <p
+              className="text-xs text-red-500 mt-1"
+              data-ocid="teacher.guardian_name.error_state"
+            >
+              {errors.guardianName}
+            </p>
+          )}
+        </div>
+        {/* Guardian Email */}
+        <div>
+          <label
+            htmlFor="add-guardian-email"
+            className="block text-xs font-medium text-foreground mb-1"
+          >
+            Guardian Email <span className="text-red-500">*</span>
+          </label>
+          <input
+            id="add-guardian-email"
+            type="email"
+            value={guardianEmail}
+            onChange={(e) => setGuardianEmail(e.target.value)}
+            placeholder="parent@email.com"
+            data-ocid="teacher.guardian_email.input"
+            className={inputCls}
+          />
+          {errors.guardianEmail && (
+            <p
+              className="text-xs text-red-500 mt-1"
+              data-ocid="teacher.guardian_email.error_state"
+            >
+              {errors.guardianEmail}
+            </p>
+          )}
+        </div>
+        {/* Guardian Phone */}
+        <div className="sm:col-span-2">
+          <label
+            htmlFor="add-guardian-phone"
+            className="block text-xs font-medium text-foreground mb-1"
+          >
+            Guardian Phone{" "}
+            <span className="text-muted-foreground">
+              (optional — helps with direct contact)
+            </span>
+          </label>
+          <input
+            id="add-guardian-phone"
+            type="tel"
+            value={guardianPhone}
+            onChange={(e) => setGuardianPhone(e.target.value)}
+            placeholder="+91 98765 43210"
+            data-ocid="teacher.guardian_phone.input"
+            className={inputCls}
+          />
+        </div>
+      </div>
+      <div className="flex gap-3 pt-1">
+        <button
+          type="submit"
+          data-ocid="teacher.add_student.submit_button"
+          className="bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium px-4 py-2 rounded-xl transition-colors"
+        >
+          Add Student
+        </button>
+        <button
+          type="button"
+          onClick={onCancel}
+          data-ocid="teacher.add_student.cancel_button"
+          className="border border-teal-200 text-teal-700 hover:bg-teal-100 text-sm font-medium px-4 py-2 rounded-xl transition-colors"
+        >
+          Cancel
+        </button>
+      </div>
+    </motion.form>
+  );
+}
+
+// ── My Students Section ───────────────────────────────────────────────────────
+
+function MyStudentsSection() {
+  const { students, addStudent, removeStudent } = useTeacherStudents();
+  const [showForm, setShowForm] = useState(false);
+
+  return (
+    <div className="mt-10 space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="font-display text-xl font-bold text-foreground">
+            My Students
+          </h2>
+          <p className="text-muted-foreground text-sm mt-0.5">
+            Student and guardian contact directory
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowForm(true)}
+          data-ocid="teacher.add_student.button"
+          className="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium px-4 py-2 rounded-xl transition-colors"
+        >
+          <Plus className="w-4 h-4" />
+          Add Student
+        </button>
+      </div>
+
+      <AnimatePresence>
+        {showForm && (
+          <AddStudentForm
+            onAdd={(entry) => {
+              addStudent(entry);
+              setShowForm(false);
+              toast.success(`${entry.studentName} added to your student list.`);
+            }}
+            onCancel={() => setShowForm(false)}
+          />
+        )}
+      </AnimatePresence>
+
+      {students.length === 0 ? (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          data-ocid="teacher.students.empty_state"
+          className="flex flex-col items-center justify-center py-14 rounded-2xl border border-dashed border-border/60 bg-muted/20 text-center"
+        >
+          <div className="w-12 h-12 rounded-full bg-teal-50 flex items-center justify-center mb-4">
+            <Users className="w-6 h-6 text-teal-400" />
+          </div>
+          <p className="text-muted-foreground text-sm max-w-sm leading-relaxed">
+            No students added yet. Use the button above to add your mentee
+            students and their guardian contact details.
+          </p>
+        </motion.div>
+      ) : (
+        <div className="space-y-3" data-ocid="teacher.students.list">
+          {students.map((s, idx) => (
+            <motion.div
+              key={s.id}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, x: -16 }}
+              transition={{ delay: idx * 0.04 }}
+              data-ocid={`teacher.students.item.${idx + 1}`}
+              className="bg-card border border-border/50 rounded-2xl p-4"
+            >
+              <div className="flex flex-col sm:flex-row sm:items-start gap-4">
+                {/* Student info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="w-7 h-7 rounded-full bg-teal-100 flex items-center justify-center flex-shrink-0">
+                      <User className="w-3.5 h-3.5 text-teal-700" />
+                    </div>
+                    <span className="font-semibold text-foreground text-sm truncate">
+                      {s.studentName}
+                    </span>
+                  </div>
+                  {s.studentEmail && (
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground ml-9">
+                      <Mail className="w-3 h-3" />
+                      <a
+                        href={`mailto:${s.studentEmail}`}
+                        className="hover:text-foreground transition-colors"
+                      >
+                        {s.studentEmail}
+                      </a>
+                    </div>
+                  )}
+                </div>
+
+                {/* Guardian info */}
+                <div className="flex-1 min-w-0 bg-teal-50/60 rounded-xl px-3 py-2">
+                  <p className="text-xs font-semibold text-teal-700 mb-1">
+                    Guardian / Parent
+                  </p>
+                  <p className="text-sm font-medium text-foreground">
+                    {s.guardianName}
+                  </p>
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
+                    <Mail className="w-3 h-3" />
+                    <a
+                      href={`mailto:${s.guardianEmail}`}
+                      className="hover:text-foreground transition-colors"
+                    >
+                      {s.guardianEmail}
+                    </a>
+                  </div>
+                  {s.guardianPhone && (
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      📞 {s.guardianPhone}
+                    </p>
+                  )}
+                </div>
+
+                {/* Delete */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    removeStudent(s.id);
+                    toast.success("Student removed.");
+                  }}
+                  data-ocid={`teacher.students.delete_button.${idx + 1}`}
+                  className="self-start sm:self-center text-muted-foreground hover:text-red-500 transition-colors p-1.5 rounded-lg hover:bg-red-50"
+                  title="Remove student"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Class Overview ────────────────────────────────────────────────────────────
 
 function ClassOverview({
-  onSelectStudent,
+  onSelectStudent: _onSelectStudent,
 }: {
   onSelectStudent: (s: StudentRecord) => void;
 }) {
-  const [filter, setFilter] = useState<FilterType>("all");
-
-  const atRiskCount = teacherStudents.filter((s) => s.isAtRisk).length;
-  const avgMoodScore =
-    teacherStudents.reduce((acc, s) => acc + MOOD_SCORE[s.mood], 0) /
-    teacherStudents.length;
-  const avgMoodEmoji = MOOD_EMOJIS_BY_SCORE[Math.round(avgMoodScore)] ?? "😐";
-  const avgXP = Math.round(
-    teacherStudents.reduce((acc, s) => acc + s.xp, 0) / teacherStudents.length,
-  );
-
-  const filtered = useMemo(() => {
-    if (filter === "at-risk") return teacherStudents.filter((s) => s.isAtRisk);
-    if (filter === "active")
-      return teacherStudents.filter((s) => s.lastActive === "Today");
-    return teacherStudents;
-  }, [filter]);
-
-  const filterBtns: { key: FilterType; label: string }[] = [
-    { key: "all", label: "All Students" },
-    { key: "at-risk", label: "At Risk" },
-    { key: "active", label: "Active Today" },
-  ];
-
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -137,7 +450,7 @@ function ClassOverview({
             Class Overview
           </h1>
           <p className="text-muted-foreground mt-1">
-            Mental wellness at a glance — {teacherStudents.length} students
+            Mental wellness at a glance
           </p>
         </div>
         <div className="inline-flex items-center gap-2 bg-teal-100 text-teal-700 px-3 py-1.5 rounded-full text-sm font-medium">
@@ -146,203 +459,32 @@ function ClassOverview({
         </div>
       </div>
 
-      {/* Summary stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {[
-          {
-            label: "Total Students",
-            value: String(teacherStudents.length),
-            icon: Users,
-            color: "bg-teal-50 border-teal-200",
-            iconColor: "text-teal-600",
-            valueColor: "text-teal-700",
-            isEmoji: false,
-          },
-          {
-            label: "At Risk",
-            value: String(atRiskCount),
-            icon: AlertTriangle,
-            color: "bg-red-50 border-red-200",
-            iconColor: "text-red-500",
-            valueColor: "text-red-600",
-            isEmoji: false,
-          },
-          {
-            label: "Average Mood",
-            value: avgMoodEmoji,
-            icon: Smile,
-            color: "bg-amber-50 border-amber-200",
-            iconColor: "text-amber-500",
-            valueColor: "text-amber-700",
-            isEmoji: true,
-          },
-          {
-            label: "Class Avg XP",
-            value: `${avgXP} XP`,
-            icon: Zap,
-            color: "bg-purple-50 border-purple-200",
-            iconColor: "text-purple-500",
-            valueColor: "text-purple-700",
-            isEmoji: false,
-          },
-        ].map((stat, i) => {
-          const Icon = stat.icon;
-          return (
-            <motion.div
-              key={stat.label}
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.07 }}
-              className={`rounded-2xl border p-5 ${stat.color}`}
-            >
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-sm text-muted-foreground font-medium">
-                  {stat.label}
-                </span>
-                <Icon className={`w-4 h-4 ${stat.iconColor}`} />
-              </div>
-              <div
-                className={`font-display font-bold ${stat.valueColor} ${stat.isEmoji ? "text-4xl" : "text-3xl"}`}
-              >
-                {stat.value}
-              </div>
-            </motion.div>
-          );
-        })}
-      </div>
-
-      {/* Filter bar */}
-      <div className="flex flex-wrap gap-2">
-        {filterBtns.map((btn) => (
-          <button
-            type="button"
-            key={btn.key}
-            onClick={() => setFilter(btn.key)}
-            data-ocid="teacher.filter.tab"
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-              filter === btn.key
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "bg-card border border-border/60 text-muted-foreground hover:bg-muted"
-            }`}
-          >
-            {btn.label}
-            {btn.key === "at-risk" && atRiskCount > 0 && (
-              <span className="ml-2 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5">
-                {atRiskCount}
-              </span>
-            )}
-          </button>
-        ))}
-      </div>
-
-      {/* Student grid */}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-        <AnimatePresence mode="popLayout">
-          {filtered.map((student, i) => (
-            <motion.div
-              key={student.id}
-              layout
-              initial={{ opacity: 0, scale: 0.96 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.94 }}
-              transition={{ delay: i * 0.04 }}
-              data-ocid={`teacher.student.card.${i + 1}`}
-              onClick={() => onSelectStudent(student)}
-              className={`relative bg-card border rounded-2xl p-5 cursor-pointer hover:shadow-md transition-all group ${
-                student.isAtRisk
-                  ? "border-red-200 hover:border-red-300"
-                  : "border-border/50 hover:border-primary/30"
-              }`}
-            >
-              {/* At-risk banner */}
-              {student.isAtRisk && (
-                <div className="absolute top-0 left-0 right-0 bg-red-500 text-white text-xs font-semibold px-4 py-1.5 rounded-t-2xl flex items-center gap-1.5">
-                  <AlertTriangle className="w-3 h-3" />
-                  Needs Attention
-                </div>
-              )}
-
-              <div className={student.isAtRisk ? "pt-5" : ""}>
-                {/* Avatar + name */}
-                <div className="flex items-start gap-3 mb-4">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-teal-100 to-sage-100 flex items-center justify-center text-2xl flex-shrink-0 shadow-sm">
-                    {student.avatarEmoji}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-foreground truncate">
-                      {student.name}
-                    </div>
-                    <div className="text-xs text-muted-foreground truncate">
-                      {student.fieldOfStudy}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {student.lastActive}
-                    </div>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0 mt-1" />
-                </div>
-
-                {/* Mood + DASS */}
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {MOOD_CONFIG[student.mood] && (
-                    <span
-                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${MOOD_CONFIG[student.mood].color}`}
-                    >
-                      {MOOD_CONFIG[student.mood].emoji} {student.mood}
-                    </span>
-                  )}
-                  <SeverityBadge severity={student.dass21.severity} />
-                </div>
-
-                {/* Streaks */}
-                <div className="flex gap-4 mb-4">
-                  {[
-                    { label: "Sleep", val: student.sleepStreak },
-                    { label: "Exercise", val: student.exerciseStreak },
-                    { label: "Outdoor", val: student.outdoorStreak },
-                  ].map(({ label, val }) => (
-                    <div
-                      key={label}
-                      className="flex items-center gap-1 text-xs text-muted-foreground"
-                    >
-                      <span className="text-orange-400">🔥</span>
-                      <span className="font-semibold text-foreground">
-                        {val}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-
-                {/* XP level */}
-                <div className="flex items-center justify-between">
-                  <span className="inline-flex items-center gap-1 bg-purple-100 text-purple-700 px-2.5 py-1 rounded-full text-xs font-medium">
-                    <Zap className="w-3 h-3" />
-                    {student.xpLevel}
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {student.xp} XP
-                  </span>
-                </div>
-              </div>
-            </motion.div>
-          ))}
-        </AnimatePresence>
-      </div>
-
-      {filtered.length === 0 && (
-        <div
-          data-ocid="teacher.empty_state"
-          className="text-center py-16 text-muted-foreground"
-        >
-          <Users className="w-12 h-12 mx-auto mb-4 opacity-30" />
-          <p className="font-medium">No students match this filter</p>
+      {/* Empty state */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        data-ocid="teacher.empty_state"
+        className="flex flex-col items-center justify-center py-24 rounded-2xl border border-dashed border-border/60 bg-muted/20 text-center"
+      >
+        <div className="w-16 h-16 rounded-full bg-teal-50 flex items-center justify-center mb-5">
+          <Users className="w-8 h-8 text-teal-400" />
         </div>
-      )}
+        <h3 className="font-display text-lg font-semibold text-foreground mb-2">
+          No students linked yet
+        </h3>
+        <p className="text-muted-foreground text-sm max-w-sm leading-relaxed">
+          Share your invite link with your mentee students to get started. Once
+          they sign up via your link, their wellness data will appear here.
+        </p>
+      </motion.div>
+
+      {/* My Students contact directory */}
+      <MyStudentsSection />
     </div>
   );
 }
 
-// ── Individual Student Profile ──────────────────────────────────────────────────────────────────────────────
+// ── Individual Student Profile ────────────────────────────────────────────────
 
 function StudentProfile({
   student,
@@ -369,7 +511,6 @@ function StudentProfile({
     return "bg-red-500";
   };
 
-  // Build compact 30-day chart data
   const mood30ChartColor = (mood: MoodValue | null): string => {
     if (!mood) return "#e5e7eb";
     const colors: Record<MoodValue, string> = {
@@ -600,7 +741,6 @@ function StudentProfile({
             </div>
           ))}
         </div>
-        {/* Day labels for start, mid, end */}
         <div className="flex justify-between mt-2">
           <span className="text-xs text-muted-foreground">Day 1</span>
           <span className="text-xs text-muted-foreground">Day 15</span>
@@ -699,19 +839,17 @@ function StudentProfile({
   );
 }
 
-// ── Main ────────────────────────────────────────────────────────────────────────────────────────────────────────
+// ── Main ──────────────────────────────────────────────────────────────────────
 
 export default function TeacherDashboard() {
   const [selectedStudent, setSelectedStudent] = useState<StudentRecord | null>(
     null,
   );
   const { identity } = useInternetIdentity();
-  const { profile } = useProfile(identity);
-
-  const inviteLink = identity ? generateTeacherInviteLink(identity) : "";
+  const { profile: userProfile } = useUserProfile();
+  const { inviteLink } = useTeacherCode();
 
   const handleCopyLink = () => {
-    if (!inviteLink) return;
     navigator.clipboard.writeText(inviteLink).then(() => {
       toast.success("Invite link copied to clipboard!");
     });
@@ -721,48 +859,82 @@ export default function TeacherDashboard() {
     <PinGate userRole="teacher">
       <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-10 max-w-6xl">
-          {/* Teacher Account Banner */}
-          {profile && (
-            <div className="flex flex-wrap items-center justify-between gap-4 mb-6 bg-teal-50 border border-teal-200 rounded-2xl px-5 py-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center">
-                  <User className="w-5 h-5 text-teal-700" />
-                </div>
-                <div>
-                  <p className="font-semibold text-foreground text-sm">
-                    {profile.name}
-                  </p>
+          {/* Teacher Account Banner — always visible */}
+          <div className="flex flex-wrap items-center justify-between gap-4 mb-6 bg-teal-50 border border-teal-200 rounded-2xl px-5 py-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center">
+                <User className="w-5 h-5 text-teal-700" />
+              </div>
+              <div>
+                <p className="font-semibold text-foreground text-sm">
+                  {userProfile?.name || "Set your name in Profile"}
+                </p>
+                {userProfile?.email ? (
                   <div className="flex items-center gap-1 text-xs text-teal-700">
                     <Mail className="w-3 h-3" />
                     <a
-                      href={`mailto:${profile.email}`}
+                      href={`mailto:${userProfile.email}`}
                       className="hover:underline"
                     >
-                      {profile.email}
+                      {userProfile.email}
                     </a>
                   </div>
-                </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    Add your email in Profile
+                  </p>
+                )}
               </div>
-              {/* Share Invite Link */}
-              <div className="flex items-center gap-2">
+            </div>
+
+            {/* Invite Link + Principal ID */}
+            <div className="flex items-center gap-2">
+              <div className="flex flex-col gap-2">
+                {/* Principal ID — only if logged in via Internet Identity */}
+                {identity && (
+                  <div className="flex items-center gap-2 bg-white border border-teal-100 rounded-xl px-3 py-2">
+                    <span className="text-xs text-muted-foreground whitespace-nowrap">
+                      Your Principal ID:
+                    </span>
+                    <span className="text-xs font-mono text-teal-700 truncate max-w-[140px]">
+                      {identity.getPrincipal().toString()}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(
+                          identity.getPrincipal().toString(),
+                        );
+                        toast.success("Principal ID copied!");
+                      }}
+                      className="ml-1 text-teal-500 hover:text-teal-700 transition-colors flex-shrink-0"
+                      title="Copy Principal ID"
+                      data-ocid="teacher.principal_id.button"
+                    >
+                      <Copy className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
+                {/* Invite Link — always visible */}
                 <div className="flex items-center gap-2 bg-white border border-teal-200 rounded-xl px-3 py-2">
                   <Link2 className="w-4 h-4 text-teal-600 flex-shrink-0" />
                   <span className="text-xs text-muted-foreground truncate max-w-[180px]">
-                    {inviteLink || "Generating..."}
+                    {inviteLink}
                   </span>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleCopyLink}
-                  data-ocid="teacher.invite_link.button"
-                  className="flex items-center gap-1.5 bg-teal-600 hover:bg-teal-700 text-white text-xs font-medium px-3 py-2 rounded-xl transition-colors"
-                >
-                  <Copy className="w-3.5 h-3.5" />
-                  Copy Invite Link
-                </button>
               </div>
+              <button
+                type="button"
+                onClick={handleCopyLink}
+                data-ocid="teacher.invite_link.button"
+                className="flex items-center gap-1.5 bg-teal-600 hover:bg-teal-700 text-white text-xs font-medium px-3 py-2 rounded-xl transition-colors"
+              >
+                <Copy className="w-3.5 h-3.5" />
+                Copy Invite Link
+              </button>
             </div>
-          )}
+          </div>
+
           <ChangePinDialog userRole="teacher" />
           <AnimatePresence mode="wait">
             {selectedStudent ? (
