@@ -13,7 +13,7 @@ import {
   Zap,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ALL_BADGES,
   type MoodValue,
@@ -23,6 +23,8 @@ import {
 import { Copy, Link2, Mail, User } from "lucide-react";
 import { toast } from "sonner";
 import PinGate, { ChangePinDialog } from "../components/PinGate";
+import { useAppContext } from "../context/AppContext";
+import { useActor } from "../hooks/useActor";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
 import { generateTeacherInviteLink } from "../hooks/useProfile";
 import { useGetTeacherStudents } from "../hooks/useQueries";
@@ -883,6 +885,17 @@ export default function TeacherDashboard() {
   );
   const { identity } = useInternetIdentity();
   const { profile: userProfile } = useUserProfile();
+  const { actor } = useActor();
+  const { setUserRole } = useAppContext();
+  useEffect(() => {
+    setUserRole("teacher");
+  }, [setUserRole]);
+  useEffect(() => {
+    if (!actor || !identity) return;
+    const name = userProfile?.name ?? "Teacher";
+    const email = userProfile?.email ?? "";
+    actor.createTeacherProfile(name, email).catch(() => {});
+  }, [actor, identity, userProfile?.name, userProfile?.email]);
   const inviteLink = identity
     ? generateTeacherInviteLink(identity)
     : `${window.location.origin}/?teacherInvite=`;

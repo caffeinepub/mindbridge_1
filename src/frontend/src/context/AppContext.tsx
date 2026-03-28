@@ -23,7 +23,17 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [userRole, setUserRole] = useState<UserRole>(null);
+  const [userRole, _setUserRole] = useState<UserRole>(
+    () => (sessionStorage.getItem("lumiArc_userRole") as UserRole) ?? null,
+  );
+  const setUserRole = (role: UserRole) => {
+    if (role) {
+      sessionStorage.setItem("lumiArc_userRole", role);
+    } else {
+      sessionStorage.removeItem("lumiArc_userRole");
+    }
+    _setUserRole(role);
+  };
   const [latestResult, setLatestResult] = useState<AssessmentResult | null>(
     null,
   );

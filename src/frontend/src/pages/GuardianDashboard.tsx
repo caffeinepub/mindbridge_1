@@ -29,7 +29,7 @@ import {
   X,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Bar,
   BarChart,
@@ -46,6 +46,7 @@ import {
 import { toast } from "sonner";
 import type { DASS21Assessment } from "../backend.d";
 import PinGate, { ChangePinDialog } from "../components/PinGate";
+import { useAppContext } from "../context/AppContext";
 import { getTodaysTip } from "../data/wellnessTips";
 import { useActor } from "../hooks/useActor";
 import { useGuardianHabitData } from "../hooks/useGuardianHabitData";
@@ -636,6 +637,10 @@ function WeeklyWellnessSummary() {
 
 export default function GuardianDashboard() {
   const { actor } = useActor();
+  const { setUserRole } = useAppContext();
+  useEffect(() => {
+    setUserRole("parent");
+  }, [setUserRole]);
   const [studentIdInput, setStudentIdInput] = useState("");
   const [studentPrincipal, setStudentPrincipal] = useState<Principal | null>(
     null,
@@ -705,6 +710,23 @@ export default function GuardianDashboard() {
 
   const { identity: guardianIdentity } = useInternetIdentity();
   const { profile: guardianProfile } = useProfile(guardianIdentity);
+  useEffect(() => {
+    if (!actor || !guardianIdentity) return;
+    const stored =
+      localStorage.getItem(
+        `lumiArcProfile_${guardianIdentity.getPrincipal().toText()}`,
+      ) || localStorage.getItem("lumiProfile");
+    let name = "Guardian";
+    let email = "";
+    if (stored) {
+      try {
+        const p = JSON.parse(stored);
+        name = p.displayName || p.name || name;
+        email = p.email || email;
+      } catch {}
+    }
+    actor.createParentProfile(name, email).catch(() => {});
+  }, [actor, guardianIdentity]);
 
   return (
     <PinGate userRole="guardian">

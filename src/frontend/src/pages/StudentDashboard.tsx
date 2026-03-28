@@ -88,7 +88,7 @@ function getTodayLog() {
 }
 
 export default function StudentDashboard() {
-  const { latestResult } = useAppContext();
+  const { latestResult, setUserRole } = useAppContext();
   const { identity } = useInternetIdentity();
   const { profile: lumiProfile } = useProfile(identity);
 
@@ -102,6 +102,9 @@ export default function StudentDashboard() {
   const [bannerDismissed, setBannerDismissed] = useState(false);
   const [todayLog, setTodayLog] = useState(getTodayLog);
 
+  useEffect(() => {
+    setUserRole("student");
+  }, [setUserRole]);
   useEffect(() => {
     // Set last active timestamp
     localStorage.setItem("lumiLastActive", new Date().toISOString());
