@@ -21,19 +21,52 @@ import {
   type StudentRecord,
 } from "../data/teacherSampleData";
 
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import type { Principal } from "@icp-sdk/core/principal";
 import { Copy, Link2, Mail, RefreshCw, User } from "lucide-react";
+import { Loader2, SmilePlus } from "lucide-react";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Legend,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { toast } from "sonner";
+import type { DASS21Assessment } from "../backend.d";
 import PinGate, { ChangePinDialog } from "../components/PinGate";
 import { useAppContext } from "../context/AppContext";
 import { useActor } from "../hooks/useActor";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
 import { generateTeacherInviteLink } from "../hooks/useProfile";
 import { useGetTeacherStudentsWithProfiles } from "../hooks/useQueries";
+import { useGetStudentAssessments } from "../hooks/useQueries";
 import {
   type TeacherStudentEntry,
   useTeacherStudents,
 } from "../hooks/useTeacherStudents";
 import { useUserProfile } from "../hooks/useUserProfile";
+import {
+  formatSeverityLabel,
+  getSocialIsolationRisk,
+  severityBgClass,
+} from "../utils/scoring";
 
 // ── Mood helpers ──────────────────────────────────────────────────────────────
 
@@ -517,12 +550,924 @@ function MyStudentsSection() {
   );
 }
 
+// ── Backend Student Data Helpers ──────────────────────────────────────────────
+
+const MOOD_LABELS_T: Record<number, string> = {
+  1: "Very Sad",
+  2: "Sad",
+  3: "Okay",
+  4: "Happy",
+  5: "Very Happy",
+};
+
+const MOOD_STRING_TO_NUMBER_T: Record<string, number> = {
+  "very-sad": 1,
+  sad: 2,
+  okay: 3,
+  happy: 4,
+  "very-happy": 5,
+};
+
+const MOOD_BAR_COLORS_T: Record<number, string> = {
+  0: "oklch(0.88 0.01 195)",
+  1: "oklch(0.55 0.14 260)",
+  2: "oklch(0.62 0.13 230)",
+  3: "oklch(0.65 0.14 195)",
+  4: "oklch(0.62 0.16 170)",
+  5: "oklch(0.58 0.18 155)",
+};
+
+const XP_LEVELS_T = [
+  { min: 0, max: 49, label: "Seeker", emoji: "🌱" },
+  { min: 50, max: 149, label: "Mindful", emoji: "🧘" },
+  { min: 150, max: 299, label: "Balanced", emoji: "⚖️" },
+  { min: 300, max: 499, label: "Radiant", emoji: "🌟" },
+  {
+    min: 500,
+    max: Number.POSITIVE_INFINITY,
+    label: "Wellness Champion",
+    emoji: "🏆",
+  },
+];
+
+function getXPLevelInfo(xp: number) {
+  const idx = Math.max(
+    0,
+    XP_LEVELS_T.findIndex((l) => xp >= l.min && xp <= l.max),
+  );
+  const safeIdx = idx === -1 ? XP_LEVELS_T.length - 1 : idx;
+  const current = XP_LEVELS_T[safeIdx];
+  const next = XP_LEVELS_T[safeIdx + 1];
+  const xpInLevel = xp - current.min;
+  const levelRange = next ? next.min - current.min : 100;
+  const xpProgress = next
+    ? Math.min(100, Math.round((xpInLevel / levelRange) * 100))
+    : 100;
+  const xpToNextLevel = next ? next.min - xp : 0;
+  return {
+    levelLabel: `${current.emoji} ${current.label}`,
+    xpProgress,
+    xpToNextLevel,
+  };
+}
+
+type PlainSevT = {
+  level: string;
+  description: string;
+  color: string;
+  bg: string;
+};
+
+function getDassPlainSeverityT(
+  type: "depression" | "anxiety" | "stress",
+  score: number,
+): PlainSevT {
+  if (type === "depression") {
+    if (score < 10)
+      return {
+        level: "Normal",
+        description: "Appears emotionally settled.",
+        color: "text-teal-700",
+        bg: "bg-teal-50 border-teal-200",
+      };
+    if (score < 14)
+      return {
+        level: "Mild",
+        description: "Mild low mood at times — generally managing well.",
+        color: "text-amber-700",
+        bg: "bg-amber-50 border-amber-200",
+      };
+    if (score < 21)
+      return {
+        level: "Moderate",
+        description: "Some signs of low mood worth a gentle conversation.",
+        color: "text-orange-700",
+        bg: "bg-orange-50 border-orange-200",
+      };
+    if (score < 28)
+      return {
+        level: "Severe",
+        description: "Notable depressive signs — consider additional support.",
+        color: "text-red-700",
+        bg: "bg-red-50 border-red-200",
+      };
+    return {
+      level: "Extremely Severe",
+      description:
+        "Significant concern — professional support strongly recommended.",
+      color: "text-red-800",
+      bg: "bg-red-100 border-red-300",
+    };
+  }
+  if (type === "anxiety") {
+    if (score < 8)
+      return {
+        level: "Normal",
+        description: "Anxiety is within a healthy, manageable range.",
+        color: "text-teal-700",
+        bg: "bg-teal-50 border-teal-200",
+      };
+    if (score < 10)
+      return {
+        level: "Mild",
+        description: "Occasional worry present — normal for students.",
+        color: "text-amber-700",
+        bg: "bg-amber-50 border-amber-200",
+      };
+    if (score < 15)
+      return {
+        level: "Moderate",
+        description: "Noticeable anxiety. Breathing exercises may help.",
+        color: "text-orange-700",
+        bg: "bg-orange-50 border-orange-200",
+      };
+    if (score < 20)
+      return {
+        level: "Severe",
+        description: "High anxiety levels — a caring check-in is important.",
+        color: "text-red-700",
+        bg: "bg-red-50 border-red-200",
+      };
+    return {
+      level: "Extremely Severe",
+      description:
+        "Intense anxiety — professional support strongly recommended.",
+      color: "text-red-800",
+      bg: "bg-red-100 border-red-300",
+    };
+  }
+  if (score < 15)
+    return {
+      level: "Normal",
+      description: "Stress levels appear healthy and manageable.",
+      color: "text-teal-700",
+      bg: "bg-teal-50 border-teal-200",
+    };
+  if (score < 19)
+    return {
+      level: "Mild",
+      description: "Some everyday pressures — managing well.",
+      color: "text-amber-700",
+      bg: "bg-amber-50 border-amber-200",
+    };
+  if (score < 26)
+    return {
+      level: "Moderate",
+      description: "Moderate stress. Encourage breaks and sleep.",
+      color: "text-orange-700",
+      bg: "bg-orange-50 border-orange-200",
+    };
+  if (score < 34)
+    return {
+      level: "Severe",
+      description:
+        "High stress — consider reducing workload or seeking support.",
+      color: "text-red-700",
+      bg: "bg-red-50 border-red-200",
+    };
+  return {
+    level: "Extremely Severe",
+    description: "Very high stress — urgent support strongly recommended.",
+    color: "text-red-800",
+    bg: "bg-red-100 border-red-300",
+  };
+}
+
+function getSocialScoreT(a: DASS21Assessment): number {
+  const social = (a as unknown as { socialIsolationScore?: bigint })
+    .socialIsolationScore;
+  if (social !== undefined && social !== null) return Number(social);
+  return 0;
+}
+
+function formatDateT(timestamp: bigint) {
+  const ms = Number(timestamp / BigInt(1_000_000));
+  return new Date(ms).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function parseMoodHistory(
+  moodStr: string,
+): Array<{ day: string; mood: number }> {
+  const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const moodMap: Record<string, number> = {};
+  for (const entry of moodStr.split(";")) {
+    const [date, mood] = entry.split("=");
+    if (date && mood) moodMap[date] = MOOD_STRING_TO_NUMBER_T[mood] ?? 0;
+  }
+  const parsed: Array<{ day: string; mood: number }> = [];
+  const today = new Date();
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    const key = d.toISOString().slice(0, 10);
+    parsed.push({ day: DAY_NAMES[d.getDay()], mood: moodMap[key] ?? 0 });
+  }
+  return parsed;
+}
+
+const TEACHER_BADGES = [
+  {
+    id: "sleep_champion",
+    emoji: "😴",
+    name: "Sleep Champion",
+    hint: "Log sleep 7 times",
+  },
+  {
+    id: "early_riser",
+    emoji: "🌅",
+    name: "Early Riser",
+    hint: "Rate sleep 5 stars, 3 times",
+  },
+  {
+    id: "yoga_warrior",
+    emoji: "🧘",
+    name: "Yoga Warrior",
+    hint: "Log yoga 5 times",
+  },
+  {
+    id: "step_master",
+    emoji: "👟",
+    name: "Step Master",
+    hint: "Log running/walking 10 times",
+  },
+  {
+    id: "outdoor_explorer",
+    emoji: "🌳",
+    name: "Outdoor Explorer",
+    hint: "Log outdoor games 5 times",
+  },
+  {
+    id: "streak_starter",
+    emoji: "🔥",
+    name: "Streak Starter",
+    hint: "3-day streak",
+  },
+  {
+    id: "streak_legend",
+    emoji: "⚡",
+    name: "Streak Legend",
+    hint: "7-day streak",
+  },
+  {
+    id: "wellness_star",
+    emoji: "⭐",
+    name: "Wellness Star",
+    hint: "Earn 30 XP",
+  },
+  { id: "radiant", emoji: "🌟", name: "Radiant", hint: "Reach 300 XP" },
+  { id: "champion", emoji: "🏆", name: "Champion", hint: "Reach 500 XP" },
+];
+
+interface StudentExtProfile {
+  name: string;
+  fieldOfStudy?: string;
+  wellnessGoal?: string;
+}
+interface HabitSummaryT {
+  sleepStreak: bigint;
+  exerciseStreak: bigint;
+  outdoorStreak: bigint;
+  xp: bigint;
+}
+
+function MoodTooltipT({
+  active,
+  payload,
+  label,
+}: { active?: boolean; payload?: Array<{ value: number }>; label?: string }) {
+  if (!active || !payload?.length) return null;
+  const score = payload[0].value;
+  if (score === 0)
+    return (
+      <div className="bg-white/95 backdrop-blur-sm border border-border/40 rounded-xl px-3 py-2 shadow-md text-xs">
+        <div className="font-semibold">{label}</div>
+        <div className="text-muted-foreground mt-0.5">No check-in recorded</div>
+      </div>
+    );
+  return (
+    <div className="bg-white/95 backdrop-blur-sm border border-border/40 rounded-xl px-3 py-2 shadow-md text-xs">
+      <div className="font-semibold">{label}</div>
+      <div className="text-muted-foreground mt-0.5">
+        {score} — {MOOD_LABELS_T[score]}
+      </div>
+    </div>
+  );
+}
+
+// ── Backend Student Profile (Teacher View) ────────────────────────────────────
+
+function BackendStudentProfile({
+  principal,
+  name,
+  email,
+  onBack,
+}: {
+  principal: Principal;
+  name: string;
+  email: string;
+  onBack: () => void;
+}) {
+  const { actor } = useActor();
+  const [loading, setLoading] = useState(true);
+  const [extProfile, setExtProfile] = useState<StudentExtProfile | null>(null);
+  const [habitData, setHabitData] = useState<HabitSummaryT | null>(null);
+  const [moodData, setMoodData] = useState<
+    Array<{ day: string; mood: number }>
+  >([]);
+
+  const { data: assessments } = useGetStudentAssessments(principal);
+
+  useEffect(() => {
+    if (!actor) return;
+    setLoading(true);
+    Promise.all([
+      (actor as any)
+        .getStudentExtendedProfile(principal)
+        .catch(() => ({ __kind__: "None" as const })),
+      (actor as any)
+        .getHabitSummary(principal)
+        .catch(() => ({ __kind__: "None" as const })),
+      (actor as any).getMoodHistory(principal).catch(() => ""),
+    ])
+      .then(([profileOpt, habitOpt, moodStr]) => {
+        if (profileOpt.__kind__ === "Some") setExtProfile(profileOpt.value);
+        if (habitOpt.__kind__ === "Some") setHabitData(habitOpt.value);
+        if (moodStr) setMoodData(parseMoodHistory(moodStr));
+      })
+      .finally(() => setLoading(false));
+  }, [actor, principal]);
+
+  const latest = assessments?.[assessments.length - 1];
+  const chartData =
+    assessments
+      ?.slice()
+      .sort((a, b) => (a.timestamp < b.timestamp ? -1 : 1))
+      .map((a) => ({
+        date: formatDateT(a.timestamp),
+        Depression: Number(a.depression.rawScore),
+        Anxiety: Number(a.anxiety.rawScore),
+        Stress: Number(a.stress.rawScore),
+      })) ?? [];
+
+  const sleepStreak = habitData ? Number(habitData.sleepStreak) : 0;
+  const exerciseStreak = habitData ? Number(habitData.exerciseStreak) : 0;
+  const outdoorStreak = habitData ? Number(habitData.outdoorStreak) : 0;
+  const totalXP = habitData ? Number(habitData.xp) : 0;
+  const { levelLabel, xpProgress, xpToNextLevel } = getXPLevelInfo(totalXP);
+
+  const earnedBadgeIds = new Set<string>();
+  if (sleepStreak >= 7) earnedBadgeIds.add("sleep_champion");
+  if (sleepStreak >= 3) earnedBadgeIds.add("streak_starter");
+  if (sleepStreak >= 7) earnedBadgeIds.add("streak_legend");
+  if (totalXP >= 30) earnedBadgeIds.add("wellness_star");
+  if (totalXP >= 300) earnedBadgeIds.add("radiant");
+  if (totalXP >= 500) earnedBadgeIds.add("champion");
+  if (exerciseStreak >= 5) earnedBadgeIds.add("yoga_warrior");
+  if (outdoorStreak >= 5) earnedBadgeIds.add("outdoor_explorer");
+
+  if (loading) {
+    return (
+      <div
+        className="flex items-center justify-center py-24"
+        data-ocid="teacher.student_profile.loading_state"
+      >
+        <Loader2 className="w-8 h-8 animate-spin text-teal-500" />
+        <span className="ml-3 text-muted-foreground">
+          Loading student data…
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: 24 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: 24 }}
+      transition={{ duration: 0.3 }}
+      className="space-y-6"
+      data-ocid="teacher.backend_student_profile.panel"
+    >
+      {/* Back button */}
+      <button
+        type="button"
+        onClick={onBack}
+        data-ocid="teacher.backend_profile.back.button"
+        className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors font-medium"
+      >
+        <ArrowLeft className="w-4 h-4" />
+        Back to Class Overview
+      </button>
+
+      {/* Student banner */}
+      <div className="rounded-2xl bg-teal-50 border border-teal-200 p-6">
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-full bg-teal-100 flex items-center justify-center flex-shrink-0 text-2xl">
+            🧑‍🎓
+          </div>
+          <div className="flex-1">
+            <h2 className="font-display text-2xl font-bold text-foreground">
+              {name || "Student"}
+            </h2>
+            {email && (
+              <p className="text-sm text-muted-foreground mt-0.5">{email}</p>
+            )}
+            {extProfile?.fieldOfStudy && (
+              <p className="text-sm text-teal-700 mt-1 font-medium">
+                {extProfile.fieldOfStudy}
+              </p>
+            )}
+            {extProfile?.wellnessGoal && (
+              <p className="text-xs text-muted-foreground mt-0.5 italic">
+                Goal: {extProfile.wellnessGoal}
+              </p>
+            )}
+          </div>
+          <div className="text-right">
+            <span className="inline-flex items-center gap-1 bg-amber-100 text-amber-700 px-3 py-1 rounded-full text-sm font-semibold">
+              <Zap className="w-3.5 h-3.5" /> {totalXP} XP
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Summary score cards */}
+      {latest && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="grid grid-cols-2 md:grid-cols-4 gap-4"
+        >
+          {[
+            {
+              label: "Depression",
+              score: Number(latest.depression.rawScore),
+              severity: latest.depression.severity,
+            },
+            {
+              label: "Anxiety",
+              score: Number(latest.anxiety.rawScore),
+              severity: latest.anxiety.severity,
+            },
+            {
+              label: "Stress",
+              score: Number(latest.stress.rawScore),
+              severity: latest.stress.severity,
+            },
+            {
+              label: "Social Risk",
+              score: getSocialScoreT(latest),
+              severity: null,
+              risk: getSocialIsolationRisk(getSocialScoreT(latest)).risk,
+            },
+          ].map((item, i) => (
+            <Card
+              key={item.label}
+              className="rounded-2xl border-border/40 shadow-sm"
+              data-ocid={`teacher.student_summary.item.${i + 1}`}
+            >
+              <CardContent className="p-4 text-center">
+                <div className="font-display text-3xl font-bold mb-1">
+                  {item.score}
+                </div>
+                <div className="text-xs text-muted-foreground mb-2">
+                  {item.label}
+                </div>
+                {item.severity ? (
+                  <Badge
+                    className={`text-xs rounded-full ${severityBgClass(item.severity)}`}
+                  >
+                    {formatSeverityLabel(item.severity)}
+                  </Badge>
+                ) : (
+                  <Badge
+                    className={`text-xs rounded-full ${
+                      item.risk === "low"
+                        ? "bg-green-100 text-green-800"
+                        : item.risk === "moderate"
+                          ? "bg-yellow-100 text-yellow-800"
+                          : item.risk === "high"
+                            ? "bg-orange-100 text-orange-800"
+                            : "bg-red-100 text-red-800"
+                    }`}
+                  >
+                    {item.risk === "low"
+                      ? "Low"
+                      : item.risk === "moderate"
+                        ? "Moderate"
+                        : item.risk === "high"
+                          ? "High"
+                          : "Very High"}
+                  </Badge>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </motion.div>
+      )}
+
+      {/* DASS-21 plain language summary */}
+      {latest && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.08 }}
+          data-ocid="teacher.dass_summary.card"
+        >
+          <Card className="rounded-2xl border-border/40 shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="font-display text-base flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-teal-500" />
+                What the DASS-21 Scores Mean
+              </CardTitle>
+              <p className="text-xs text-muted-foreground">
+                Plain-language guide to this student's latest results.
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {[
+                {
+                  type: "depression" as const,
+                  label: "Depression",
+                  score: Number(latest.depression.rawScore),
+                },
+                {
+                  type: "anxiety" as const,
+                  label: "Anxiety",
+                  score: Number(latest.anxiety.rawScore),
+                },
+                {
+                  type: "stress" as const,
+                  label: "Stress",
+                  score: Number(latest.stress.rawScore),
+                },
+              ].map(({ type, label, score }) => {
+                const sev = getDassPlainSeverityT(type, score);
+                return (
+                  <div key={type} className={`rounded-xl border p-3 ${sev.bg}`}>
+                    <div className="flex items-center justify-between mb-0.5">
+                      <span className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                        {label}
+                      </span>
+                      <span className={`text-xs font-semibold ${sev.color}`}>
+                        {sev.level}
+                      </span>
+                    </div>
+                    <p className={`text-sm leading-relaxed ${sev.color}`}>
+                      {sev.description}
+                    </p>
+                  </div>
+                );
+              })}
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
+
+      {/* Assessment Trends line chart */}
+      {chartData.length > 1 && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.12 }}
+        >
+          <Card className="rounded-2xl border-border/40 shadow-sm">
+            <CardHeader>
+              <CardTitle className="font-display text-base flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-teal-500" />
+                Assessment Trends
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={280}>
+                <LineChart data={chartData}>
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke="oklch(0.9 0.02 180)"
+                  />
+                  <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                  <YAxis tick={{ fontSize: 11 }} domain={[0, 42]} />
+                  <Tooltip
+                    contentStyle={{
+                      borderRadius: "12px",
+                      border: "1px solid oklch(0.88 0.025 180)",
+                      fontSize: "12px",
+                    }}
+                  />
+                  <Legend wrapperStyle={{ fontSize: "12px" }} />
+                  <Line
+                    type="monotone"
+                    dataKey="Depression"
+                    stroke="oklch(0.55 0.18 25)"
+                    strokeWidth={2}
+                    dot={{ r: 4 }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="Anxiety"
+                    stroke="oklch(0.58 0.18 55)"
+                    strokeWidth={2}
+                    dot={{ r: 4 }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="Stress"
+                    stroke="oklch(0.42 0.09 195)"
+                    strokeWidth={2}
+                    dot={{ r: 4 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
+
+      {/* Weekly Mood chart */}
+      {moodData.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.16 }}
+          data-ocid="teacher.student_mood.panel"
+        >
+          <Card className="rounded-2xl border-border/40 shadow-sm">
+            <CardHeader>
+              <CardTitle className="font-display text-base flex items-center gap-2">
+                <SmilePlus className="w-4 h-4 text-teal-500" />
+                Weekly Mood Check-Ins
+              </CardTitle>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Mood score: 1 = Very Sad · 2 = Sad · 3 = Okay · 4 = Happy · 5 =
+                Very Happy
+              </p>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={220}>
+                <BarChart
+                  data={moodData}
+                  barCategoryGap="28%"
+                  margin={{ top: 4, right: 8, left: -10, bottom: 0 }}
+                >
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    vertical={false}
+                    stroke="oklch(0.92 0.015 195)"
+                  />
+                  <XAxis
+                    dataKey="day"
+                    tick={{ fontSize: 11 }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    domain={[0, 5]}
+                    ticks={[1, 2, 3, 4, 5]}
+                    tick={{ fontSize: 11 }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <Tooltip
+                    content={<MoodTooltipT />}
+                    cursor={{ fill: "oklch(0.96 0.02 195 / 0.5)" }}
+                  />
+                  <Bar dataKey="mood" radius={[6, 6, 0, 0]} maxBarSize={48}>
+                    {moodData.map((entry) => (
+                      <Cell
+                        key={`mood-bar-${entry.day}`}
+                        fill={
+                          MOOD_BAR_COLORS_T[entry.mood] ?? MOOD_BAR_COLORS_T[0]
+                        }
+                      />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
+
+      {/* Habit Streaks */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+      >
+        <Card className="rounded-2xl border-border/40 shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="font-display text-base flex items-center gap-2">
+              <Flame className="w-4 h-4 text-orange-400" />
+              Daily Habit Streaks
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                {
+                  icon: "🌙",
+                  label: "Sleep Streak",
+                  value: sleepStreak,
+                  color: "from-indigo-100 to-violet-100 border-indigo-200",
+                },
+                {
+                  icon: "💪",
+                  label: "Exercise Streak",
+                  value: exerciseStreak,
+                  color: "from-orange-100 to-rose-100 border-orange-200",
+                },
+                {
+                  icon: "🌳",
+                  label: "Outdoor Streak",
+                  value: outdoorStreak,
+                  color: "from-emerald-100 to-teal-100 border-emerald-200",
+                },
+              ].map((s) => (
+                <div
+                  key={s.label}
+                  className={`rounded-2xl border bg-gradient-to-br ${s.color} p-4 text-center shadow-sm`}
+                >
+                  <div className="text-2xl mb-1">{s.icon}</div>
+                  <div className="font-display text-3xl font-bold text-foreground flex items-center justify-center gap-1">
+                    {s.value > 0 && <span className="text-xl">🔥</span>}
+                    {s.value}
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-0.5 font-medium">
+                    {s.label}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {s.value === 1 ? "day" : "days"}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* XP Level banner */}
+            <div className="rounded-2xl bg-gradient-to-r from-amber-50 via-orange-50 to-yellow-50 border border-amber-200 p-4 shadow-sm">
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-display font-bold text-foreground text-base">
+                  {levelLabel}
+                </span>
+                <span className="text-sm font-semibold text-amber-700">
+                  {totalXP} XP
+                </span>
+              </div>
+              <Progress value={xpProgress} className="h-2 bg-amber-100" />
+              <div className="text-xs text-muted-foreground mt-1.5">
+                {xpToNextLevel > 0
+                  ? `${xpToNextLevel} XP to next level`
+                  : "Max level reached! 🏆"}
+              </div>
+            </div>
+
+            <p className="text-xs text-muted-foreground text-center italic">
+              Detailed day-by-day habit logs are visible only to the student.
+            </p>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* Badges shelf */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.24 }}
+      >
+        <Card className="rounded-2xl border-border/40 shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="font-display text-base flex items-center gap-2">
+              🏅 Achievements
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-5 gap-3">
+              {TEACHER_BADGES.map((badge) => {
+                const unlocked = earnedBadgeIds.has(badge.id);
+                return (
+                  <div
+                    key={badge.id}
+                    title={badge.hint}
+                    className={`flex flex-col items-center gap-1 p-2 rounded-xl text-center transition-all ${
+                      unlocked
+                        ? "bg-amber-50 border border-amber-200 shadow-sm ring-1 ring-amber-300/50"
+                        : "bg-muted/40 border border-border/30 opacity-50 grayscale"
+                    }`}
+                  >
+                    <span className="text-xl">{badge.emoji}</span>
+                    <span className="text-[10px] font-medium leading-tight text-foreground">
+                      {badge.name}
+                    </span>
+                    {unlocked && (
+                      <span className="text-[9px] text-amber-600 font-semibold">
+                        Earned!
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* Assessment history table */}
+      {assessments && assessments.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.28 }}
+        >
+          <Card className="rounded-2xl border-border/40 shadow-sm">
+            <CardHeader>
+              <CardTitle className="font-display text-base flex items-center gap-2">
+                📅 Assessment History ({assessments.length} records)
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <Table data-ocid="teacher.student_assessments.table">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Depression</TableHead>
+                      <TableHead>Anxiety</TableHead>
+                      <TableHead>Stress</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {assessments
+                      .slice()
+                      .sort((a, b) => (a.timestamp > b.timestamp ? -1 : 1))
+                      .map((a, i) => (
+                        <TableRow
+                          key={a.id.toString()}
+                          data-ocid={`teacher.student_assessment.row.${i + 1}`}
+                        >
+                          <TableCell className="text-sm">
+                            {formatDateT(a.timestamp)}
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              className={`text-xs rounded-full ${severityBgClass(a.depression.severity)}`}
+                            >
+                              {Number(a.depression.rawScore)} —{" "}
+                              {formatSeverityLabel(a.depression.severity)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              className={`text-xs rounded-full ${severityBgClass(a.anxiety.severity)}`}
+                            >
+                              {Number(a.anxiety.rawScore)} —{" "}
+                              {formatSeverityLabel(a.anxiety.severity)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              className={`text-xs rounded-full ${severityBgClass(a.stress.severity)}`}
+                            >
+                              {Number(a.stress.rawScore)} —{" "}
+                              {formatSeverityLabel(a.stress.severity)}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
+
+      {!latest && !loading && (
+        <div
+          className="text-center py-12 text-muted-foreground"
+          data-ocid="teacher.student_assessments.empty_state"
+        >
+          <p className="font-display text-lg font-semibold mb-1 text-foreground">
+            No assessments yet
+          </p>
+          <p className="text-sm">
+            This student has not completed any DASS-21 assessments.
+          </p>
+        </div>
+      )}
+    </motion.div>
+  );
+}
+
 // ── Class Overview ────────────────────────────────────────────────────────────
 
 function ClassOverview({
   onSelectStudent: _onSelectStudent,
+  onSelectBackendStudent,
 }: {
   onSelectStudent: (s: StudentRecord) => void;
+  onSelectBackendStudent: (p: Principal, name: string, email: string) => void;
 }) {
   const { data: backendStudents = [], isFetching } =
     useGetTeacherStudentsWithProfiles();
@@ -596,10 +1541,14 @@ function ClassOverview({
           data-ocid="teacher.students_grid"
         >
           {backendStudents.map(([principal, name, email], idx) => (
-            <div
+            <button
+              type="button"
               key={principal.toString()}
               data-ocid={`teacher.student_card.${idx + 1}`}
-              className="bg-teal-50 border border-teal-200 rounded-2xl p-4 space-y-2"
+              onClick={() =>
+                onSelectBackendStudent(principal, name || "Student", email)
+              }
+              className="bg-teal-50 border border-teal-200 rounded-2xl p-4 space-y-2 w-full text-left hover:bg-teal-100 transition-colors cursor-pointer"
             >
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center flex-shrink-0">
@@ -628,7 +1577,10 @@ function ClassOverview({
               <p className="text-xs text-muted-foreground font-mono pl-11">
                 {principal.toString().slice(0, 16)}…
               </p>
-            </div>
+              <p className="text-xs text-teal-600 font-medium pl-11">
+                Click to view progress →
+              </p>
+            </button>
           ))}
         </div>
       )}
@@ -1000,6 +1952,11 @@ export default function TeacherDashboard() {
   const [selectedStudent, setSelectedStudent] = useState<StudentRecord | null>(
     null,
   );
+  const [selectedBackendStudent, setSelectedBackendStudent] = useState<{
+    principal: Principal;
+    name: string;
+    email: string;
+  } | null>(null);
   const { identity } = useInternetIdentity();
   const { profile: userProfile } = useUserProfile();
   const { actor } = useActor();
@@ -1105,7 +2062,21 @@ export default function TeacherDashboard() {
 
           <ChangePinDialog userRole="teacher" />
           <AnimatePresence mode="wait">
-            {selectedStudent ? (
+            {selectedBackendStudent ? (
+              <motion.div
+                key="backend-profile"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+              >
+                <BackendStudentProfile
+                  principal={selectedBackendStudent.principal}
+                  name={selectedBackendStudent.name}
+                  email={selectedBackendStudent.email}
+                  onBack={() => setSelectedBackendStudent(null)}
+                />
+              </motion.div>
+            ) : selectedStudent ? (
               <motion.div
                 key="profile"
                 initial={{ opacity: 0 }}
@@ -1124,7 +2095,16 @@ export default function TeacherDashboard() {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
               >
-                <ClassOverview onSelectStudent={setSelectedStudent} />
+                <ClassOverview
+                  onSelectStudent={setSelectedStudent}
+                  onSelectBackendStudent={(p, n, e) =>
+                    setSelectedBackendStudent({
+                      principal: p,
+                      name: n,
+                      email: e,
+                    })
+                  }
+                />
               </motion.div>
             )}
           </AnimatePresence>
