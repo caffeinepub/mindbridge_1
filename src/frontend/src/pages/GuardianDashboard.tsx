@@ -45,6 +45,7 @@ import {
 } from "recharts";
 import { toast } from "sonner";
 import type { DASS21Assessment } from "../backend.d";
+import type { HabitSummary, StudentExtProfile } from "../backend.d";
 import PinGate, { ChangePinDialog } from "../components/PinGate";
 import { useAppContext } from "../context/AppContext";
 import { getTodaysTip } from "../data/wellnessTips";
@@ -373,18 +374,33 @@ function getLastActiveLabel(): string {
 
 // ─── Daily Habits Section ───────────────────────────────────────────────────────────────────────────
 
-function DailyHabitsSection() {
+function DailyHabitsSection({
+  backendHabit,
+}: { backendHabit?: import("../backend.d").HabitSummary | null }) {
+  const localData = useGuardianHabitData();
   const {
-    sleepStreak,
-    exerciseStreak,
-    outdoorStreak,
-    totalXP,
+    sleepStreak: localSleep,
+    exerciseStreak: localExercise,
+    outdoorStreak: localOutdoor,
+    totalXP: localXP,
     levelLabel,
     xpProgress,
     xpToNextLevel,
     weeklyActivityData,
     unlockedBadges,
-  } = useGuardianHabitData();
+  } = localData;
+
+  // Use backend data if available, otherwise fall back to local
+  const sleepStreak = backendHabit
+    ? Number(backendHabit.sleepStreak)
+    : localSleep;
+  const exerciseStreak = backendHabit
+    ? Number(backendHabit.exerciseStreak)
+    : localExercise;
+  const outdoorStreak = backendHabit
+    ? Number(backendHabit.outdoorStreak)
+    : localOutdoor;
+  const totalXP = backendHabit ? Number(backendHabit.xp) : localXP;
 
   const streaks = [
     {
@@ -559,8 +575,19 @@ function DailyHabitsSection() {
 
 // ─── Weekly Wellness Summary ────────────────────────────────────────────────────────────────────────
 
-function WeeklyWellnessSummary() {
-  const { sleepStreak, exerciseStreak, outdoorStreak } = useGuardianHabitData();
+function WeeklyWellnessSummary({
+  backendHabit,
+}: { backendHabit?: import("../backend.d").HabitSummary | null }) {
+  const localData = useGuardianHabitData();
+  const sleepStreak = backendHabit
+    ? Number(backendHabit.sleepStreak)
+    : localData.sleepStreak;
+  const exerciseStreak = backendHabit
+    ? Number(backendHabit.exerciseStreak)
+    : localData.exerciseStreak;
+  const outdoorStreak = backendHabit
+    ? Number(backendHabit.outdoorStreak)
+    : localData.outdoorStreak;
   const STORAGE_KEY = "lumi_arc_daily_logs";
 
   const { sleepDays, exerciseDays } = useMemo(() => {
@@ -641,12 +668,80 @@ export default function GuardianDashboard() {
   useEffect(() => {
     setUserRole("parent");
   }, [setUserRole]);
-  const [studentIdInput, setStudentIdInput] = useState("");
+
+  // Auto-loaded linked student data
   const [studentPrincipal, setStudentPrincipal] = useState<Principal | null>(
     null,
   );
+  const [linkedStudentProfile, setLinkedStudentProfile] =
+    useState<StudentExtProfile | null>(null);
+  const [linkedHabitData, setLinkedHabitData] = useState<HabitSummary | null>(
+    null,
+  );
+  const [backendMoodData, setBackendMoodData] = useState<Array<{
+    day: string;
+    mood: number;
+  }> | null>(null);
+  const [autoLoadDone, setAutoLoadDone] = useState(false);
+  const [autoLoadLoading, setAutoLoadLoading] = useState(false);
+
+  // Manual fallback inputs (shown only if no linked student found)
+  const [studentIdInput, setStudentIdInput] = useState("");
   const [inputError, setInputError] = useState("");
   const [moodAlertDismissed, setMoodAlertDismissed] = useState(false);
+
+  const { identity: guardianIdentity2 } = useInternetIdentity();
+
+  // Auto-load linked student on mount
+  useEffect(() => {
+    if (!actor || !guardianIdentity2 || autoLoadDone) return;
+    setAutoLoadLoading(true);
+    (async () => {
+      try {
+        const linkedOpt = await (actor as any).getParentLinkedStudent();
+        if (linkedOpt.__kind__ === "Some") {
+          const sp = linkedOpt.value;
+          setStudentPrincipal(sp);
+          // Load profile, habits, mood in parallel
+          const [profileOpt, habitOpt, moodStr] = await Promise.all([
+            (actor as any)
+              .getStudentExtendedProfile(sp)
+              .catch(() => ({ __kind__: "None" as const })),
+            (actor as any)
+              .getHabitSummary(sp)
+              .catch(() => ({ __kind__: "None" as const })),
+            (actor as any).getMoodHistory(sp).catch(() => ""),
+          ]);
+          if (profileOpt.__kind__ === "Some")
+            setLinkedStudentProfile(profileOpt.value);
+          if (habitOpt.__kind__ === "Some") setLinkedHabitData(habitOpt.value);
+          if (moodStr) {
+            const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+            const moodMap: Record<string, number> = {};
+            for (const entry of moodStr.split(";")) {
+              const [date, mood] = entry.split("=");
+              if (date && mood)
+                moodMap[date] = MOOD_STRING_TO_NUMBER[mood] ?? 0;
+            }
+            const parsed: Array<{ day: string; mood: number }> = [];
+            const today = new Date();
+            for (let i = 6; i >= 0; i--) {
+              const d = new Date(today);
+              d.setDate(today.getDate() - i);
+              const key = d.toISOString().slice(0, 10);
+              parsed.push({
+                day: DAY_NAMES[d.getDay()],
+                mood: moodMap[key] ?? 0,
+              });
+            }
+            setBackendMoodData(parsed);
+          }
+        }
+      } catch {}
+      setAutoLoadDone(true);
+      setAutoLoadLoading(false);
+    })();
+  }, [actor, guardianIdentity2, autoLoadDone]);
 
   const {
     data: assessments,
@@ -681,7 +776,8 @@ export default function GuardianDashboard() {
 
   const latest = assessments?.[assessments.length - 1];
 
-  const weeklyMoodData = getRealWeeklyMoodData();
+  // Mood data: prefer backend (linked student's real data), fallback to localStorage
+  const weeklyMoodData = backendMoodData ?? getRealWeeklyMoodData();
 
   // Mood alert: 2+ consecutive sad days
   const moodAlertActive = useMemo(() => {
@@ -708,7 +804,7 @@ export default function GuardianDashboard() {
   // Last active
   const lastActiveLabel = getLastActiveLabel();
 
-  const { identity: guardianIdentity } = useInternetIdentity();
+  const guardianIdentity = guardianIdentity2;
   const { profile: guardianProfile } = useProfile(guardianIdentity);
   useEffect(() => {
     if (!actor || !guardianIdentity) return;
@@ -902,51 +998,150 @@ export default function GuardianDashboard() {
           </p>
         </motion.div>
 
-        {/* Search */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.12 }}
-          className="glass-card rounded-2xl p-6 shadow-sm mb-8"
-        >
-          <Label className="text-sm font-medium mb-2 block">
-            Student Principal ID
-          </Label>
-          <div className="flex gap-3">
-            <Input
-              value={studentIdInput}
-              onChange={(e) => {
-                setStudentIdInput(e.target.value);
-                if (inputError) setInputError("");
-              }}
-              placeholder="e.g. abc12-def34-..."
-              className="h-11 rounded-xl flex-1"
-              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-              data-ocid="guardian.search.input"
-            />
-            <Button
-              onClick={handleSearch}
-              disabled={!actor || isLoading}
-              className="h-11 px-5 rounded-xl bg-primary text-primary-foreground shadow-teal"
-              data-ocid="guardian.search.button"
-            >
-              {isLoading ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Search className="w-4 h-4" />
-              )}
-              <span className="ml-2">Search</span>
-            </Button>
+        {/* Auto-loading indicator */}
+        {autoLoadLoading && (
+          <div
+            className="flex items-center gap-3 mb-6 text-muted-foreground text-sm"
+            data-ocid="guardian.loading_state"
+          >
+            <Loader2 className="w-4 h-4 animate-spin text-primary" />
+            Loading your child's data...
           </div>
-          {inputError && (
-            <p
-              className="text-destructive text-xs mt-2"
-              data-ocid="guardian.search.error_state"
-            >
-              {inputError}
+        )}
+
+        {/* Linked student info banner OR manual search */}
+        {autoLoadDone && studentPrincipal && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="glass-card rounded-2xl p-5 shadow-sm mb-8 border border-teal-200/60 bg-teal-50/40"
+            data-ocid="guardian.student_linked.card"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-full bg-teal-100 flex items-center justify-center flex-shrink-0">
+                <User className="w-4 h-4 text-teal-700" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-teal-700 uppercase tracking-wide mb-0.5">
+                  Viewing
+                </p>
+                <p className="font-semibold text-foreground text-base">
+                  {linkedStudentProfile?.name || "Your Child"}
+                </p>
+                {linkedStudentProfile?.fieldOfStudy && (
+                  <p className="text-xs text-muted-foreground">
+                    {linkedStudentProfile.fieldOfStudy}
+                  </p>
+                )}
+                {linkedStudentProfile?.wellnessGoal && (
+                  <p className="text-xs text-muted-foreground italic mt-0.5">
+                    🎯 {linkedStudentProfile.wellnessGoal}
+                  </p>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {autoLoadDone && !studentPrincipal && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.12 }}
+            className="glass-card rounded-2xl p-6 shadow-sm mb-8"
+          >
+            <p className="text-sm text-muted-foreground mb-4">
+              No student linked automatically. You can enter a student Principal
+              ID manually, or ask your child to link you from their portal.
             </p>
-          )}
-        </motion.div>
+            <Label className="text-sm font-medium mb-2 block">
+              Student Principal ID
+            </Label>
+            <div className="flex gap-3">
+              <Input
+                value={studentIdInput}
+                onChange={(e) => {
+                  setStudentIdInput(e.target.value);
+                  if (inputError) setInputError("");
+                }}
+                placeholder="e.g. abc12-def34-..."
+                className="h-11 rounded-xl flex-1"
+                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                data-ocid="guardian.search.input"
+              />
+              <Button
+                onClick={handleSearch}
+                disabled={!actor || isLoading}
+                className="h-11 px-5 rounded-xl bg-primary text-primary-foreground shadow-teal"
+                data-ocid="guardian.search.button"
+              >
+                {isLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Search className="w-4 h-4" />
+                )}
+                <span className="ml-2">Search</span>
+              </Button>
+            </div>
+            {inputError && (
+              <p
+                className="text-destructive text-xs mt-2"
+                data-ocid="guardian.search.error_state"
+              >
+                {inputError}
+              </p>
+            )}
+          </motion.div>
+        )}
+
+        {/* Not logged in via II: show manual search always */}
+        {!guardianIdentity2 && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.12 }}
+            className="glass-card rounded-2xl p-6 shadow-sm mb-8"
+          >
+            <Label className="text-sm font-medium mb-2 block">
+              Student Principal ID
+            </Label>
+            <div className="flex gap-3">
+              <Input
+                value={studentIdInput}
+                onChange={(e) => {
+                  setStudentIdInput(e.target.value);
+                  if (inputError) setInputError("");
+                }}
+                placeholder="e.g. abc12-def34-..."
+                className="h-11 rounded-xl flex-1"
+                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                data-ocid="guardian.search.input"
+              />
+              <Button
+                onClick={handleSearch}
+                disabled={!actor || isLoading}
+                className="h-11 px-5 rounded-xl bg-primary text-primary-foreground shadow-teal"
+                data-ocid="guardian.search.button"
+              >
+                {isLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Search className="w-4 h-4" />
+                )}
+                <span className="ml-2">Search</span>
+              </Button>
+            </div>
+            {inputError && (
+              <p
+                className="text-destructive text-xs mt-2"
+                data-ocid="guardian.search.error_state"
+              >
+                {inputError}
+              </p>
+            )}
+          </motion.div>
+        )}
 
         {/* Results */}
         {isLoading && (
@@ -992,7 +1187,7 @@ export default function GuardianDashboard() {
             ) : (
               <div className="space-y-6">
                 {/* Weekly Wellness Summary */}
-                <WeeklyWellnessSummary />
+                <WeeklyWellnessSummary backendHabit={linkedHabitData} />
 
                 {/* Summary cards */}
                 {latest && (
@@ -1268,7 +1463,7 @@ export default function GuardianDashboard() {
                 </motion.div>
 
                 {/* Daily Habits Section */}
-                <DailyHabitsSection />
+                <DailyHabitsSection backendHabit={linkedHabitData} />
 
                 {/* History table */}
                 <motion.div
@@ -1347,18 +1542,18 @@ export default function GuardianDashboard() {
           </div>
         )}
 
-        {!studentPrincipal && !isLoading && (
+        {!studentPrincipal && !isLoading && autoLoadDone && (
           <div
             className="text-center py-16 text-muted-foreground"
             data-ocid="guardian.empty_state"
           >
             <Search className="w-10 h-10 mx-auto mb-3 opacity-40" />
             <p className="font-display text-lg font-semibold mb-1 text-foreground">
-              Enter a student&apos;s ID to begin
+              No student linked yet
             </p>
             <p className="text-sm">
-              Students can share their Principal ID from the &ldquo;Link
-              Guardian&rdquo; page.
+              Ask your child to link you from their &ldquo;Link Guardian&rdquo;
+              page, or enter their Principal ID above.
             </p>
           </div>
         )}

@@ -27,7 +27,7 @@ import { useAppContext } from "../context/AppContext";
 import { useActor } from "../hooks/useActor";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
 import { generateTeacherInviteLink } from "../hooks/useProfile";
-import { useGetTeacherStudents } from "../hooks/useQueries";
+import { useGetTeacherStudentsWithProfiles } from "../hooks/useQueries";
 import {
   type TeacherStudentEntry,
   useTeacherStudents,
@@ -302,7 +302,7 @@ function AddStudentForm({ onAdd, onCancel }: AddStudentFormProps) {
 // ── My Students Section ───────────────────────────────────────────────────────
 
 function MyStudentsSection() {
-  const { data: backendStudents = [] } = useGetTeacherStudents();
+  const { data: backendStudents = [] } = useGetTeacherStudentsWithProfiles();
   const { students, addStudent, removeStudent } = useTeacherStudents();
   const [showForm, setShowForm] = useState(false);
 
@@ -347,31 +347,88 @@ function MyStudentsSection() {
           <p className="text-xs font-semibold text-teal-700 mb-2 uppercase tracking-wide">
             Linked via Invite
           </p>
-          <div className="space-y-2">
-            {backendStudents.map(([principal, name, email], idx) => (
-              <div
-                key={principal.toString()}
-                data-ocid={`teacher.backend_student.item.${idx + 1}`}
-                className="bg-teal-50/70 border border-teal-200/60 rounded-xl px-4 py-3 flex items-center gap-3"
-              >
-                <div className="w-7 h-7 rounded-full bg-teal-100 flex items-center justify-center flex-shrink-0">
-                  <User className="w-3.5 h-3.5 text-teal-700" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="font-semibold text-sm text-foreground truncate">
-                    {name || "Student"}
-                  </p>
-                  {email && (
-                    <p className="text-xs text-muted-foreground truncate">
-                      {email}
+          <div className="space-y-3">
+            {backendStudents.map(
+              ([principal, name, email, profileOpt, habitOpt], idx) => {
+                const profile =
+                  profileOpt.__kind__ === "Some" ? profileOpt.value : null;
+                const habit =
+                  habitOpt.__kind__ === "Some" ? habitOpt.value : null;
+                const displayName = profile?.name || name || "Student";
+                const displayEmail = profile?.email || email;
+                const shortId = `${principal.toString().slice(0, 16)}…`;
+                return (
+                  <div
+                    key={principal.toString()}
+                    data-ocid={`teacher.backend_student.item.${idx + 1}`}
+                    className="bg-teal-50/70 border border-teal-200/60 rounded-2xl px-4 py-4 space-y-2"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center flex-shrink-0">
+                        <User className="w-4 h-4 text-teal-700" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold text-sm text-foreground">
+                          {displayName}
+                        </p>
+                        {displayEmail && (
+                          <p className="text-xs text-muted-foreground">
+                            {displayEmail}
+                          </p>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(principal.toString());
+                          toast.success("Principal ID copied!");
+                        }}
+                        className="text-teal-500 hover:text-teal-700 transition-colors"
+                        title="Copy Principal ID"
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    <p className="text-xs text-muted-foreground font-mono pl-11">
+                      {shortId}
                     </p>
-                  )}
-                  <p className="text-xs text-muted-foreground font-mono truncate">
-                    {principal.toString()}
-                  </p>
-                </div>
-              </div>
-            ))}
+                    {profile && (
+                      <div className="pl-11 flex flex-wrap gap-2">
+                        {profile.fieldOfStudy && (
+                          <span className="text-xs bg-teal-100 text-teal-700 rounded-full px-2 py-0.5">
+                            📚 {profile.fieldOfStudy}
+                          </span>
+                        )}
+                        {profile.wellnessGoal && (
+                          <span className="text-xs bg-purple-100 text-purple-700 rounded-full px-2 py-0.5 max-w-[200px] truncate">
+                            🎯 {profile.wellnessGoal}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    {habit && (
+                      <div className="pl-11 flex gap-3 flex-wrap">
+                        <span className="text-xs text-muted-foreground">
+                          🌙 Sleep:{" "}
+                          <strong>{Number(habit.sleepStreak)}d</strong>
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          💪 Exercise:{" "}
+                          <strong>{Number(habit.exerciseStreak)}d</strong>
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          🌿 Outdoor:{" "}
+                          <strong>{Number(habit.outdoorStreak)}d</strong>
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          ✨ XP: <strong>{Number(habit.xp)}</strong>
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                );
+              },
+            )}
           </div>
         </div>
       )}

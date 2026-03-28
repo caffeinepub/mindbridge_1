@@ -113,6 +113,28 @@ actor {
     };
   };
 
+  // Extended student profile (name, age, field of study, wellness goal)
+  module StudentExtProfile {
+    public type Type = {
+      name : Text;
+      email : Text;
+      age : Text;
+      fieldOfStudy : Text;
+      wellnessGoal : Text;
+    };
+  };
+
+  // Habit summary (streaks + XP)
+  module HabitSummary {
+    public type Type = {
+      sleepStreak : Nat;
+      exerciseStreak : Nat;
+      outdoorStreak : Nat;
+      xp : Nat;
+      lastUpdated : Time.Time;
+    };
+  };
+
   public type Severity = Severity.Type;
   public type ResourceCategory = ResourceCategory.Type;
   public type ActivityType = ActivityType.Type;
@@ -131,6 +153,12 @@ actor {
   let activityResponses = Map.empty<Nat, ActivityResponse.Type>();
   let studentLinks = Map.empty<StudentId, (TeacherId, ParentId)>();
 
+  // New: extended student profiles, habit summaries, mood data
+  let studentExtProfiles = Map.empty<StudentId, StudentExtProfile.Type>();
+  let habitSummaries = Map.empty<StudentId, HabitSummary.Type>();
+  // Mood data: StudentId -> encoded string "YYYY-MM-DD=moodValue;..."
+  let studentMoodData = Map.empty<StudentId, Text>();
+
   public type UserRole = UserRole.Type;
   public type DASS21Assessment = DASS21Assessment.Type;
   public type SocialIsolation = SocialIsolation.Type;
@@ -138,6 +166,8 @@ actor {
   public type LanguageActivity = LanguageActivity.Type;
   public type ActivityResponse = ActivityResponse.Type;
   public type UserProfile = UserProfile.Type;
+  public type StudentExtProfile = StudentExtProfile.Type;
+  public type HabitSummary = HabitSummary.Type;
 
   include MixinAuthorization(accessControlState);
 
@@ -225,6 +255,212 @@ actor {
     };
     result.toArray();
   };
+
+  // ─── NEW: Extended profile, mood, habit functions ─────────────────────────
+
+  // Save extended student profile (student calls after completing profile wizard)
+  public shared ({ caller }) func saveStudentExtendedProfile(
+    name : Text,
+    email : Text,
+    age : Text,
+    fieldOfStudy : Text,
+    wellnessGoal : Text
+  ) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized");
+    };
+    studentExtProfiles.add(caller, { name; email; age; fieldOfStudy; wellnessGoal });
+    // Also ensure basic profile is registered
+    switch (studentProfiles.get(caller)) {
+      case null {
+        studentProfiles.add(caller, { name; email; role = #student });
+      };
+      case (?_) {};
+    };
+  };
+
+  // Get extended student profile (teacher/parent linked to student, or student themselves)
+  public query ({ caller }) func getStudentExtendedProfile(studentId : StudentId) : async ?StudentExtProfile {
+    if (caller != studentId) {
+      var authorized = false;
+      switch (teacherProfiles.get(caller)) {
+        case (?_) {
+          switch (studentLinks.get(studentId)) {
+            case (?(teacherId, _)) {
+              if (teacherId == caller) { authorized := true };
+            };
+            case null {};
+          };
+        };
+        case null {};
+      };
+      if (not authorized) {
+        switch (parentProfiles.get(caller)) {
+          case (?_) {
+            switch (studentLinks.get(studentId)) {
+              case (?(_, parentId)) {
+                if (parentId == caller) { authorized := true };
+              };
+              case null {};
+            };
+          };
+          case null {};
+        };
+      };
+      if (not authorized) {
+        Runtime.trap("Unauthorized: Only linked teachers/parents can view student profile");
+      };
+    };
+    studentExtProfiles.get(studentId);
+  };
+
+  // Save mood entry (student calls when checking in mood)
+  // Appends "YYYY-MM-DD=moodValue" to the student's mood data string
+  public shared ({ caller }) func saveMoodEntry(date : Text, mood : Text) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized");
+    };
+    let newPart = date # "=" # mood;
+    let existing = switch (studentMoodData.get(caller)) {
+      case null newPart;
+      case (?s) s # ";" # newPart;
+    };
+    studentMoodData.add(caller, existing);
+  };
+
+  // Get mood history for a student (returns encoded string "date=mood;date=mood;...")
+  // Teacher or parent linked to the student can call this
+  public query ({ caller }) func getMoodHistory(studentId : StudentId) : async Text {
+    if (caller != studentId) {
+      var authorized = false;
+      switch (teacherProfiles.get(caller)) {
+        case (?_) {
+          switch (studentLinks.get(studentId)) {
+            case (?(teacherId, _)) {
+              if (teacherId == caller) { authorized := true };
+            };
+            case null {};
+          };
+        };
+        case null {};
+      };
+      if (not authorized) {
+        switch (parentProfiles.get(caller)) {
+          case (?_) {
+            switch (studentLinks.get(studentId)) {
+              case (?(_, parentId)) {
+                if (parentId == caller) { authorized := true };
+              };
+              case null {};
+            };
+          };
+          case null {};
+        };
+      };
+      if (not authorized) {
+        Runtime.trap("Unauthorized: Only linked teachers/parents can view mood history");
+      };
+    };
+    switch (studentMoodData.get(studentId)) {
+      case null "";
+      case (?s) s;
+    };
+  };
+
+  // Save habit summary (student calls when updating trackers)
+  public shared ({ caller }) func saveHabitSummary(
+    sleepStreak : Nat,
+    exerciseStreak : Nat,
+    outdoorStreak : Nat,
+    xp : Nat
+  ) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized");
+    };
+    habitSummaries.add(caller, {
+      sleepStreak;
+      exerciseStreak;
+      outdoorStreak;
+      xp;
+      lastUpdated = Time.now();
+    });
+  };
+
+  // Get habit summary for a student (teacher or parent linked to student)
+  public query ({ caller }) func getHabitSummary(studentId : StudentId) : async ?HabitSummary {
+    if (caller != studentId) {
+      var authorized = false;
+      switch (teacherProfiles.get(caller)) {
+        case (?_) {
+          switch (studentLinks.get(studentId)) {
+            case (?(teacherId, _)) {
+              if (teacherId == caller) { authorized := true };
+            };
+            case null {};
+          };
+        };
+        case null {};
+      };
+      if (not authorized) {
+        switch (parentProfiles.get(caller)) {
+          case (?_) {
+            switch (studentLinks.get(studentId)) {
+              case (?(_, parentId)) {
+                if (parentId == caller) { authorized := true };
+              };
+              case null {};
+            };
+          };
+          case null {};
+        };
+      };
+      if (not authorized) {
+        Runtime.trap("Unauthorized: Only linked teachers/parents can view habit data");
+      };
+    };
+    habitSummaries.get(studentId);
+  };
+
+  // Get the student linked to the calling parent
+  public query ({ caller }) func getParentLinkedStudent() : async ?Principal {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized");
+    };
+    for ((studentId, (_, parentId)) in studentLinks.entries()) {
+      if (parentId == caller) {
+        return ?studentId;
+      };
+    };
+    null;
+  };
+
+  // Get teacher's students with extended profiles and habit data
+  public query ({ caller }) func getTeacherStudentsWithProfiles() : async [(Principal, Text, Text, ?StudentExtProfile, ?HabitSummary)] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized");
+    };
+    let result = List.empty<(Principal, Text, Text, ?StudentExtProfile, ?HabitSummary)>();
+    for ((studentId, (teacherId, _)) in studentLinks.entries()) {
+      if (teacherId == caller) {
+        // Prefer extended profile name/email, fall back to basic profile
+        let (finalName, finalEmail) = switch (studentExtProfiles.get(studentId)) {
+          case (?ep) (ep.name, ep.email);
+          case null {
+            switch (studentProfiles.get(studentId)) {
+              case (?p) (p.name, p.email);
+              case null ("", "");
+            };
+          };
+        };
+        let extProfile = studentExtProfiles.get(studentId);
+        let habitData = habitSummaries.get(studentId);
+        result.add((studentId, finalName, finalEmail, extProfile, habitData));
+      };
+    };
+    result.toArray();
+  };
+
+  // ─── Existing assessment functions ───────────────────────────────────────────
 
   public shared ({ caller }) func createDASS21Assessment(
     answers : [Nat],

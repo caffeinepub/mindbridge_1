@@ -1,6 +1,8 @@
 import { RefreshCw } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
+import { useActor } from "../hooks/useActor";
+import { useInternetIdentity } from "../hooks/useInternetIdentity";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────────────────
 
@@ -697,6 +699,8 @@ export default function MoodCheckIn() {
   const [overlayMood, setOverlayMood] = useState<Mood | null>(null);
   const [checkedInToday, setCheckedInToday] = useState<MoodKey | null>(null);
   const [showChangePrompt, setShowChangePrompt] = useState(false);
+  const { actor } = useActor();
+  const { identity } = useInternetIdentity();
 
   useEffect(() => {
     const stored = localStorage.getItem(todayKey());
@@ -718,6 +722,11 @@ export default function MoodCheckIn() {
     setCheckedInToday(selected);
     setShowChangePrompt(false);
     setOverlayMood(moodData);
+    // Sync to backend if logged in via Internet Identity
+    if (actor && identity) {
+      const dateStr = new Date().toISOString().slice(0, 10);
+      (actor as any).saveMoodEntry(dateStr, selected).catch(() => {});
+    }
   }
 
   function handleDismissOverlay() {

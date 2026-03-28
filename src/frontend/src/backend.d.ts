@@ -39,6 +39,20 @@ export interface WellnessResource {
     description: string;
     category: Type__1;
 }
+export interface StudentExtProfile {
+    name: string;
+    email: string;
+    age: string;
+    fieldOfStudy: string;
+    wellnessGoal: string;
+}
+export interface HabitSummary {
+    sleepStreak: bigint;
+    exerciseStreak: bigint;
+    outdoorStreak: bigint;
+    xp: bigint;
+    lastUpdated: Time;
+}
 export enum ActivityType {
     affirmation = "affirmation",
     word_association = "word_association",
@@ -62,6 +76,8 @@ export enum UserRole {
     user = "user",
     guest = "guest"
 }
+export type ResourceCategory = Type__1;
+export type Type__2 = ActivityType;
 export interface backendInterface {
     addLanguageActivity(title: string, activityType: ActivityType, prompt: string, difficultyLevel: bigint): Promise<bigint>;
     addResource(title: string, category: ResourceCategory, description: string, url: string, tags: Array<string>): Promise<bigint>;
@@ -78,4 +94,13 @@ export interface backendInterface {
     isCallerAdmin(): Promise<boolean>;
     linkStudentToTeacherAndParent(teacherId: TeacherId, parentId: ParentId): Promise<void>;
     submitActivityResponse(activityId: bigint, response: string): Promise<bigint>;
+    // New: extended data functions
+    saveStudentExtendedProfile(name: string, email: string, age: string, fieldOfStudy: string, wellnessGoal: string): Promise<void>;
+    getStudentExtendedProfile(studentId: StudentId): Promise<Option<StudentExtProfile>>;
+    saveMoodEntry(date: string, mood: string): Promise<void>;
+    getMoodHistory(studentId: StudentId): Promise<string>;
+    saveHabitSummary(sleepStreak: bigint, exerciseStreak: bigint, outdoorStreak: bigint, xp: bigint): Promise<void>;
+    getHabitSummary(studentId: StudentId): Promise<Option<HabitSummary>>;
+    getParentLinkedStudent(): Promise<Option<Principal>>;
+    getTeacherStudentsWithProfiles(): Promise<Array<[Principal, string, string, Option<StudentExtProfile>, Option<HabitSummary>]>>;
 }

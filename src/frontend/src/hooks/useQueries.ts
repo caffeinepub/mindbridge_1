@@ -149,3 +149,26 @@ export function useGetTeacherStudents() {
     enabled: !!actor && !isFetching,
   });
 }
+
+// Get teacher students with extended profiles and habit data
+export function useGetTeacherStudentsWithProfiles() {
+  const { actor, isFetching } = useActor();
+  return useQuery<
+    Array<
+      [
+        import("@icp-sdk/core/principal").Principal,
+        string,
+        string,
+        import("../backend.d").Option<import("../backend.d").StudentExtProfile>,
+        import("../backend.d").Option<import("../backend.d").HabitSummary>,
+      ]
+    >
+  >({
+    queryKey: ["teacherStudentsWithProfiles"],
+    queryFn: async () => {
+      if (!actor) return [];
+      return (actor as any).getTeacherStudentsWithProfiles();
+    },
+    enabled: !!actor && !isFetching,
+  });
+}

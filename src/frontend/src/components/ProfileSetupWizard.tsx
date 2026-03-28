@@ -6,6 +6,7 @@ import type { Identity } from "@icp-sdk/core/agent";
 import { GraduationCap, Heart, Users } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
+import { useActor } from "../hooks/useActor";
 import {
   type LumiProfile,
   type UserRole,
@@ -36,6 +37,7 @@ const fadeSlide = {
 };
 
 export default function ProfileSetupWizard({ identity, onComplete }: Props) {
+  const { actor } = useActor();
   const [step, setStep] = useState(1);
   const [role, setRole] = useState<UserRole | null>(null);
   const [name, setName] = useState("");
@@ -118,6 +120,18 @@ export default function ProfileSetupWizard({ identity, onComplete }: Props) {
     }
 
     onComplete(profile);
+    // Sync extended profile to backend if student
+    if (role === "student" && actor) {
+      (actor as any)
+        .saveStudentExtendedProfile(
+          (profile.name || "").trim(),
+          (profile.email || "").trim(),
+          "",
+          "",
+          "",
+        )
+        .catch(() => {});
+    }
   };
 
   const handleGuardianLink = () => {

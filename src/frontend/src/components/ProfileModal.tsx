@@ -4,6 +4,8 @@ import { cn } from "@/lib/utils";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { useAppContext } from "../context/AppContext";
+import { useActor } from "../hooks/useActor";
+import { useInternetIdentity } from "../hooks/useInternetIdentity";
 import { useUserProfile } from "../hooks/useUserProfile";
 
 const AVATARS = [
@@ -55,6 +57,8 @@ interface Props {
 export default function ProfileModal({ open, onClose }: Props) {
   const { profile, saveProfile } = useUserProfile();
   const { userRole } = useAppContext();
+  const { actor } = useActor();
+  const { identity } = useInternetIdentity();
   const [name, setName] = useState("");
   const [age, setAge] = useState("");
   const [email, setEmail] = useState("");
@@ -77,6 +81,18 @@ export default function ProfileModal({ open, onClose }: Props) {
 
   function handleSave() {
     saveProfile({ name, age, email, fieldOfStudy, goal, avatar });
+    // Sync to backend if student and logged in via II
+    if (actor && identity && userRole === "student") {
+      (actor as any)
+        .saveStudentExtendedProfile(
+          name.trim(),
+          email.trim(),
+          age.trim(),
+          fieldOfStudy.trim(),
+          goal.trim(),
+        )
+        .catch(() => {});
+    }
     setSaved(true);
     setTimeout(() => {
       setSaved(false);

@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
+import { useActor } from "./useActor";
+import { useInternetIdentity } from "./useInternetIdentity";
 
 export interface ActivityEntry {
   name: string;
@@ -225,6 +227,69 @@ export function useDailyTrackers() {
   const today = todayDate();
   const todayLog: DayLog = logs[today] ?? { date: today };
 
+  const { actor } = useActor();
+  const { identity } = useInternetIdentity();
+
+  const syncHabitSummary = useCallback(
+    (logs: Record<string, DayLog>) => {
+      if (!actor || !identity) return;
+      const streak = computeStreak(logs);
+      const xp = computeXP(logs);
+      // Compute per-category streaks
+      const now = new Date();
+      let sleepStreak = 0;
+      let exerciseStreak = 0;
+      let outdoorStreak = 0;
+      for (let i = 0; i < 365; i++) {
+        const d = new Date(now);
+        d.setDate(d.getDate() - i);
+        const key = d.toISOString().slice(0, 10);
+        const log = logs[key];
+        if (log?.sleep) sleepStreak++;
+        else if (i < 365) {
+          if (sleepStreak === 0 && i > 0) {
+          }
+        }
+      }
+      for (let i = 0; i < 365; i++) {
+        const d = new Date(now);
+        d.setDate(d.getDate() - i);
+        const key = d.toISOString().slice(0, 10);
+        const log = logs[key];
+        if (log?.exercise) exerciseStreak++;
+        else break;
+      }
+      for (let i = 0; i < 365; i++) {
+        const d = new Date(now);
+        d.setDate(d.getDate() - i);
+        const key = d.toISOString().slice(0, 10);
+        const log = logs[key];
+        if (log?.outdoor) outdoorStreak++;
+        else break;
+      }
+      // sleep streak (consecutive)
+      sleepStreak = 0;
+      for (let i = 0; i < 365; i++) {
+        const d = new Date(now);
+        d.setDate(d.getDate() - i);
+        const key = d.toISOString().slice(0, 10);
+        const log = logs[key];
+        if (log?.sleep) sleepStreak++;
+        else break;
+      }
+      (actor as any)
+        .saveHabitSummary(
+          BigInt(sleepStreak),
+          BigInt(exerciseStreak),
+          BigInt(outdoorStreak),
+          BigInt(xp),
+        )
+        .catch(() => {});
+      void streak; // suppress unused warning
+    },
+    [actor, identity],
+  );
+
   const updateLog = useCallback(
     (patch: Partial<DayLog>) => {
       setLogs((prev) => {
@@ -233,10 +298,11 @@ export function useDailyTrackers() {
           [today]: { ...prev[today], date: today, ...patch },
         };
         saveLogs(updated);
+        syncHabitSummary(updated);
         return updated;
       });
     },
-    [today],
+    [today, syncHabitSummary],
   );
 
   const saveSleepLog = useCallback(
