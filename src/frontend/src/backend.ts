@@ -374,6 +374,20 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async getTeacherStudents(): Promise<Array<[import("@icp-sdk/core/principal").Principal, string, string]>> {
+        if (this.processError) {
+            try {
+                const result = await (this.actor as any).getTeacherStudents();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await (this.actor as any).getTeacherStudents();
+            return result;
+        }
+    }
 }
 function from_candid_DASS21Assessment_n20(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _DASS21Assessment): DASS21Assessment {
     return from_candid_record_n21(_uploadFile, _downloadFile, value);

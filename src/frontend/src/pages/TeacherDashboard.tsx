@@ -24,7 +24,8 @@ import { Copy, Link2, Mail, User } from "lucide-react";
 import { toast } from "sonner";
 import PinGate, { ChangePinDialog } from "../components/PinGate";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
-import { useTeacherCode } from "../hooks/useTeacherCode";
+import { generateTeacherInviteLink } from "../hooks/useProfile";
+import { useGetTeacherStudents } from "../hooks/useQueries";
 import {
   type TeacherStudentEntry,
   useTeacherStudents,
@@ -299,6 +300,7 @@ function AddStudentForm({ onAdd, onCancel }: AddStudentFormProps) {
 // ── My Students Section ───────────────────────────────────────────────────────
 
 function MyStudentsSection() {
+  const { data: backendStudents = [] } = useGetTeacherStudents();
   const { students, addStudent, removeStudent } = useTeacherStudents();
   const [showForm, setShowForm] = useState(false);
 
@@ -337,6 +339,40 @@ function MyStudentsSection() {
         )}
       </AnimatePresence>
 
+      {/* Backend-linked students (via Principal ID invite link) */}
+      {backendStudents.length > 0 && (
+        <div className="mb-4">
+          <p className="text-xs font-semibold text-teal-700 mb-2 uppercase tracking-wide">
+            Linked via Invite
+          </p>
+          <div className="space-y-2">
+            {backendStudents.map(([principal, name, email], idx) => (
+              <div
+                key={principal.toString()}
+                data-ocid={`teacher.backend_student.item.${idx + 1}`}
+                className="bg-teal-50/70 border border-teal-200/60 rounded-xl px-4 py-3 flex items-center gap-3"
+              >
+                <div className="w-7 h-7 rounded-full bg-teal-100 flex items-center justify-center flex-shrink-0">
+                  <User className="w-3.5 h-3.5 text-teal-700" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold text-sm text-foreground truncate">
+                    {name || "Student"}
+                  </p>
+                  {email && (
+                    <p className="text-xs text-muted-foreground truncate">
+                      {email}
+                    </p>
+                  )}
+                  <p className="text-xs text-muted-foreground font-mono truncate">
+                    {principal.toString()}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       {students.length === 0 ? (
         <motion.div
           initial={{ opacity: 0 }}
@@ -847,7 +883,9 @@ export default function TeacherDashboard() {
   );
   const { identity } = useInternetIdentity();
   const { profile: userProfile } = useUserProfile();
-  const { inviteLink } = useTeacherCode();
+  const inviteLink = identity
+    ? generateTeacherInviteLink(identity)
+    : `${window.location.origin}/?teacherInvite=`;
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(inviteLink).then(() => {

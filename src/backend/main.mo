@@ -204,6 +204,28 @@ actor {
     };
   };
 
+  // Get all students linked to the calling teacher.
+  // Returns array of (studentPrincipal, name, email).
+  public query ({ caller }) func getTeacherStudents() : async [(Principal, Text, Text)] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized");
+    };
+    let result = List.empty<(Principal, Text, Text)>();
+    for ((studentId, (teacherId, _)) in studentLinks.entries()) {
+      if (teacherId == caller) {
+        switch (studentProfiles.get(studentId)) {
+          case (?profile) {
+            result.add((studentId, profile.name, profile.email));
+          };
+          case null {
+            result.add((studentId, "", ""));
+          };
+        };
+      };
+    };
+    result.toArray();
+  };
+
   public shared ({ caller }) func createDASS21Assessment(
     answers : [Nat],
     socialIsolationAnswers : [Nat]

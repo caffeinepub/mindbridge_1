@@ -134,3 +134,18 @@ export function useLinkGuardian() {
     },
   });
 }
+
+// Get all students linked to calling teacher
+export function useGetTeacherStudents() {
+  const { actor, isFetching } = useActor();
+  return useQuery<
+    Array<[import("@icp-sdk/core/principal").Principal, string, string]>
+  >({
+    queryKey: ["teacherStudents"],
+    queryFn: async () => {
+      if (!actor) return [];
+      return (actor as any).getTeacherStudents();
+    },
+    enabled: !!actor && !isFetching,
+  });
+}

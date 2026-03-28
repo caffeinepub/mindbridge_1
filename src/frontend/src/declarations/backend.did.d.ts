@@ -83,6 +83,7 @@ export interface _SERVICE {
   'getAllResources' : ActorMethod<[], Array<WellnessResource>>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
   'getStudentAssessments' : ActorMethod<[StudentId], Array<DASS21Assessment>>,
+  'getTeacherStudents' : ActorMethod<[], Array<[Principal, string, string]>>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'linkStudentToTeacherAndParent' : ActorMethod<
     [TeacherId, ParentId],

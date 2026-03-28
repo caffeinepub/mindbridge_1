@@ -74,6 +74,7 @@ export interface backendInterface {
     getAllResources(): Promise<Array<WellnessResource>>;
     getCallerUserRole(): Promise<UserRole>;
     getStudentAssessments(studentId: StudentId): Promise<Array<DASS21Assessment>>;
+    getTeacherStudents(): Promise<Array<[Principal, string, string]>>;
     isCallerAdmin(): Promise<boolean>;
     linkStudentToTeacherAndParent(teacherId: TeacherId, parentId: ParentId): Promise<void>;
     submitActivityResponse(activityId: bigint, response: string): Promise<bigint>;

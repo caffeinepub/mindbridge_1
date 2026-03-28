@@ -14,13 +14,15 @@ import {
   Shield,
 } from "lucide-react";
 import { motion } from "motion/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useActor } from "../hooks/useActor";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
 import { useLinkGuardian } from "../hooks/useQueries";
 
 export default function LinkGuardianPage() {
   const { identity } = useInternetIdentity();
+  const { actor } = useActor();
   const linkGuardian = useLinkGuardian();
 
   const [teacherId, setTeacherId] = useState("");
@@ -32,6 +34,24 @@ export default function LinkGuardianPage() {
   const [copied, setCopied] = useState(false);
 
   const myPrincipal = identity?.getPrincipal().toString() ?? "";
+
+  // Pre-fill teacher ID from invite link URL param or session storage
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const invite = params.get("teacherInvite");
+    if (invite) {
+      try {
+        const decoded = atob(invite);
+        setTeacherId(decoded);
+        sessionStorage.setItem("pendingTeacherInvite", decoded);
+      } catch {
+        // ignore invalid base64
+      }
+    } else {
+      const pending = sessionStorage.getItem("pendingTeacherInvite");
+      if (pending) setTeacherId(pending);
+    }
+  }, []);
 
   const handleCopy = () => {
     if (myPrincipal) {
@@ -69,12 +89,44 @@ export default function LinkGuardianPage() {
 
   const handleSubmit = async () => {
     if (!validate()) return;
+    // Ensure student is registered in backend first
+    try {
+      let name = "";
+      let email = "";
+      try {
+        const raw = localStorage.getItem("lumiProfile");
+        if (raw) {
+          const p = JSON.parse(raw);
+          name = p.displayName || "";
+        }
+      } catch {
+        // ignore
+      }
+      if (identity) {
+        try {
+          const profileRaw = localStorage.getItem(
+            `lumiArcProfile_${identity.getPrincipal().toText()}`,
+          );
+          if (profileRaw) {
+            const p = JSON.parse(profileRaw);
+            name = name || p.name || "";
+            email = p.email || "";
+          }
+        } catch {
+          // ignore
+        }
+      }
+      await actor?.createStudentProfile(name, email);
+    } catch {
+      // ignore -- may already exist
+    }
     try {
       await linkGuardian.mutateAsync({
         teacherId: Principal.fromText(teacherId.trim()),
         parentId: Principal.fromText(parentId.trim()),
       });
       setLinked(true);
+      sessionStorage.removeItem("pendingTeacherInvite");
       toast.success("Guardians linked successfully!");
     } catch {
       toast.error(
@@ -125,12 +177,13 @@ export default function LinkGuardianPage() {
             </p>
             <div className="flex items-center gap-2">
               <code className="flex-1 bg-white/70 border border-teal-200 rounded-lg px-3 py-2 text-xs font-mono truncate text-foreground">
-                {myPrincipal || "Loading..."}
+                {myPrincipal || "Log in via Internet Identity to see your ID"}
               </code>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleCopy}
+                disabled={!myPrincipal}
                 className="rounded-lg h-9 border-teal-200 flex-shrink-0"
                 data-ocid="guardian-link.copy_button"
               >
@@ -157,8 +210,9 @@ export default function LinkGuardianPage() {
       >
         <Info className="w-4 h-4 flex-shrink-0 mt-0.5 text-primary" />
         <p>
-          Ask your teacher and parent to sign in to Lumi Arc, create a profile,
-          and share their Principal ID with you. Then enter their IDs below.
+          Ask your teacher and parent to sign in to Lumi Arc, go to their
+          profile section, and share their Principal ID with you. Then enter
+          their IDs below.
         </p>
       </motion.div>
 
@@ -175,7 +229,7 @@ export default function LinkGuardianPage() {
               <div>
                 <Label className="text-sm font-medium mb-1.5 flex items-center gap-2">
                   <GraduationCap className="w-4 h-4 text-sage-600" />
-                  Teacher's Principal ID
+                  Teacher&apos;s Principal ID
                 </Label>
                 <Input
                   value={teacherId}
@@ -188,6 +242,10 @@ export default function LinkGuardianPage() {
                   className="h-11 rounded-xl"
                   data-ocid="link-guardian.teacher.input"
                 />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Your teacher can find their Principal ID in the Teacher
+                  Dashboard profile section
+                </p>
                 {errors.teacher && (
                   <p
                     className="text-destructive text-xs mt-1"
@@ -202,7 +260,7 @@ export default function LinkGuardianPage() {
               <div>
                 <Label className="text-sm font-medium mb-1.5 flex items-center gap-2">
                   <Heart className="w-4 h-4 text-rose-600" />
-                  Parent's Principal ID
+                  Parent&apos;s Principal ID
                 </Label>
                 <Input
                   value={parentId}
@@ -215,6 +273,10 @@ export default function LinkGuardianPage() {
                   className="h-11 rounded-xl"
                   data-ocid="link-guardian.parent.input"
                 />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Your parent/guardian can find their Principal ID in the
+                  Guardian Dashboard profile section
+                </p>
                 {errors.parent && (
                   <p
                     className="text-destructive text-xs mt-1"
@@ -266,7 +328,7 @@ export default function LinkGuardianPage() {
           </h2>
           <p className="text-muted-foreground text-sm max-w-sm mx-auto">
             Your teacher and parent can now view your mental health assessment
-            history. You're not alone in this journey.
+            history. You&apos;re not alone in this journey.
           </p>
         </motion.div>
       )}

@@ -104,6 +104,11 @@ export const idlService = IDL.Service({
       [IDL.Vec(DASS21Assessment)],
       ['query'],
     ),
+  'getTeacherStudents' : IDL.Func(
+      [],
+      [IDL.Vec(IDL.Tuple(IDL.Principal, IDL.Text, IDL.Text))],
+      ['query'],
+    ),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
   'linkStudentToTeacherAndParent' : IDL.Func([TeacherId, ParentId], [], []),
   'submitActivityResponse' : IDL.Func([IDL.Nat, IDL.Text], [IDL.Nat], []),
@@ -206,6 +211,11 @@ export const idlFactory = ({ IDL }) => {
     'getStudentAssessments' : IDL.Func(
         [StudentId],
         [IDL.Vec(DASS21Assessment)],
+        ['query'],
+      ),
+    'getTeacherStudents' : IDL.Func(
+        [],
+        [IDL.Vec(IDL.Tuple(IDL.Principal, IDL.Text, IDL.Text))],
         ['query'],
       ),
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
