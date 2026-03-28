@@ -348,87 +348,48 @@ function MyStudentsSection() {
             Linked via Invite
           </p>
           <div className="space-y-3">
-            {backendStudents.map(
-              ([principal, name, email, profileOpt, habitOpt], idx) => {
-                const profile =
-                  profileOpt.__kind__ === "Some" ? profileOpt.value : null;
-                const habit =
-                  habitOpt.__kind__ === "Some" ? habitOpt.value : null;
-                const displayName = profile?.name || name || "Student";
-                const displayEmail = profile?.email || email;
-                const shortId = `${principal.toString().slice(0, 16)}…`;
-                return (
-                  <div
-                    key={principal.toString()}
-                    data-ocid={`teacher.backend_student.item.${idx + 1}`}
-                    className="bg-teal-50/70 border border-teal-200/60 rounded-2xl px-4 py-4 space-y-2"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center flex-shrink-0">
-                        <User className="w-4 h-4 text-teal-700" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="font-semibold text-sm text-foreground">
-                          {displayName}
-                        </p>
-                        {displayEmail && (
-                          <p className="text-xs text-muted-foreground">
-                            {displayEmail}
-                          </p>
-                        )}
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          navigator.clipboard.writeText(principal.toString());
-                          toast.success("Principal ID copied!");
-                        }}
-                        className="text-teal-500 hover:text-teal-700 transition-colors"
-                        title="Copy Principal ID"
-                      >
-                        <Copy className="w-3.5 h-3.5" />
-                      </button>
+            {backendStudents.map(([principal, name, email], idx) => {
+              const displayName = name || "Student";
+              const displayEmail = email;
+              const shortId = `${principal.toString().slice(0, 16)}…`;
+              return (
+                <div
+                  key={principal.toString()}
+                  data-ocid={`teacher.backend_student.item.${idx + 1}`}
+                  className="bg-teal-50/70 border border-teal-200/60 rounded-2xl px-4 py-4 space-y-2"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center flex-shrink-0">
+                      <User className="w-4 h-4 text-teal-700" />
                     </div>
-                    <p className="text-xs text-muted-foreground font-mono pl-11">
-                      {shortId}
-                    </p>
-                    {profile && (
-                      <div className="pl-11 flex flex-wrap gap-2">
-                        {profile.fieldOfStudy && (
-                          <span className="text-xs bg-teal-100 text-teal-700 rounded-full px-2 py-0.5">
-                            📚 {profile.fieldOfStudy}
-                          </span>
-                        )}
-                        {profile.wellnessGoal && (
-                          <span className="text-xs bg-purple-100 text-purple-700 rounded-full px-2 py-0.5 max-w-[200px] truncate">
-                            🎯 {profile.wellnessGoal}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                    {habit && (
-                      <div className="pl-11 flex gap-3 flex-wrap">
-                        <span className="text-xs text-muted-foreground">
-                          🌙 Sleep:{" "}
-                          <strong>{Number(habit.sleepStreak)}d</strong>
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          💪 Exercise:{" "}
-                          <strong>{Number(habit.exerciseStreak)}d</strong>
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          🌿 Outdoor:{" "}
-                          <strong>{Number(habit.outdoorStreak)}d</strong>
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          ✨ XP: <strong>{Number(habit.xp)}</strong>
-                        </span>
-                      </div>
-                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className="font-semibold text-sm text-foreground">
+                        {displayName}
+                      </p>
+                      {displayEmail && (
+                        <p className="text-xs text-muted-foreground">
+                          {displayEmail}
+                        </p>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(principal.toString());
+                        toast.success("Principal ID copied!");
+                      }}
+                      className="text-teal-500 hover:text-teal-700 transition-colors"
+                      title="Copy Principal ID"
+                    >
+                      <Copy className="w-3.5 h-3.5" />
+                    </button>
                   </div>
-                );
-              },
-            )}
+                  <p className="text-xs text-muted-foreground font-mono pl-11">
+                    {shortId}
+                  </p>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
@@ -536,6 +497,8 @@ function ClassOverview({
 }: {
   onSelectStudent: (s: StudentRecord) => void;
 }) {
+  const { data: backendStudents = [] } = useGetTeacherStudentsWithProfiles();
+
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -554,24 +517,68 @@ function ClassOverview({
         </div>
       </div>
 
-      {/* Empty state */}
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        data-ocid="teacher.empty_state"
-        className="flex flex-col items-center justify-center py-24 rounded-2xl border border-dashed border-border/60 bg-muted/20 text-center"
-      >
-        <div className="w-16 h-16 rounded-full bg-teal-50 flex items-center justify-center mb-5">
-          <Users className="w-8 h-8 text-teal-400" />
+      {/* Student cards or empty state */}
+      {backendStudents.length === 0 ? (
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          data-ocid="teacher.empty_state"
+          className="flex flex-col items-center justify-center py-24 rounded-2xl border border-dashed border-border/60 bg-muted/20 text-center"
+        >
+          <div className="w-16 h-16 rounded-full bg-teal-50 flex items-center justify-center mb-5">
+            <Users className="w-8 h-8 text-teal-400" />
+          </div>
+          <h3 className="font-display text-lg font-semibold text-foreground mb-2">
+            No students linked yet
+          </h3>
+          <p className="text-muted-foreground text-sm max-w-sm leading-relaxed">
+            Share your invite link with your mentee students to get started.
+            Once they sign up via your link, their wellness data will appear
+            here.
+          </p>
+        </motion.div>
+      ) : (
+        <div
+          className="grid grid-cols-1 sm:grid-cols-2 gap-4"
+          data-ocid="teacher.students_grid"
+        >
+          {backendStudents.map(([principal, name, email], idx) => (
+            <div
+              key={principal.toString()}
+              data-ocid={`teacher.student_card.${idx + 1}`}
+              className="bg-teal-50 border border-teal-200 rounded-2xl p-4 space-y-2"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center flex-shrink-0">
+                  <User className="w-4 h-4 text-teal-700" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold text-sm text-foreground">
+                    {name || "Student"}
+                  </p>
+                  {email && (
+                    <p className="text-xs text-muted-foreground">{email}</p>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(principal.toString());
+                    toast.success("Principal ID copied!");
+                  }}
+                  className="text-teal-500 hover:text-teal-700 transition-colors flex-shrink-0"
+                  title="Copy Principal ID"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                </button>
+              </div>
+              <p className="text-xs text-muted-foreground font-mono pl-11">
+                {principal.toString().slice(0, 16)}…
+              </p>
+            </div>
+          ))}
         </div>
-        <h3 className="font-display text-lg font-semibold text-foreground mb-2">
-          No students linked yet
-        </h3>
-        <p className="text-muted-foreground text-sm max-w-sm leading-relaxed">
-          Share your invite link with your mentee students to get started. Once
-          they sign up via your link, their wellness data will appear here.
-        </p>
-      </motion.div>
+      )}
 
       {/* My Students contact directory */}
       <MyStudentsSection />

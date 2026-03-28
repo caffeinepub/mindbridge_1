@@ -49,6 +49,17 @@ const TEACHER_WELLNESS_GOALS = [
   "I want to grow as a compassionate educator",
 ];
 
+const GUARDIAN_WELLNESS_GOALS = [
+  "I want to stay closely connected to my child's emotional world",
+  "I want to be a calming presence during my child's stressful times",
+  "I want to understand and support my child's mental well-being",
+  "I want to help my child build emotional resilience",
+  "I want to have more open, meaningful conversations with my child",
+  "I want to recognize when my child needs extra support",
+  "I want to be a mindful and present parent",
+  "I want to model healthy emotional habits for my child",
+];
+
 interface Props {
   open: boolean;
   onClose: () => void;
@@ -66,6 +77,8 @@ export default function ProfileModal({ open, onClose }: Props) {
   const [goal, setGoal] = useState("");
   const [avatar, setAvatar] = useState(AVATARS[0].id);
   const [saved, setSaved] = useState(false);
+  const [relationship, setRelationship] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
 
   useEffect(() => {
     if (open) {
@@ -75,12 +88,23 @@ export default function ProfileModal({ open, onClose }: Props) {
       setFieldOfStudy(profile.fieldOfStudy ?? "");
       setGoal(profile.goal ?? "");
       setAvatar(profile.avatar ?? AVATARS[0].id);
+      setRelationship((profile as any).relationship ?? "");
+      setPhoneNumber((profile as any).phoneNumber ?? "");
       setSaved(false);
     }
   }, [open, profile]);
 
   function handleSave() {
-    saveProfile({ name, age, email, fieldOfStudy, goal, avatar });
+    saveProfile({
+      name,
+      age,
+      email,
+      fieldOfStudy,
+      goal,
+      avatar,
+      relationship,
+      phoneNumber,
+    } as any);
     // Sync to backend if student and logged in via II
     if (actor && identity && userRole === "student") {
       (actor as any)
@@ -99,6 +123,15 @@ export default function ProfileModal({ open, onClose }: Props) {
       onClose();
     }, 900);
   }
+
+  const isGuardian = userRole === "parent";
+  const isTeacher = userRole === "teacher";
+
+  const wellnessGoals = isTeacher
+    ? TEACHER_WELLNESS_GOALS
+    : isGuardian
+      ? GUARDIAN_WELLNESS_GOALS
+      : STUDENT_WELLNESS_GOALS;
 
   const selectedAvatarEmoji =
     AVATARS.find((a) => a.id === avatar)?.emoji ?? "🌻";
@@ -194,40 +227,62 @@ export default function ProfileModal({ open, onClose }: Props) {
                 />
               </div>
 
-              {/* Age */}
-              <div>
-                <label
-                  htmlFor="profile-age"
-                  className="text-xs font-semibold text-foreground/70 uppercase tracking-wide mb-1.5 block"
-                >
-                  Age
-                </label>
-                <Input
-                  id="profile-age"
-                  data-ocid="profile.age.input"
-                  placeholder="e.g. 20"
-                  value={age}
-                  onChange={(e) => setAge(e.target.value)}
-                  className="rounded-xl border-border/60"
-                  maxLength={3}
-                  type="number"
-                  min={16}
-                  max={40}
-                />
-              </div>
+              {/* Age (students/teachers) OR Relationship with Child (guardians) */}
+              {isGuardian ? (
+                <div>
+                  <label
+                    htmlFor="profile-relationship"
+                    className="text-xs font-semibold text-foreground/70 uppercase tracking-wide mb-1.5 block"
+                  >
+                    Relationship with Child
+                  </label>
+                  <Input
+                    id="profile-relationship"
+                    data-ocid="profile.relationship.input"
+                    placeholder="e.g. Mother, Father, Grandparent, Uncle..."
+                    value={relationship}
+                    onChange={(e) => setRelationship(e.target.value)}
+                    className="rounded-xl border-border/60"
+                    maxLength={40}
+                  />
+                </div>
+              ) : (
+                <div>
+                  <label
+                    htmlFor="profile-age"
+                    className="text-xs font-semibold text-foreground/70 uppercase tracking-wide mb-1.5 block"
+                  >
+                    Age
+                  </label>
+                  <Input
+                    id="profile-age"
+                    data-ocid="profile.age.input"
+                    placeholder="e.g. 20"
+                    value={age}
+                    onChange={(e) => setAge(e.target.value)}
+                    className="rounded-xl border-border/60"
+                    maxLength={3}
+                    type="number"
+                    min={16}
+                    max={40}
+                  />
+                </div>
+              )}
 
-              {/* University Email */}
+              {/* Email (universal label) */}
               <div>
                 <label
                   htmlFor="profile-email"
                   className="text-xs font-semibold text-foreground/70 uppercase tracking-wide mb-1.5 block"
                 >
-                  University Email
+                  Email
                 </label>
                 <Input
                   id="profile-email"
                   data-ocid="profile.email.input"
-                  placeholder="your@university.edu"
+                  placeholder={
+                    isGuardian ? "your@email.com" : "your@university.edu"
+                  }
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="rounded-xl border-border/60"
@@ -236,24 +291,45 @@ export default function ProfileModal({ open, onClose }: Props) {
                 />
               </div>
 
-              {/* Field of Study */}
-              <div>
-                <label
-                  htmlFor="profile-field"
-                  className="text-xs font-semibold text-foreground/70 uppercase tracking-wide mb-1.5 block"
-                >
-                  Field of Study
-                </label>
-                <Input
-                  id="profile-field"
-                  data-ocid="profile.field_of_study.input"
-                  placeholder="e.g. Computer Science, Psychology, Commerce..."
-                  value={fieldOfStudy}
-                  onChange={(e) => setFieldOfStudy(e.target.value)}
-                  className="rounded-xl border-border/60"
-                  maxLength={60}
-                />
-              </div>
+              {/* Field of Study (students/teachers) OR Phone Number (guardians) */}
+              {isGuardian ? (
+                <div>
+                  <label
+                    htmlFor="profile-phone"
+                    className="text-xs font-semibold text-foreground/70 uppercase tracking-wide mb-1.5 block"
+                  >
+                    Phone Number
+                  </label>
+                  <Input
+                    id="profile-phone"
+                    data-ocid="profile.phone.input"
+                    placeholder="e.g. +91 98765 43210"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    className="rounded-xl border-border/60"
+                    maxLength={20}
+                    type="tel"
+                  />
+                </div>
+              ) : (
+                <div>
+                  <label
+                    htmlFor="profile-field"
+                    className="text-xs font-semibold text-foreground/70 uppercase tracking-wide mb-1.5 block"
+                  >
+                    Field of Study
+                  </label>
+                  <Input
+                    id="profile-field"
+                    data-ocid="profile.field_of_study.input"
+                    placeholder="e.g. Computer Science, Psychology, Commerce..."
+                    value={fieldOfStudy}
+                    onChange={(e) => setFieldOfStudy(e.target.value)}
+                    className="rounded-xl border-border/60"
+                    maxLength={60}
+                  />
+                </div>
+              )}
 
               {/* Wellness goal */}
               <div>
@@ -261,10 +337,7 @@ export default function ProfileModal({ open, onClose }: Props) {
                   My Wellness Goal
                 </p>
                 <div className="flex flex-col gap-1.5">
-                  {(userRole === "teacher"
-                    ? TEACHER_WELLNESS_GOALS
-                    : STUDENT_WELLNESS_GOALS
-                  ).map((g) => (
+                  {wellnessGoals.map((g) => (
                     <button
                       key={g}
                       type="button"
