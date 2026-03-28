@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -20,7 +21,7 @@ import {
   type StudentRecord,
 } from "../data/teacherSampleData";
 
-import { Copy, Link2, Mail, User } from "lucide-react";
+import { Copy, Link2, Mail, RefreshCw, User } from "lucide-react";
 import { toast } from "sonner";
 import PinGate, { ChangePinDialog } from "../components/PinGate";
 import { useAppContext } from "../context/AppContext";
@@ -302,9 +303,18 @@ function AddStudentForm({ onAdd, onCancel }: AddStudentFormProps) {
 // ── My Students Section ───────────────────────────────────────────────────────
 
 function MyStudentsSection() {
-  const { data: backendStudents = [] } = useGetTeacherStudentsWithProfiles();
+  const { data: backendStudents = [], isFetching } =
+    useGetTeacherStudentsWithProfiles();
   const { students, addStudent, removeStudent } = useTeacherStudents();
   const [showForm, setShowForm] = useState(false);
+  const queryClient = useQueryClient();
+
+  function handleRefresh() {
+    queryClient.invalidateQueries({
+      queryKey: ["teacherStudentsWithProfiles"],
+    });
+    queryClient.invalidateQueries({ queryKey: ["teacherStudents"] });
+  }
 
   return (
     <div className="mt-10 space-y-4">
@@ -315,17 +325,34 @@ function MyStudentsSection() {
           </h2>
           <p className="text-muted-foreground text-sm mt-0.5">
             Student and guardian contact directory
+            {isFetching && (
+              <span className="ml-2 text-teal-600 text-xs">Refreshing…</span>
+            )}
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => setShowForm(true)}
-          data-ocid="teacher.add_student.button"
-          className="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium px-4 py-2 rounded-xl transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          Add Student
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleRefresh}
+            data-ocid="teacher.students.button"
+            className="inline-flex items-center gap-1.5 border border-teal-200 text-teal-700 hover:bg-teal-50 text-sm font-medium px-3 py-2 rounded-xl transition-colors"
+            title="Refresh student list"
+          >
+            <RefreshCw
+              className={`w-4 h-4 ${isFetching ? "animate-spin" : ""}`}
+            />
+            Refresh
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowForm(true)}
+            data-ocid="teacher.add_student.button"
+            className="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium px-4 py-2 rounded-xl transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            Add Student
+          </button>
+        </div>
       </div>
 
       <AnimatePresence>
@@ -497,7 +524,16 @@ function ClassOverview({
 }: {
   onSelectStudent: (s: StudentRecord) => void;
 }) {
-  const { data: backendStudents = [] } = useGetTeacherStudentsWithProfiles();
+  const { data: backendStudents = [], isFetching } =
+    useGetTeacherStudentsWithProfiles();
+  const queryClient = useQueryClient();
+
+  function handleRefresh() {
+    queryClient.invalidateQueries({
+      queryKey: ["teacherStudentsWithProfiles"],
+    });
+    queryClient.invalidateQueries({ queryKey: ["teacherStudents"] });
+  }
 
   return (
     <div className="space-y-8">
@@ -509,11 +545,28 @@ function ClassOverview({
           </h1>
           <p className="text-muted-foreground mt-1">
             Mental wellness at a glance
+            {isFetching && (
+              <span className="ml-2 text-teal-600 text-xs">Refreshing…</span>
+            )}
           </p>
         </div>
-        <div className="inline-flex items-center gap-2 bg-teal-100 text-teal-700 px-3 py-1.5 rounded-full text-sm font-medium">
-          <Users className="w-4 h-4" />
-          Lumi Arc Teacher View
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleRefresh}
+            data-ocid="teacher.overview.button"
+            className="inline-flex items-center gap-1.5 border border-teal-200 text-teal-700 hover:bg-teal-50 text-sm font-medium px-3 py-2 rounded-xl transition-colors"
+            title="Refresh class overview"
+          >
+            <RefreshCw
+              className={`w-4 h-4 ${isFetching ? "animate-spin" : ""}`}
+            />
+            Refresh
+          </button>
+          <div className="inline-flex items-center gap-2 bg-teal-100 text-teal-700 px-3 py-1.5 rounded-full text-sm font-medium">
+            <Users className="w-4 h-4" />
+            Lumi Arc Teacher View
+          </div>
         </div>
       </div>
 

@@ -137,7 +137,7 @@ export function useLinkGuardian() {
 
 // Get all students linked to calling teacher
 export function useGetTeacherStudents() {
-  const { actor, isFetching } = useActor();
+  const { actor } = useActor();
   return useQuery<
     Array<[import("@icp-sdk/core/principal").Principal, string, string]>
   >({
@@ -146,14 +146,17 @@ export function useGetTeacherStudents() {
       if (!actor) return [];
       return (actor as any).getTeacherStudents();
     },
-    enabled: !!actor && !isFetching,
+    enabled: !!actor,
+    staleTime: 0,
+    refetchInterval: 20000,
+    refetchOnWindowFocus: true,
   });
 }
 
 // Get teacher students — uses getTeacherStudents (available in canister)
 // Returns [Principal, name, email] triples
 export function useGetTeacherStudentsWithProfiles() {
-  const { actor, isFetching } = useActor();
+  const { actor } = useActor();
   return useQuery<
     Array<[import("@icp-sdk/core/principal").Principal, string, string]>
   >({
@@ -162,6 +165,9 @@ export function useGetTeacherStudentsWithProfiles() {
       if (!actor) return [];
       return (actor as any).getTeacherStudents();
     },
-    enabled: !!actor && !isFetching,
+    enabled: !!actor,
+    staleTime: 0,
+    refetchInterval: 20000,
+    refetchOnWindowFocus: true,
   });
 }

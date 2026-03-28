@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Principal } from "@icp-sdk/core/principal";
 import {
+  AlertCircle,
   CheckCircle,
   Copy,
   GraduationCap,
@@ -12,6 +13,7 @@ import {
   Link2,
   Loader2,
   Shield,
+  Sparkles,
 } from "lucide-react";
 import { motion } from "motion/react";
 import { useEffect, useState } from "react";
@@ -31,51 +33,12 @@ export default function LinkGuardianPage() {
   const [parentError, setParentError] = useState("");
   const [teacherLinked, setTeacherLinked] = useState(false);
   const [parentLinked, setParentLinked] = useState(false);
+  const [bothLinked, setBothLinked] = useState(false);
   const [teacherPending, setTeacherPending] = useState(false);
   const [parentPending, setParentPending] = useState(false);
   const [copied, setCopied] = useState(false);
 
   const myPrincipal = identity?.getPrincipal().toString() ?? "";
-
-  // Pre-fill from URL param, session storage, or localStorage on mount
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const invite = params.get("teacherInvite");
-    if (invite) {
-      try {
-        const decoded = atob(invite);
-        setTeacherId(decoded);
-        sessionStorage.setItem("pendingTeacherInvite", decoded);
-        localStorage.setItem("lumiLinkedTeacherId", decoded);
-      } catch {
-        // ignore invalid base64
-      }
-    } else {
-      const stored = localStorage.getItem("lumiLinkedTeacherId");
-      if (stored) setTeacherId(stored);
-      else {
-        const pending = sessionStorage.getItem("pendingTeacherInvite");
-        if (pending) setTeacherId(pending);
-      }
-    }
-
-    const storedParent = localStorage.getItem("lumiLinkedParentId");
-    if (storedParent) setParentId(storedParent);
-
-    // Reflect existing linked states
-    if (localStorage.getItem("lumiLinkedTeacherId")) setTeacherLinked(true);
-    if (localStorage.getItem("lumiLinkedParentId")) setParentLinked(true);
-  }, []);
-
-  const handleCopy = () => {
-    if (myPrincipal) {
-      navigator.clipboard.writeText(myPrincipal).then(() => {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-        toast.success("Principal ID copied!");
-      });
-    }
-  };
 
   const ensureStudentRegistered = async () => {
     try {
@@ -110,6 +73,71 @@ export default function LinkGuardianPage() {
     }
   };
 
+  const tryLinkBoth = async (tId: string, pId: string): Promise<boolean> => {
+    try {
+      const teacherPrincipal = Principal.fromText(tId.trim());
+      const parentPrincipal = Principal.fromText(pId.trim());
+      await ensureStudentRegistered();
+      await linkGuardian.mutateAsync({
+        teacherId: teacherPrincipal,
+        parentId: parentPrincipal,
+      });
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  // Load stored IDs on mount and attempt silent re-link if both exist
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const invite = params.get("teacherInvite");
+    let storedTeacher = localStorage.getItem("lumiLinkedTeacherId") ?? "";
+    const storedParent = localStorage.getItem("lumiLinkedParentId") ?? "";
+
+    if (invite) {
+      try {
+        const decoded = atob(invite);
+        storedTeacher = decoded;
+        setTeacherId(decoded);
+        localStorage.setItem("lumiLinkedTeacherId", decoded);
+        sessionStorage.removeItem("pendingTeacherInvite");
+      } catch {
+        // ignore invalid base64
+        if (storedTeacher) setTeacherId(storedTeacher);
+      }
+    } else {
+      if (storedTeacher) setTeacherId(storedTeacher);
+      else {
+        const pending = sessionStorage.getItem("pendingTeacherInvite");
+        if (pending) setTeacherId(pending);
+      }
+    }
+
+    if (storedParent) setParentId(storedParent);
+
+    const teacherSaved = !!storedTeacher;
+    const parentSaved = !!storedParent;
+
+    if (teacherSaved) setTeacherLinked(true);
+    if (parentSaved) setParentLinked(true);
+
+    // Silently mark both linked on mount; backend re-sync happens on next submit
+    if (teacherSaved && parentSaved) {
+      setBothLinked(true);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleCopy = () => {
+    if (myPrincipal) {
+      navigator.clipboard.writeText(myPrincipal).then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+        toast.success("Principal ID copied!");
+      });
+    }
+  };
+
   const handleLinkTeacher = async () => {
     setTeacherError("");
     const trimmed = teacherId.trim();
@@ -117,35 +145,39 @@ export default function LinkGuardianPage() {
       setTeacherError("Teacher Principal ID is required");
       return;
     }
-    let teacherPrincipal: Principal;
     try {
-      teacherPrincipal = Principal.fromText(trimmed);
+      Principal.fromText(trimmed);
     } catch {
       setTeacherError("Invalid Principal ID format");
       return;
     }
+
     setTeacherPending(true);
-    await ensureStudentRegistered();
+    // Always save teacher ID immediately
+    localStorage.setItem("lumiLinkedTeacherId", trimmed);
+    setTeacherLinked(true);
+
     const storedParent = localStorage.getItem("lumiLinkedParentId");
-    const parentPrincipal = storedParent
-      ? Principal.fromText(storedParent)
-      : (identity?.getPrincipal() ?? Principal.fromText(trimmed));
-    try {
-      await linkGuardian.mutateAsync({
-        teacherId: teacherPrincipal,
-        parentId: parentPrincipal,
-      });
-      localStorage.setItem("lumiLinkedTeacherId", trimmed);
-      sessionStorage.removeItem("pendingTeacherInvite");
-      setTeacherLinked(true);
-      toast.success("Linked to teacher successfully!");
-    } catch {
-      toast.error(
-        "Could not link to teacher. Please check the Principal ID and try again.",
+    if (storedParent) {
+      // Both IDs now available — call backend
+      const ok = await tryLinkBoth(trimmed, storedParent);
+      if (ok) {
+        setBothLinked(true);
+        toast.success(
+          "Connected to teacher and parent! Your support network is set up. 🎉",
+        );
+      } else {
+        toast.error(
+          "Could not complete the backend link. Your IDs are saved — try again later.",
+        );
+      }
+    } else {
+      // Only teacher saved so far
+      toast.info(
+        "Teacher ID saved! Ask your parent to share their Principal ID and link them too to complete the connection.",
       );
-    } finally {
-      setTeacherPending(false);
     }
+    setTeacherPending(false);
   };
 
   const handleLinkParent = async () => {
@@ -155,35 +187,43 @@ export default function LinkGuardianPage() {
       setParentError("Parent Principal ID is required");
       return;
     }
-    let parentPrincipal: Principal;
     try {
-      parentPrincipal = Principal.fromText(trimmed);
+      Principal.fromText(trimmed);
     } catch {
       setParentError("Invalid Principal ID format");
       return;
     }
+
     setParentPending(true);
-    await ensureStudentRegistered();
+    // Always save parent ID immediately
+    localStorage.setItem("lumiLinkedParentId", trimmed);
+    setParentLinked(true);
+
     const storedTeacher = localStorage.getItem("lumiLinkedTeacherId");
-    const teacherPrincipal = storedTeacher
-      ? Principal.fromText(storedTeacher)
-      : (identity?.getPrincipal() ?? parentPrincipal);
-    try {
-      await linkGuardian.mutateAsync({
-        teacherId: teacherPrincipal,
-        parentId: parentPrincipal,
-      });
-      localStorage.setItem("lumiLinkedParentId", trimmed);
-      setParentLinked(true);
-      toast.success("Linked to parent/guardian successfully!");
-    } catch {
-      toast.error(
-        "Could not link to parent. Please check the Principal ID and try again.",
+    if (storedTeacher) {
+      // Both IDs now available — call backend
+      const ok = await tryLinkBoth(storedTeacher, trimmed);
+      if (ok) {
+        setBothLinked(true);
+        toast.success(
+          "Connected to parent and teacher! Your support network is set up. 🎉",
+        );
+      } else {
+        toast.error(
+          "Could not complete the backend link. Your IDs are saved — try again later.",
+        );
+      }
+    } else {
+      // Only parent saved so far
+      toast.info(
+        "Parent ID saved! Ask your teacher to share their invite link and link them too to complete the connection.",
       );
-    } finally {
-      setParentPending(false);
     }
+    setParentPending(false);
   };
+
+  const onlyOneLinked =
+    (teacherLinked && !parentLinked) || (!teacherLinked && parentLinked);
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-2xl">
@@ -206,6 +246,45 @@ export default function LinkGuardianPage() {
           independently — no need to do both at once.
         </p>
       </motion.div>
+
+      {/* Connection Complete Banner */}
+      {bothLinked && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.97 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="mb-6 flex items-center gap-3 bg-gradient-to-r from-teal-50 to-emerald-50 border border-teal-300 rounded-2xl px-5 py-4 text-teal-800"
+          data-ocid="link-guardian.success_state"
+        >
+          <Sparkles className="w-5 h-5 flex-shrink-0 text-teal-600" />
+          <div>
+            <p className="font-semibold text-sm">Connection Complete ✨</p>
+            <p className="text-xs mt-0.5 text-teal-700">
+              Your teacher and parent are both linked. They can now view your
+              wellbeing dashboard and support you on your journey.
+            </p>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Partial Link Warning */}
+      {onlyOneLinked && !bothLinked && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.97 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="mb-6 flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-2xl px-5 py-4 text-amber-800"
+          data-ocid="link-guardian.partial_state"
+        >
+          <AlertCircle className="w-5 h-5 flex-shrink-0 text-amber-500" />
+          <div>
+            <p className="font-semibold text-sm">Partial connection</p>
+            <p className="text-xs mt-0.5 text-amber-700">
+              {teacherLinked && !parentLinked
+                ? "Teacher ID saved. Link your parent too to complete the connection."
+                : "Parent ID saved. Link your teacher too to complete the connection."}
+            </p>
+          </div>
+        </motion.div>
+      )}
 
       {/* My Principal ID */}
       <motion.div
@@ -281,7 +360,7 @@ export default function LinkGuardianPage() {
                 Link to Teacher
                 {teacherLinked && (
                   <span className="ml-auto flex items-center gap-1 text-xs font-normal text-teal-600">
-                    <CheckCircle className="w-3.5 h-3.5" /> Linked
+                    <CheckCircle className="w-3.5 h-3.5" /> Saved
                   </span>
                 )}
               </CardTitle>
@@ -314,16 +393,16 @@ export default function LinkGuardianPage() {
                   </p>
                 )}
               </div>
-              {teacherLinked ? (
+              {teacherLinked && (
                 <div
                   className="flex items-center gap-2 bg-teal-50 border border-teal-200 rounded-xl px-4 py-3 text-sm text-teal-700"
                   data-ocid="link-guardian.teacher.success_state"
                 >
                   <CheckCircle className="w-4 h-4" />
-                  Teacher linked! You can update the link by entering a new ID
-                  and submitting again.
+                  Teacher ID saved. You can update it by entering a new ID and
+                  submitting.
                 </div>
-              ) : null}
+              )}
               <Button
                 onClick={handleLinkTeacher}
                 disabled={teacherPending}
@@ -333,12 +412,12 @@ export default function LinkGuardianPage() {
                 {teacherPending ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Linking Teacher...
+                    Saving...
                   </>
                 ) : (
                   <>
                     <GraduationCap className="w-4 h-4 mr-2" />
-                    Link to Teacher
+                    {teacherLinked ? "Update Teacher Link" : "Link to Teacher"}
                   </>
                 )}
               </Button>
@@ -359,7 +438,7 @@ export default function LinkGuardianPage() {
                 Link to Parent / Guardian
                 {parentLinked && (
                   <span className="ml-auto flex items-center gap-1 text-xs font-normal text-rose-600">
-                    <CheckCircle className="w-3.5 h-3.5" /> Linked
+                    <CheckCircle className="w-3.5 h-3.5" /> Saved
                   </span>
                 )}
               </CardTitle>
@@ -392,16 +471,16 @@ export default function LinkGuardianPage() {
                   </p>
                 )}
               </div>
-              {parentLinked ? (
+              {parentLinked && (
                 <div
                   className="flex items-center gap-2 bg-rose-50 border border-rose-200 rounded-xl px-4 py-3 text-sm text-rose-700"
                   data-ocid="link-guardian.parent.success_state"
                 >
                   <CheckCircle className="w-4 h-4" />
-                  Parent linked! You can update the link by entering a new ID
-                  and submitting again.
+                  Parent ID saved. You can update it by entering a new ID and
+                  submitting.
                 </div>
-              ) : null}
+              )}
               <Button
                 onClick={handleLinkParent}
                 disabled={parentPending}
@@ -411,12 +490,14 @@ export default function LinkGuardianPage() {
                 {parentPending ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Linking Parent...
+                    Saving...
                   </>
                 ) : (
                   <>
                     <Heart className="w-4 h-4 mr-2" />
-                    Link to Parent / Guardian
+                    {parentLinked
+                      ? "Update Parent Link"
+                      : "Link to Parent / Guardian"}
                   </>
                 )}
               </Button>
