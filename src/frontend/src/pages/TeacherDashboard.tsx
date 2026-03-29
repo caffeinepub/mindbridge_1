@@ -1309,13 +1309,7 @@ function BackendStudentProfile({
   const { data: assessments } = useGetStudentAssessments(principal);
 
   useEffect(() => {
-    if (
-      !actor ||
-      typeof (actor as any).getStudentExtendedProfile !== "function"
-    ) {
-      setLoading(false);
-      return;
-    }
+    if (!actor) return;
     setLoading(true);
     Promise.all([
       (actor as any).getStudentExtendedProfile(principal).catch(() => []),
@@ -1896,6 +1890,15 @@ function BackendStudentProfile({
           </p>
         </div>
       )}
+      {!loading && !extProfile && moodData.length === 0 && !latest && (
+        <div className="rounded-2xl bg-amber-50 border border-amber-200 p-6 text-center">
+          <p className="text-amber-800 font-medium">No wellness data yet</p>
+          <p className="text-amber-700 text-sm mt-1">
+            This student hasn't logged any mood check-ins, assessments, or
+            habits yet. Ask them to use their dashboard.
+          </p>
+        </div>
+      )}
     </motion.div>
   );
 }
@@ -1905,9 +1908,11 @@ function BackendStudentProfile({
 function ClassOverview({
   onSelectStudent: _onSelectStudent,
   onSelectBackendStudent,
+  onSelectManualStudent,
 }: {
   onSelectStudent: (s: StudentRecord) => void;
   onSelectBackendStudent: (p: Principal, name: string, email: string) => void;
+  onSelectManualStudent: (s: TeacherStudentEntry) => void;
 }) {
   const { data: backendStudents = [], isFetching } =
     useGetTeacherStudentsWithProfiles();
@@ -2031,10 +2036,12 @@ function ClassOverview({
             </button>
           ))}
           {manualStudents.map((s, idx) => (
-            <div
+            <button
+              type="button"
               key={s.id}
               data-ocid={`teacher.manual_student_card.${backendStudents.length + idx + 1}`}
-              className="bg-amber-50 border border-amber-200 rounded-2xl p-4 space-y-2"
+              onClick={() => onSelectManualStudent(s)}
+              className="bg-amber-50 border border-amber-200 rounded-2xl p-4 space-y-2 w-full text-left hover:bg-amber-100 transition-colors cursor-pointer"
             >
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
@@ -2056,7 +2063,8 @@ function ClassOverview({
                   </span>
                   <button
                     type="button"
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation();
                       removeStudent(s.id);
                       toast.success("Student removed.");
                     }}
@@ -2078,9 +2086,9 @@ function ClassOverview({
                 </p>
               )}
               <p className="text-xs text-amber-600 font-medium pl-11">
-                Manually added · see details in My Students ↓
+                Click to view details →
               </p>
-            </div>
+            </button>
           ))}
         </div>
       )}
@@ -2088,6 +2096,127 @@ function ClassOverview({
       {/* My Students contact directory */}
       <MyStudentsSection onSelectBackendStudent={onSelectBackendStudent} />
     </div>
+  );
+}
+
+// ── Manual Student Profile ───────────────────────────────────────────────────
+
+function ManualStudentProfile({
+  student,
+  onBack,
+}: {
+  student: TeacherStudentEntry;
+  onBack: () => void;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: 24 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: 24 }}
+      transition={{ duration: 0.3 }}
+      className="space-y-6"
+      data-ocid="teacher.manual_student_profile.panel"
+    >
+      <button
+        type="button"
+        onClick={onBack}
+        className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors font-medium"
+      >
+        <ArrowLeft className="w-4 h-4" />
+        Back to Class Overview
+      </button>
+
+      {/* Student header */}
+      <div className="rounded-2xl bg-amber-50 border border-amber-200 p-6">
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0 text-2xl">
+            🧑‍🎓
+          </div>
+          <div>
+            <h2 className="font-display text-2xl font-bold text-foreground">
+              {student.studentName}
+            </h2>
+            {student.studentEmail && (
+              <p className="text-sm text-muted-foreground">
+                {student.studentEmail}
+              </p>
+            )}
+            {student.studentFieldOfStudy && (
+              <p className="text-sm text-amber-700 font-medium mt-1">
+                {student.studentFieldOfStudy}
+              </p>
+            )}
+            <span className="inline-flex items-center mt-2 text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">
+              Manually Added
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Student details */}
+      <Card className="rounded-2xl border-border/40">
+        <CardHeader>
+          <CardTitle className="text-base">Student Details</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {[
+            { label: "Full Name", value: student.studentName },
+            { label: "Email", value: student.studentEmail },
+            { label: "Phone", value: student.studentPhone },
+            { label: "Field of Study", value: student.studentFieldOfStudy },
+            { label: "Principal ID", value: student.studentPrincipalId },
+          ].map(({ label, value }) => (
+            <div
+              key={label}
+              className="flex flex-col sm:flex-row sm:items-center gap-1"
+            >
+              <span className="text-sm font-medium text-muted-foreground w-32 shrink-0">
+                {label}
+              </span>
+              <span className="text-sm font-mono break-all">
+                {value || (
+                  <span className="text-muted-foreground italic">
+                    Not provided
+                  </span>
+                )}
+              </span>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      {/* Guardian details */}
+      <Card className="rounded-2xl border-border/40">
+        <CardHeader>
+          <CardTitle className="text-base">Guardian / Parent Details</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {[
+            { label: "Name", value: student.guardianName },
+            { label: "Email", value: student.guardianEmail },
+            { label: "Phone", value: student.guardianPhone },
+            { label: "Relationship", value: student.guardianRelationship },
+            { label: "Principal ID", value: student.guardianPrincipalId },
+          ].map(({ label, value }) => (
+            <div
+              key={label}
+              className="flex flex-col sm:flex-row sm:items-center gap-1"
+            >
+              <span className="text-sm font-medium text-muted-foreground w-32 shrink-0">
+                {label}
+              </span>
+              <span className="text-sm font-mono break-all">
+                {value || (
+                  <span className="text-muted-foreground italic">
+                    Not provided
+                  </span>
+                )}
+              </span>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 }
 
@@ -2458,6 +2587,8 @@ export default function TeacherDashboard() {
     name: string;
     email: string;
   } | null>(null);
+  const [selectedManualStudent, setSelectedManualStudent] =
+    useState<TeacherStudentEntry | null>(null);
   const { identity } = useInternetIdentity();
   const { profile: userProfile } = useUserProfile();
   const { actor } = useActor();
@@ -2578,6 +2709,18 @@ export default function TeacherDashboard() {
                     onBack={() => setSelectedBackendStudent(null)}
                   />
                 </motion.div>
+              ) : selectedManualStudent ? (
+                <motion.div
+                  key="manual-profile"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                >
+                  <ManualStudentProfile
+                    student={selectedManualStudent}
+                    onBack={() => setSelectedManualStudent(null)}
+                  />
+                </motion.div>
               ) : selectedStudent ? (
                 <motion.div
                   key="profile"
@@ -2606,6 +2749,7 @@ export default function TeacherDashboard() {
                         email: e,
                       })
                     }
+                    onSelectManualStudent={setSelectedManualStudent}
                   />
                 </motion.div>
               )}
