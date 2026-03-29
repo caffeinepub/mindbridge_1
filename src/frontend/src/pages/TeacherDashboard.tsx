@@ -335,7 +335,11 @@ function AddStudentForm({ onAdd, onCancel }: AddStudentFormProps) {
 
 // ── My Students Section ───────────────────────────────────────────────────────
 
-function MyStudentsSection() {
+function MyStudentsSection({
+  onSelectBackendStudent,
+}: {
+  onSelectBackendStudent?: (p: Principal, name: string, email: string) => void;
+}) {
   const { data: backendStudents = [], isFetching } =
     useGetTeacherStudentsWithProfiles();
   const { students, addStudent, removeStudent } = useTeacherStudents();
@@ -447,6 +451,24 @@ function MyStudentsSection() {
                   <p className="text-xs text-muted-foreground font-mono pl-11">
                     {shortId}
                   </p>
+                  {onSelectBackendStudent && (
+                    <div className="pl-11">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          onSelectBackendStudent(
+                            principal,
+                            displayName,
+                            displayEmail || "",
+                          )
+                        }
+                        data-ocid={`teacher.backend_student.view_button.${idx + 1}`}
+                        className="inline-flex items-center gap-1.5 bg-teal-600 hover:bg-teal-700 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
+                      >
+                        View Details →
+                      </button>
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -1592,7 +1614,7 @@ function ClassOverview({
       )}
 
       {/* My Students contact directory */}
-      <MyStudentsSection />
+      <MyStudentsSection onSelectBackendStudent={onSelectBackendStudent} />
     </div>
   );
 }

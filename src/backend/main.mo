@@ -139,6 +139,21 @@ actor {
   public type ResourceCategory = ResourceCategory.Type;
   public type ActivityType = ActivityType.Type;
 
+
+  // ── Stable storage for persistence across upgrades ──────────────────────────
+  stable var _stableUserRoles : [(Principal, AccessControl.UserRole)] = [];
+  stable var _stableAdminAssigned : Bool = false;
+  stable var _stableStudentProfiles : [(StudentId, {name : Text; email : Text; role : UserRole.Type})] = [];
+  stable var _stableTeacherProfiles : [(TeacherId, {name : Text; email : Text; role : UserRole.Type})] = [];
+  stable var _stableParentProfiles : [(ParentId, {name : Text; email : Text; role : UserRole.Type})] = [];
+  stable var _stableStudentLinks : [(StudentId, (TeacherId, ParentId))] = [];
+  stable var _stableStudentExtProfiles : [(StudentId, {name : Text; email : Text; age : Text; fieldOfStudy : Text; wellnessGoal : Text})] = [];
+  stable var _stableHabitSummaries : [(StudentId, {sleepStreak : Nat; exerciseStreak : Nat; outdoorStreak : Nat; xp : Nat; lastUpdated : Time.Time})] = [];
+  stable var _stableStudentMoodData : [(StudentId, Text)] = [];
+  stable var _stableNextAssessmentId : Nat = 1;
+  stable var _stableNextResourceId : Nat = 1;
+  stable var _stableNextActivityId : Nat = 1;
+
   var nextAssessmentId = 1;
   var nextResourceId = 1;
   var nextActivityId = 1;
@@ -719,4 +734,60 @@ actor {
     activityResponses.add(responseId, activityResponse);
     responseId;
   };
+
+  // ── Upgrade hooks ─────────────────────────────────────────────────────────────
+  system func preupgrade() {
+    let urList = List.empty<(Principal, AccessControl.UserRole)>();
+    for (entry in accessControlState.userRoles.entries()) { urList.add(entry) };
+    _stableUserRoles := urList.toArray();
+    _stableAdminAssigned := accessControlState.adminAssigned;
+
+    let spList = List.empty<(StudentId, {name : Text; email : Text; role : UserRole.Type})>();
+    for (entry in studentProfiles.entries()) { spList.add(entry) };
+    _stableStudentProfiles := spList.toArray();
+
+    let tpList = List.empty<(TeacherId, {name : Text; email : Text; role : UserRole.Type})>();
+    for (entry in teacherProfiles.entries()) { tpList.add(entry) };
+    _stableTeacherProfiles := tpList.toArray();
+
+    let ppList = List.empty<(ParentId, {name : Text; email : Text; role : UserRole.Type})>();
+    for (entry in parentProfiles.entries()) { ppList.add(entry) };
+    _stableParentProfiles := ppList.toArray();
+
+    let slList = List.empty<(StudentId, (TeacherId, ParentId))>();
+    for (entry in studentLinks.entries()) { slList.add(entry) };
+    _stableStudentLinks := slList.toArray();
+
+    let sepList = List.empty<(StudentId, {name : Text; email : Text; age : Text; fieldOfStudy : Text; wellnessGoal : Text})>();
+    for (entry in studentExtProfiles.entries()) { sepList.add(entry) };
+    _stableStudentExtProfiles := sepList.toArray();
+
+    let hsList = List.empty<(StudentId, {sleepStreak : Nat; exerciseStreak : Nat; outdoorStreak : Nat; xp : Nat; lastUpdated : Time.Time})>();
+    for (entry in habitSummaries.entries()) { hsList.add(entry) };
+    _stableHabitSummaries := hsList.toArray();
+
+    let smdList = List.empty<(StudentId, Text)>();
+    for (entry in studentMoodData.entries()) { smdList.add(entry) };
+    _stableStudentMoodData := smdList.toArray();
+
+    _stableNextAssessmentId := nextAssessmentId;
+    _stableNextResourceId := nextResourceId;
+    _stableNextActivityId := nextActivityId;
+  };
+
+  system func postupgrade() {
+    for ((k, v) in _stableUserRoles.vals()) { accessControlState.userRoles.add(k, v) };
+    accessControlState.adminAssigned := _stableAdminAssigned;
+    for ((k, v) in _stableStudentProfiles.vals()) { studentProfiles.add(k, v) };
+    for ((k, v) in _stableTeacherProfiles.vals()) { teacherProfiles.add(k, v) };
+    for ((k, v) in _stableParentProfiles.vals()) { parentProfiles.add(k, v) };
+    for ((k, v) in _stableStudentLinks.vals()) { studentLinks.add(k, v) };
+    for ((k, v) in _stableStudentExtProfiles.vals()) { studentExtProfiles.add(k, v) };
+    for ((k, v) in _stableHabitSummaries.vals()) { habitSummaries.add(k, v) };
+    for ((k, v) in _stableStudentMoodData.vals()) { studentMoodData.add(k, v) };
+    nextAssessmentId := _stableNextAssessmentId;
+    nextResourceId := _stableNextResourceId;
+    nextActivityId := _stableNextActivityId;
+  };
+
 };
