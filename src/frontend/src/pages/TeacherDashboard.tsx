@@ -884,17 +884,23 @@ function BackendStudentProfile({
     if (!actor) return;
     setLoading(true);
     Promise.all([
-      (actor as any)
-        .getStudentExtendedProfile(principal)
-        .catch(() => ({ __kind__: "None" as const })),
-      (actor as any)
-        .getHabitSummary(principal)
-        .catch(() => ({ __kind__: "None" as const })),
+      (actor as any).getStudentExtendedProfile(principal).catch(() => []),
+      (actor as any).getHabitSummary(principal).catch(() => []),
       (actor as any).getMoodHistory(principal).catch(() => ""),
     ])
       .then(([profileOpt, habitOpt, moodStr]) => {
-        if (profileOpt.__kind__ === "Some") setExtProfile(profileOpt.value);
-        if (habitOpt.__kind__ === "Some") setHabitData(habitOpt.value);
+        const profileVal = Array.isArray(profileOpt)
+          ? profileOpt[0]
+          : profileOpt?.__kind__ === "Some"
+            ? profileOpt.value
+            : undefined;
+        const habitVal = Array.isArray(habitOpt)
+          ? habitOpt[0]
+          : habitOpt?.__kind__ === "Some"
+            ? habitOpt.value
+            : undefined;
+        if (profileVal) setExtProfile(profileVal);
+        if (habitVal) setHabitData(habitVal);
         if (moodStr) setMoodData(parseMoodHistory(moodStr));
       })
       .finally(() => setLoading(false));

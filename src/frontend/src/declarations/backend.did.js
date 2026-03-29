@@ -74,6 +74,20 @@ export const DASS21Assessment = IDL.Record({
 });
 export const TeacherId = IDL.Principal;
 export const ParentId = IDL.Principal;
+export const StudentExtProfile = IDL.Record({
+  'name' : IDL.Text,
+  'email' : IDL.Text,
+  'age' : IDL.Text,
+  'fieldOfStudy' : IDL.Text,
+  'wellnessGoal' : IDL.Text,
+});
+export const HabitSummary = IDL.Record({
+  'sleepStreak' : IDL.Nat,
+  'exerciseStreak' : IDL.Nat,
+  'outdoorStreak' : IDL.Nat,
+  'xp' : IDL.Nat,
+  'lastUpdated' : IDL.Int,
+});
 
 export const idlService = IDL.Service({
   '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
@@ -104,13 +118,49 @@ export const idlService = IDL.Service({
       [IDL.Vec(DASS21Assessment)],
       ['query'],
     ),
+  'getStudentExtendedProfile' : IDL.Func(
+      [StudentId],
+      [IDL.Opt(StudentExtProfile)],
+      ['query'],
+    ),
+  'getHabitSummary' : IDL.Func(
+      [StudentId],
+      [IDL.Opt(HabitSummary)],
+      ['query'],
+    ),
+  'getMoodHistory' : IDL.Func(
+      [StudentId],
+      [IDL.Text],
+      ['query'],
+    ),
+  'getParentLinkedStudent' : IDL.Func(
+      [],
+      [IDL.Opt(IDL.Principal)],
+      ['query'],
+    ),
   'getTeacherStudents' : IDL.Func(
       [],
       [IDL.Vec(IDL.Tuple(IDL.Principal, IDL.Text, IDL.Text))],
       ['query'],
     ),
+  'getTeacherStudentsWithProfiles' : IDL.Func(
+      [],
+      [IDL.Vec(IDL.Tuple(IDL.Principal, IDL.Text, IDL.Text, IDL.Opt(StudentExtProfile), IDL.Opt(HabitSummary)))],
+      ['query'],
+    ),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
   'linkStudentToTeacherAndParent' : IDL.Func([TeacherId, ParentId], [], []),
+  'saveStudentExtendedProfile' : IDL.Func(
+      [IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Text],
+      [],
+      [],
+    ),
+  'saveMoodEntry' : IDL.Func([IDL.Text, IDL.Text], [], []),
+  'saveHabitSummary' : IDL.Func(
+      [IDL.Nat, IDL.Nat, IDL.Nat, IDL.Nat],
+      [],
+      [],
+    ),
   'submitActivityResponse' : IDL.Func([IDL.Nat, IDL.Text], [IDL.Nat], []),
 });
 
@@ -183,7 +233,21 @@ export const idlFactory = ({ IDL }) => {
   });
   const TeacherId = IDL.Principal;
   const ParentId = IDL.Principal;
-  
+  const StudentExtProfile = IDL.Record({
+    'name' : IDL.Text,
+    'email' : IDL.Text,
+    'age' : IDL.Text,
+    'fieldOfStudy' : IDL.Text,
+    'wellnessGoal' : IDL.Text,
+  });
+  const HabitSummary = IDL.Record({
+    'sleepStreak' : IDL.Nat,
+    'exerciseStreak' : IDL.Nat,
+    'outdoorStreak' : IDL.Nat,
+    'xp' : IDL.Nat,
+    'lastUpdated' : IDL.Int,
+  });
+
   return IDL.Service({
     '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
     'addLanguageActivity' : IDL.Func(
@@ -213,13 +277,49 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Vec(DASS21Assessment)],
         ['query'],
       ),
+    'getStudentExtendedProfile' : IDL.Func(
+        [StudentId],
+        [IDL.Opt(StudentExtProfile)],
+        ['query'],
+      ),
+    'getHabitSummary' : IDL.Func(
+        [StudentId],
+        [IDL.Opt(HabitSummary)],
+        ['query'],
+      ),
+    'getMoodHistory' : IDL.Func(
+        [StudentId],
+        [IDL.Text],
+        ['query'],
+      ),
+    'getParentLinkedStudent' : IDL.Func(
+        [],
+        [IDL.Opt(IDL.Principal)],
+        ['query'],
+      ),
     'getTeacherStudents' : IDL.Func(
         [],
         [IDL.Vec(IDL.Tuple(IDL.Principal, IDL.Text, IDL.Text))],
         ['query'],
       ),
+    'getTeacherStudentsWithProfiles' : IDL.Func(
+        [],
+        [IDL.Vec(IDL.Tuple(IDL.Principal, IDL.Text, IDL.Text, IDL.Opt(StudentExtProfile), IDL.Opt(HabitSummary)))],
+        ['query'],
+      ),
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
     'linkStudentToTeacherAndParent' : IDL.Func([TeacherId, ParentId], [], []),
+    'saveStudentExtendedProfile' : IDL.Func(
+        [IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Text],
+        [],
+        [],
+      ),
+    'saveMoodEntry' : IDL.Func([IDL.Text, IDL.Text], [], []),
+    'saveHabitSummary' : IDL.Func(
+        [IDL.Nat, IDL.Nat, IDL.Nat, IDL.Nat],
+        [],
+        [],
+      ),
     'submitActivityResponse' : IDL.Func([IDL.Nat, IDL.Text], [IDL.Nat], []),
   });
 };

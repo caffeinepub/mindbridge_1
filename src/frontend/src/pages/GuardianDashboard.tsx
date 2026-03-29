@@ -699,22 +699,33 @@ export default function GuardianDashboard() {
     (async () => {
       try {
         const linkedOpt = await (actor as any).getParentLinkedStudent();
-        if (linkedOpt.__kind__ === "Some") {
-          const sp = linkedOpt.value;
+        // Candid opt returns [] (None) or [value] (Some)
+        const linkedArr = Array.isArray(linkedOpt)
+          ? linkedOpt
+          : linkedOpt?.__kind__ === "Some"
+            ? [linkedOpt.value]
+            : [];
+        if (linkedArr.length > 0) {
+          const sp = linkedArr[0];
           setStudentPrincipal(sp);
           // Load profile, habits, mood in parallel
           const [profileOpt, habitOpt, moodStr] = await Promise.all([
-            (actor as any)
-              .getStudentExtendedProfile(sp)
-              .catch(() => ({ __kind__: "None" as const })),
-            (actor as any)
-              .getHabitSummary(sp)
-              .catch(() => ({ __kind__: "None" as const })),
+            (actor as any).getStudentExtendedProfile(sp).catch(() => []),
+            (actor as any).getHabitSummary(sp).catch(() => []),
             (actor as any).getMoodHistory(sp).catch(() => ""),
           ]);
-          if (profileOpt.__kind__ === "Some")
-            setLinkedStudentProfile(profileOpt.value);
-          if (habitOpt.__kind__ === "Some") setLinkedHabitData(habitOpt.value);
+          const profileVal = Array.isArray(profileOpt)
+            ? profileOpt[0]
+            : profileOpt?.__kind__ === "Some"
+              ? profileOpt.value
+              : undefined;
+          const habitVal = Array.isArray(habitOpt)
+            ? habitOpt[0]
+            : habitOpt?.__kind__ === "Some"
+              ? habitOpt.value
+              : undefined;
+          if (profileVal) setLinkedStudentProfile(profileVal);
+          if (habitVal) setLinkedHabitData(habitVal);
           if (moodStr) {
             const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
             const moodMap: Record<string, number> = {};
