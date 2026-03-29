@@ -70,27 +70,6 @@ const features = [
   },
 ];
 
-const testimonials = [
-  {
-    name: "Priya S.",
-    role: "University Student",
-    text: "Lumi Arc helped me realize I was dealing with more anxiety than I knew. The resources section gave me practical tools that actually work.",
-    stars: 5,
-  },
-  {
-    name: "Mr. Thomas R.",
-    role: "University Counselor",
-    text: "Being able to check on my students' wellbeing trends has made a real difference. I can intervene earlier and more meaningfully.",
-    stars: 5,
-  },
-  {
-    name: "Ananya M.",
-    role: "Parent",
-    text: "As a parent, having visibility into my child's mental health check-ins — with their permission — gives me peace of mind and opens conversations.",
-    stars: 5,
-  },
-];
-
 const roles = [
   {
     icon: GraduationCap,
@@ -403,58 +382,6 @@ export default function LandingPage() {
                 </motion.div>
               );
             })}
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials */}
-      <section className="py-24">
-        <div className="container mx-auto px-4">
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            variants={fadeUp}
-            className="text-center mb-16"
-          >
-            <h2 className="font-display text-4xl font-bold text-foreground mb-4">
-              Stories of growth
-            </h2>
-            <p className="text-muted-foreground max-w-lg mx-auto">
-              Real experiences from students, teachers, and parents using Lumi
-              Arc.
-            </p>
-          </motion.div>
-
-          <div className="grid md:grid-cols-3 gap-6">
-            {testimonials.map((t, i) => (
-              <motion.div
-                key={t.name}
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true }}
-                custom={i * 0.1}
-                variants={fadeUp}
-                className="bg-card rounded-2xl p-6 shadow-sm border border-border/40"
-                data-ocid={`testimonials.item.${i + 1}`}
-              >
-                <div className="flex items-center gap-1 text-yellow-500 mb-4">
-                  {Array.from({ length: t.stars }, (_, j) => (
-                    <Star
-                      key={`star-${t.name}-${j}`}
-                      className="w-4 h-4 fill-yellow-500"
-                    />
-                  ))}
-                </div>
-                <p className="text-foreground mb-4 leading-relaxed italic">
-                  "{t.text}"
-                </p>
-                <div>
-                  <div className="font-semibold text-sm">{t.name}</div>
-                  <div className="text-xs text-muted-foreground">{t.role}</div>
-                </div>
-              </motion.div>
-            ))}
           </div>
         </div>
       </section>

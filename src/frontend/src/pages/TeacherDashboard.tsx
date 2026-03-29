@@ -1911,7 +1911,7 @@ function ClassOverview({
 }) {
   const { data: backendStudents = [], isFetching } =
     useGetTeacherStudentsWithProfiles();
-  const { students: manualStudents } = useTeacherStudents();
+  const { students: manualStudents, removeStudent } = useTeacherStudents();
   const queryClient = useQueryClient();
 
   function handleRefresh() {
@@ -2050,9 +2050,22 @@ function ClassOverview({
                     </p>
                   )}
                 </div>
-                <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium flex-shrink-0">
-                  Manual
-                </span>
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">
+                    Manual
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      removeStudent(s.id);
+                      toast.success("Student removed.");
+                    }}
+                    className="text-red-400 hover:text-red-600 transition-colors p-1 rounded"
+                    title="Remove student"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
               {s.studentFieldOfStudy && (
                 <p className="text-xs text-muted-foreground pl-11">
