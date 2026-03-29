@@ -153,8 +153,8 @@ export function useGetTeacherStudents() {
   });
 }
 
-// Get teacher students — uses getTeacherStudents (available in canister)
-// Returns [Principal, name, email] triples
+// Get teacher students with extended profiles
+// Returns [Principal, name, email] triples (extracted from richer data)
 export function useGetTeacherStudentsWithProfiles() {
   const { actor } = useActor();
   return useQuery<
@@ -163,7 +163,25 @@ export function useGetTeacherStudentsWithProfiles() {
     queryKey: ["teacherStudentsWithProfiles"],
     queryFn: async () => {
       if (!actor) return [];
-      return (actor as any).getTeacherStudents();
+      try {
+        // Try richer endpoint first (returns [Principal, name, email, ?extProfile, ?habitSummary])
+        const rich = await (actor as any).getTeacherStudentsWithProfiles();
+        return rich.map(
+          ([p, n, e]: [
+            import("@icp-sdk/core/principal").Principal,
+            string,
+            string,
+          ]) =>
+            [p, n, e] as [
+              import("@icp-sdk/core/principal").Principal,
+              string,
+              string,
+            ],
+        );
+      } catch {
+        // Fallback to basic endpoint
+        return (actor as any).getTeacherStudents();
+      }
     },
     enabled: !!actor,
     staleTime: 0,

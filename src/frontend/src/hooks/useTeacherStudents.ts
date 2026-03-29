@@ -4,9 +4,14 @@ export interface TeacherStudentEntry {
   id: string;
   studentName: string;
   studentEmail?: string;
+  studentPhone?: string;
+  studentFieldOfStudy?: string;
+  studentPrincipalId?: string;
   guardianName: string;
   guardianEmail: string;
   guardianPhone?: string;
+  guardianRelationship?: string;
+  guardianPrincipalId?: string;
 }
 
 const STORAGE_KEY = "lumi_teacher_students";

@@ -161,6 +161,7 @@ export const idlService = IDL.Service({
       [],
       [],
     ),
+  'removeStudentLink' : IDL.Func([IDL.Principal], [], []),
   'submitActivityResponse' : IDL.Func([IDL.Nat, IDL.Text], [IDL.Nat], []),
 });
 
@@ -320,6 +321,7 @@ export const idlFactory = ({ IDL }) => {
         [],
         [],
       ),
+    'removeStudentLink' : IDL.Func([IDL.Principal], [], []),
     'submitActivityResponse' : IDL.Func([IDL.Nat, IDL.Text], [IDL.Nat], []),
   });
 };

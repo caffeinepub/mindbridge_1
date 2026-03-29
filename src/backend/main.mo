@@ -271,6 +271,24 @@ actor {
     result.toArray();
   };
 
+  // Remove a student link (teacher calls to unlink a student from their class)
+  public shared ({ caller }) func removeStudentLink(studentId : StudentId) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized");
+    };
+    // Only the linked teacher (or the student themselves) can remove the link
+    switch (studentLinks.get(studentId)) {
+      case (?(teacherId, _)) {
+        if (teacherId == caller or studentId == caller) {
+          studentLinks.remove(studentId);
+        } else {
+          Runtime.trap("Unauthorized: Only the linked teacher can remove this student");
+        };
+      };
+      case null {};
+    };
+  };
+
   // ─── NEW: Extended profile, mood, habit functions ─────────────────────────
 
   // Save extended student profile (student calls after completing profile wizard)
@@ -297,30 +315,13 @@ actor {
   // Get extended student profile (teacher/parent linked to student, or student themselves)
   public query ({ caller }) func getStudentExtendedProfile(studentId : StudentId) : async ?StudentExtProfile {
     if (caller != studentId) {
+      // Check studentLinks directly: caller is authorized if they are the linked teacher or parent
       var authorized = false;
-      switch (teacherProfiles.get(caller)) {
-        case (?_) {
-          switch (studentLinks.get(studentId)) {
-            case (?(teacherId, _)) {
-              if (teacherId == caller) { authorized := true };
-            };
-            case null {};
-          };
+      switch (studentLinks.get(studentId)) {
+        case (?(teacherId, parentId)) {
+          if (teacherId == caller or parentId == caller) { authorized := true };
         };
         case null {};
-      };
-      if (not authorized) {
-        switch (parentProfiles.get(caller)) {
-          case (?_) {
-            switch (studentLinks.get(studentId)) {
-              case (?(_, parentId)) {
-                if (parentId == caller) { authorized := true };
-              };
-              case null {};
-            };
-          };
-          case null {};
-        };
       };
       if (not authorized) {
         Runtime.trap("Unauthorized: Only linked teachers/parents can view student profile");
@@ -347,30 +348,13 @@ actor {
   // Teacher or parent linked to the student can call this
   public query ({ caller }) func getMoodHistory(studentId : StudentId) : async Text {
     if (caller != studentId) {
+      // Check studentLinks directly: caller is authorized if they are the linked teacher or parent
       var authorized = false;
-      switch (teacherProfiles.get(caller)) {
-        case (?_) {
-          switch (studentLinks.get(studentId)) {
-            case (?(teacherId, _)) {
-              if (teacherId == caller) { authorized := true };
-            };
-            case null {};
-          };
+      switch (studentLinks.get(studentId)) {
+        case (?(teacherId, parentId)) {
+          if (teacherId == caller or parentId == caller) { authorized := true };
         };
         case null {};
-      };
-      if (not authorized) {
-        switch (parentProfiles.get(caller)) {
-          case (?_) {
-            switch (studentLinks.get(studentId)) {
-              case (?(_, parentId)) {
-                if (parentId == caller) { authorized := true };
-              };
-              case null {};
-            };
-          };
-          case null {};
-        };
       };
       if (not authorized) {
         Runtime.trap("Unauthorized: Only linked teachers/parents can view mood history");
@@ -404,30 +388,13 @@ actor {
   // Get habit summary for a student (teacher or parent linked to student)
   public query ({ caller }) func getHabitSummary(studentId : StudentId) : async ?HabitSummary {
     if (caller != studentId) {
+      // Check studentLinks directly: caller is authorized if they are the linked teacher or parent
       var authorized = false;
-      switch (teacherProfiles.get(caller)) {
-        case (?_) {
-          switch (studentLinks.get(studentId)) {
-            case (?(teacherId, _)) {
-              if (teacherId == caller) { authorized := true };
-            };
-            case null {};
-          };
+      switch (studentLinks.get(studentId)) {
+        case (?(teacherId, parentId)) {
+          if (teacherId == caller or parentId == caller) { authorized := true };
         };
         case null {};
-      };
-      if (not authorized) {
-        switch (parentProfiles.get(caller)) {
-          case (?_) {
-            switch (studentLinks.get(studentId)) {
-              case (?(_, parentId)) {
-                if (parentId == caller) { authorized := true };
-              };
-              case null {};
-            };
-          };
-          case null {};
-        };
       };
       if (not authorized) {
         Runtime.trap("Unauthorized: Only linked teachers/parents can view habit data");
@@ -594,37 +561,17 @@ actor {
       // Teachers and Parents can view assessments of their linked students
       var authorized = false;
 
-      // Check if caller is a teacher linked to this student
-      switch (teacherProfiles.get(caller)) {
-        case (?_) {
-          switch (studentLinks.get(studentId)) {
-            case (?(teacherId, _)) {
-              if (teacherId == caller) {
-                authorized := true;
-              };
-            };
-            case null {};
+      // Check studentLinks directly: caller is teacher or parent linked to this student
+      switch (studentLinks.get(studentId)) {
+        case (?(teacherId, parentId)) {
+          if (teacherId == caller or parentId == caller) {
+            authorized := true;
           };
         };
         case null {};
       };
 
-      // Check if caller is a parent linked to this student
-      if (not authorized) {
-        switch (parentProfiles.get(caller)) {
-          case (?_) {
-            switch (studentLinks.get(studentId)) {
-              case (?(_, parentId)) {
-                if (parentId == caller) {
-                  authorized := true;
-                };
-              };
-              case null {};
-            };
-          };
-          case null {};
-        };
-      };
+
 
       // Admin can view all assessments
       if (not authorized and not AccessControl.isAdmin(accessControlState, caller)) {

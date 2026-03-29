@@ -71,6 +71,53 @@ export default function LinkGuardianPage() {
     } catch {
       /* may already exist */
     }
+    // Also sync extended profile so teacher can see name/email
+    try {
+      if (actor) {
+        let extName = "";
+        let extEmail = "";
+        let extAge = "";
+        let extField = "";
+        let extGoal = "";
+        if (identity) {
+          try {
+            const profileRaw = localStorage.getItem(
+              `lumiArcProfile_${identity.getPrincipal().toText()}`,
+            );
+            if (profileRaw) {
+              const p = JSON.parse(profileRaw);
+              extName = p.name || p.displayName || "";
+              extEmail = p.email || "";
+              extAge = p.age || "";
+              extField = p.fieldOfStudy || "";
+              extGoal = p.wellnessGoal || "";
+            }
+          } catch {
+            /* ignore */
+          }
+        }
+        if (!extName) {
+          try {
+            const raw = localStorage.getItem("lumiProfile");
+            if (raw) {
+              const p = JSON.parse(raw);
+              extName = p.displayName || p.name || "";
+            }
+          } catch {
+            /* ignore */
+          }
+        }
+        await (actor as any).saveStudentExtendedProfile(
+          extName,
+          extEmail,
+          extAge,
+          extField,
+          extGoal,
+        );
+      }
+    } catch {
+      /* ignore */
+    }
   };
 
   const tryLinkBoth = async (tId: string, pId: string): Promise<boolean> => {

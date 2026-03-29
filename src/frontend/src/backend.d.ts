@@ -93,6 +93,7 @@ export interface backendInterface {
     getTeacherStudents(): Promise<Array<[Principal, string, string]>>;
     isCallerAdmin(): Promise<boolean>;
     linkStudentToTeacherAndParent(teacherId: TeacherId, parentId: ParentId): Promise<void>;
+    removeStudentLink(studentId: Principal): Promise<void>;
     submitActivityResponse(activityId: bigint, response: string): Promise<bigint>;
     // New: extended data functions
     saveStudentExtendedProfile(name: string, email: string, age: string, fieldOfStudy: string, wellnessGoal: string): Promise<void>;

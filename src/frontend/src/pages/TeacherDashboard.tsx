@@ -149,6 +149,10 @@ function AddStudentForm({ onAdd, onCancel }: AddStudentFormProps) {
   const [guardianName, setGuardianName] = useState("");
   const [guardianEmail, setGuardianEmail] = useState("");
   const [guardianPhone, setGuardianPhone] = useState("");
+  const [studentPhone, setStudentPhone] = useState("");
+  const [studentFieldOfStudy, setStudentFieldOfStudy] = useState("");
+  const [studentPrincipalId, setStudentPrincipalId] = useState("");
+  const [guardianPrincipalId, setGuardianPrincipalId] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   function validate() {
@@ -171,9 +175,13 @@ function AddStudentForm({ onAdd, onCancel }: AddStudentFormProps) {
     onAdd({
       studentName: studentName.trim(),
       studentEmail: studentEmail.trim() || undefined,
+      studentPhone: studentPhone.trim() || undefined,
+      studentFieldOfStudy: studentFieldOfStudy.trim() || undefined,
+      studentPrincipalId: studentPrincipalId.trim() || undefined,
       guardianName: guardianName.trim(),
       guardianEmail: guardianEmail.trim(),
       guardianPhone: guardianPhone.trim() || undefined,
+      guardianPrincipalId: guardianPrincipalId.trim() || undefined,
     });
   }
 
@@ -311,6 +319,78 @@ function AddStudentForm({ onAdd, onCancel }: AddStudentFormProps) {
             className={inputCls}
           />
         </div>
+        {/* Student Phone */}
+        <div>
+          <label
+            htmlFor="add-student-phone"
+            className="block text-xs font-medium text-foreground mb-1"
+          >
+            Student Phone (optional)
+          </label>
+          <input
+            id="add-student-phone"
+            type="tel"
+            value={studentPhone}
+            onChange={(e) => setStudentPhone(e.target.value)}
+            placeholder="+91 98765 43210"
+            data-ocid="teacher.student_phone.input"
+            className={inputCls}
+          />
+        </div>
+        {/* Field of Study */}
+        <div>
+          <label
+            htmlFor="add-student-fos"
+            className="block text-xs font-medium text-foreground mb-1"
+          >
+            Field of Study (optional)
+          </label>
+          <input
+            id="add-student-fos"
+            type="text"
+            value={studentFieldOfStudy}
+            onChange={(e) => setStudentFieldOfStudy(e.target.value)}
+            placeholder="e.g. Computer Science"
+            data-ocid="teacher.student_field.input"
+            className={inputCls}
+          />
+        </div>
+        {/* Student Principal ID */}
+        <div>
+          <label
+            htmlFor="add-student-pid"
+            className="block text-xs font-medium text-foreground mb-1"
+          >
+            Student Principal ID (optional)
+          </label>
+          <input
+            id="add-student-pid"
+            type="text"
+            value={studentPrincipalId}
+            onChange={(e) => setStudentPrincipalId(e.target.value)}
+            placeholder="Paste from student's profile page"
+            data-ocid="teacher.student_principal.input"
+            className={inputCls}
+          />
+        </div>
+        {/* Parent Principal ID */}
+        <div>
+          <label
+            htmlFor="add-parent-pid"
+            className="block text-xs font-medium text-foreground mb-1"
+          >
+            Parent/Guardian Principal ID (optional)
+          </label>
+          <input
+            id="add-parent-pid"
+            type="text"
+            value={guardianPrincipalId}
+            onChange={(e) => setGuardianPrincipalId(e.target.value)}
+            placeholder="Paste from guardian's profile page"
+            data-ocid="teacher.guardian_principal.input"
+            className={inputCls}
+          />
+        </div>
       </div>
       <div className="flex gap-3 pt-1">
         <button
@@ -345,6 +425,22 @@ function MyStudentsSection({
   const { students, addStudent, removeStudent } = useTeacherStudents();
   const [showForm, setShowForm] = useState(false);
   const queryClient = useQueryClient();
+  const { actor } = useActor();
+
+  async function handleUnlinkBackendStudent(principal: Principal) {
+    if (!actor) return;
+    try {
+      await (actor as any).removeStudentLink(principal);
+    } catch (_) {
+      // ignore if method not available
+    }
+    queryClient.invalidateQueries({
+      queryKey: ["teacherStudentsWithProfiles"],
+    });
+    toast.success(
+      "Student unlinked. They will need to re-link to appear again.",
+    );
+  }
 
   function handleRefresh() {
     queryClient.invalidateQueries({
@@ -447,6 +543,15 @@ function MyStudentsSection({
                     >
                       <Copy className="w-3.5 h-3.5" />
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => handleUnlinkBackendStudent(principal)}
+                      data-ocid={`teacher.backend_student.delete_button.${idx + 1}`}
+                      className="text-red-400 hover:text-red-600 transition-colors"
+                      title="Unlink student"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                   <p className="text-xs text-muted-foreground font-mono pl-11">
                     {shortId}
@@ -524,6 +629,21 @@ function MyStudentsSection({
                       </a>
                     </div>
                   )}
+                  {s.studentPhone && (
+                    <p className="text-xs text-muted-foreground ml-9">
+                      📞 {s.studentPhone}
+                    </p>
+                  )}
+                  {s.studentFieldOfStudy && (
+                    <p className="text-xs text-muted-foreground ml-9">
+                      📚 {s.studentFieldOfStudy}
+                    </p>
+                  )}
+                  {s.studentPrincipalId && (
+                    <p className="text-xs text-muted-foreground font-mono ml-9 truncate">
+                      🪪 Student ID: {s.studentPrincipalId.slice(0, 20)}…
+                    </p>
+                  )}
                 </div>
 
                 {/* Guardian info */}
@@ -546,6 +666,11 @@ function MyStudentsSection({
                   {s.guardianPhone && (
                     <p className="text-xs text-muted-foreground mt-0.5">
                       📞 {s.guardianPhone}
+                    </p>
+                  )}
+                  {s.guardianPrincipalId && (
+                    <p className="text-xs text-muted-foreground font-mono mt-0.5 truncate">
+                      🪪 {s.guardianPrincipalId.slice(0, 20)}…
                     </p>
                   )}
                 </div>
@@ -903,7 +1028,13 @@ function BackendStudentProfile({
   const { data: assessments } = useGetStudentAssessments(principal);
 
   useEffect(() => {
-    if (!actor) return;
+    if (
+      !actor ||
+      typeof (actor as any).getStudentExtendedProfile !== "function"
+    ) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     Promise.all([
       (actor as any).getStudentExtendedProfile(principal).catch(() => []),
