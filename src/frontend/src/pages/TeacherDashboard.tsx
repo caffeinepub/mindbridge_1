@@ -5,6 +5,7 @@ import {
   Dumbbell,
   Flame,
   Moon,
+  Pencil,
   Plus,
   Smile,
   Trash2,
@@ -59,7 +60,9 @@ import { useGetTeacherStudentsWithProfiles } from "../hooks/useQueries";
 import { useGetStudentAssessments } from "../hooks/useQueries";
 import {
   type TeacherStudentEntry,
+  TeacherStudentsContext,
   useTeacherStudents,
+  useTeacherStudentsProvider,
 } from "../hooks/useTeacherStudents";
 import { useUserProfile } from "../hooks/useUserProfile";
 import {
@@ -413,6 +416,257 @@ function AddStudentForm({ onAdd, onCancel }: AddStudentFormProps) {
   );
 }
 
+// ── Edit Student Form ────────────────────────────────────────────────────────
+
+interface EditStudentFormProps {
+  initial: TeacherStudentEntry;
+  onSave: (entry: Omit<TeacherStudentEntry, "id">) => void;
+  onCancel: () => void;
+}
+
+function EditStudentForm({ initial, onSave, onCancel }: EditStudentFormProps) {
+  const [studentName, setStudentName] = useState(initial.studentName);
+  const [studentEmail, setStudentEmail] = useState(initial.studentEmail ?? "");
+  const [studentPhone, setStudentPhone] = useState(initial.studentPhone ?? "");
+  const [studentFieldOfStudy, setStudentFieldOfStudy] = useState(
+    initial.studentFieldOfStudy ?? "",
+  );
+  const [studentPrincipalId, setStudentPrincipalId] = useState(
+    initial.studentPrincipalId ?? "",
+  );
+  const [guardianName, setGuardianName] = useState(initial.guardianName);
+  const [guardianEmail, setGuardianEmail] = useState(initial.guardianEmail);
+  const [guardianPhone, setGuardianPhone] = useState(
+    initial.guardianPhone ?? "",
+  );
+  const [guardianPrincipalId, setGuardianPrincipalId] = useState(
+    initial.guardianPrincipalId ?? "",
+  );
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  function validate() {
+    const e: Record<string, string> = {};
+    if (!studentName.trim()) e.studentName = "Student name is required";
+    if (!guardianName.trim()) e.guardianName = "Guardian name is required";
+    if (!guardianEmail.trim()) e.guardianEmail = "Guardian email is required";
+    else if (!/^[^@]+@[^@]+\.[^@]+$/.test(guardianEmail.trim()))
+      e.guardianEmail = "Please enter a valid email";
+    return e;
+  }
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const errs = validate();
+    if (Object.keys(errs).length > 0) {
+      setErrors(errs);
+      return;
+    }
+    onSave({
+      studentName: studentName.trim(),
+      studentEmail: studentEmail.trim() || undefined,
+      studentPhone: studentPhone.trim() || undefined,
+      studentFieldOfStudy: studentFieldOfStudy.trim() || undefined,
+      studentPrincipalId: studentPrincipalId.trim() || undefined,
+      guardianName: guardianName.trim(),
+      guardianEmail: guardianEmail.trim(),
+      guardianPhone: guardianPhone.trim() || undefined,
+      guardianPrincipalId: guardianPrincipalId.trim() || undefined,
+    });
+  }
+
+  const inputCls =
+    "w-full border border-teal-200 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-teal-400";
+
+  return (
+    <motion.form
+      initial={{ opacity: 0, y: -8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8 }}
+      onSubmit={handleSubmit}
+      className="bg-teal-50/60 rounded-xl p-4 space-y-3"
+      data-ocid="teacher.edit_student.panel"
+    >
+      <p className="text-xs font-semibold text-teal-700 uppercase tracking-wide">
+        Edit Student Details
+      </p>
+      <div className="grid sm:grid-cols-2 gap-3">
+        <div>
+          <label
+            htmlFor="edit-student-name"
+            className="block text-xs font-medium text-foreground mb-1"
+          >
+            Student Name <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            value={studentName}
+            onChange={(e) => setStudentName(e.target.value)}
+            className={inputCls}
+            id="edit-student-name"
+            data-ocid="teacher.edit_student_name.input"
+          />
+          {errors.studentName && (
+            <p className="text-xs text-red-500 mt-1">{errors.studentName}</p>
+          )}
+        </div>
+        <div>
+          <label
+            htmlFor="edit-student-email"
+            className="block text-xs font-medium text-foreground mb-1"
+          >
+            Student Email
+          </label>
+          <input
+            type="email"
+            value={studentEmail}
+            onChange={(e) => setStudentEmail(e.target.value)}
+            className={inputCls}
+            id="edit-student-email"
+            data-ocid="teacher.edit_student_email.input"
+          />
+        </div>
+        <div>
+          <label
+            htmlFor="edit-student-phone"
+            className="block text-xs font-medium text-foreground mb-1"
+          >
+            Student Phone
+          </label>
+          <input
+            type="tel"
+            value={studentPhone}
+            onChange={(e) => setStudentPhone(e.target.value)}
+            className={inputCls}
+            id="edit-student-phone"
+            data-ocid="teacher.edit_student_phone.input"
+          />
+        </div>
+        <div>
+          <label
+            htmlFor="edit-student-field"
+            className="block text-xs font-medium text-foreground mb-1"
+          >
+            Field of Study
+          </label>
+          <input
+            type="text"
+            value={studentFieldOfStudy}
+            onChange={(e) => setStudentFieldOfStudy(e.target.value)}
+            className={inputCls}
+            id="edit-student-field"
+            data-ocid="teacher.edit_student_field.input"
+          />
+        </div>
+        <div>
+          <label
+            htmlFor="edit-student-principal"
+            className="block text-xs font-medium text-foreground mb-1"
+          >
+            Student Principal ID
+          </label>
+          <input
+            type="text"
+            value={studentPrincipalId}
+            onChange={(e) => setStudentPrincipalId(e.target.value)}
+            className={inputCls}
+            id="edit-student-principal"
+            data-ocid="teacher.edit_student_principal.input"
+          />
+        </div>
+      </div>
+      <div className="grid sm:grid-cols-2 gap-3 pt-1">
+        <div>
+          <label
+            htmlFor="edit-guardian-name"
+            className="block text-xs font-medium text-foreground mb-1"
+          >
+            Guardian Name <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            value={guardianName}
+            onChange={(e) => setGuardianName(e.target.value)}
+            className={inputCls}
+            id="edit-guardian-name"
+            data-ocid="teacher.edit_guardian_name.input"
+          />
+          {errors.guardianName && (
+            <p className="text-xs text-red-500 mt-1">{errors.guardianName}</p>
+          )}
+        </div>
+        <div>
+          <label
+            htmlFor="edit-guardian-email"
+            className="block text-xs font-medium text-foreground mb-1"
+          >
+            Guardian Email <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="email"
+            value={guardianEmail}
+            onChange={(e) => setGuardianEmail(e.target.value)}
+            className={inputCls}
+            id="edit-guardian-email"
+            data-ocid="teacher.edit_guardian_email.input"
+          />
+          {errors.guardianEmail && (
+            <p className="text-xs text-red-500 mt-1">{errors.guardianEmail}</p>
+          )}
+        </div>
+        <div>
+          <label
+            htmlFor="edit-guardian-phone"
+            className="block text-xs font-medium text-foreground mb-1"
+          >
+            Guardian Phone
+          </label>
+          <input
+            type="tel"
+            value={guardianPhone}
+            onChange={(e) => setGuardianPhone(e.target.value)}
+            className={inputCls}
+            id="edit-guardian-phone"
+            data-ocid="teacher.edit_guardian_phone.input"
+          />
+        </div>
+        <div>
+          <label
+            htmlFor="edit-guardian-principal"
+            className="block text-xs font-medium text-foreground mb-1"
+          >
+            Guardian Principal ID
+          </label>
+          <input
+            type="text"
+            value={guardianPrincipalId}
+            onChange={(e) => setGuardianPrincipalId(e.target.value)}
+            className={inputCls}
+            id="edit-guardian-principal"
+            data-ocid="teacher.edit_guardian_principal.input"
+          />
+        </div>
+      </div>
+      <div className="flex gap-2 pt-1">
+        <button
+          type="submit"
+          data-ocid="teacher.edit_student.save_button"
+          className="bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium px-4 py-2 rounded-xl transition-colors"
+        >
+          Save Changes
+        </button>
+        <button
+          type="button"
+          onClick={onCancel}
+          data-ocid="teacher.edit_student.cancel_button"
+          className="border border-border text-sm font-medium px-4 py-2 rounded-xl hover:bg-muted/30 transition-colors"
+        >
+          Cancel
+        </button>
+      </div>
+    </motion.form>
+  );
+}
+
 // ── My Students Section ───────────────────────────────────────────────────────
 
 function MyStudentsSection({
@@ -422,7 +676,9 @@ function MyStudentsSection({
 }) {
   const { data: backendStudents = [], isFetching } =
     useGetTeacherStudentsWithProfiles();
-  const { students, addStudent, removeStudent } = useTeacherStudents();
+  const { students, addStudent, removeStudent, updateStudent } =
+    useTeacherStudents();
+  const [editingStudentId, setEditingStudentId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const queryClient = useQueryClient();
   const { actor } = useActor();
@@ -675,20 +931,45 @@ function MyStudentsSection({
                   )}
                 </div>
 
-                {/* Delete */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    removeStudent(s.id);
-                    toast.success("Student removed.");
-                  }}
-                  data-ocid={`teacher.students.delete_button.${idx + 1}`}
-                  className="self-start sm:self-center text-muted-foreground hover:text-red-500 transition-colors p-1.5 rounded-lg hover:bg-red-50"
-                  title="Remove student"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                {/* Edit / Delete */}
+                <div className="flex items-center gap-1 self-start sm:self-center">
+                  <button
+                    type="button"
+                    onClick={() => setEditingStudentId(s.id)}
+                    data-ocid={`teacher.students.edit_button.${idx + 1}`}
+                    className="text-muted-foreground hover:text-teal-600 transition-colors p-1.5 rounded-lg hover:bg-teal-50"
+                    title="Edit student"
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      removeStudent(s.id);
+                      toast.success("Student removed.");
+                    }}
+                    data-ocid={`teacher.students.delete_button.${idx + 1}`}
+                    className="text-muted-foreground hover:text-red-500 transition-colors p-1.5 rounded-lg hover:bg-red-50"
+                    title="Remove student"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
+              {/* Inline edit form */}
+              {editingStudentId === s.id && (
+                <div className="mt-3 pt-3 border-t border-border/40">
+                  <EditStudentForm
+                    initial={s}
+                    onSave={(entry) => {
+                      updateStudent(s.id, entry);
+                      setEditingStudentId(null);
+                      toast.success(`${entry.studentName}'s details updated.`);
+                    }}
+                    onCancel={() => setEditingStudentId(null)}
+                  />
+                </div>
+              )}
             </motion.div>
           ))}
         </div>
@@ -1630,6 +1911,7 @@ function ClassOverview({
 }) {
   const { data: backendStudents = [], isFetching } =
     useGetTeacherStudentsWithProfiles();
+  const { students: manualStudents } = useTeacherStudents();
   const queryClient = useQueryClient();
 
   function handleRefresh() {
@@ -1675,7 +1957,7 @@ function ClassOverview({
       </div>
 
       {/* Student cards or empty state */}
-      {backendStudents.length === 0 ? (
+      {backendStudents.length === 0 && manualStudents.length === 0 ? (
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -1691,7 +1973,8 @@ function ClassOverview({
           <p className="text-muted-foreground text-sm max-w-sm leading-relaxed">
             Share your invite link with your mentee students to get started.
             Once they sign up via your link, their wellness data will appear
-            here.
+            here. You can also manually add students using the My Students
+            section below.
           </p>
         </motion.div>
       ) : (
@@ -1705,7 +1988,7 @@ function ClassOverview({
               key={principal.toString()}
               data-ocid={`teacher.student_card.${idx + 1}`}
               onClick={() =>
-                onSelectBackendStudent(principal, name || "Student", email)
+                onSelectBackendStudent(principal, name || "Name not set", email)
               }
               className="bg-teal-50 border border-teal-200 rounded-2xl p-4 space-y-2 w-full text-left hover:bg-teal-100 transition-colors cursor-pointer"
             >
@@ -1714,9 +1997,15 @@ function ClassOverview({
                   <User className="w-4 h-4 text-teal-700" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="font-semibold text-sm text-foreground">
-                    {name || "Student"}
-                  </p>
+                  {name ? (
+                    <p className="font-semibold text-sm text-foreground">
+                      {name}
+                    </p>
+                  ) : (
+                    <p className="font-semibold text-sm text-muted-foreground italic">
+                      Name not set
+                    </p>
+                  )}
                   {email && (
                     <p className="text-xs text-muted-foreground">{email}</p>
                   )}
@@ -1740,6 +2029,45 @@ function ClassOverview({
                 Click to view progress →
               </p>
             </button>
+          ))}
+          {manualStudents.map((s, idx) => (
+            <div
+              key={s.id}
+              data-ocid={`teacher.manual_student_card.${backendStudents.length + idx + 1}`}
+              className="bg-amber-50 border border-amber-200 rounded-2xl p-4 space-y-2"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+                  <User className="w-4 h-4 text-amber-700" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold text-sm text-foreground">
+                    {s.studentName}
+                  </p>
+                  {s.studentEmail && (
+                    <p className="text-xs text-muted-foreground">
+                      {s.studentEmail}
+                    </p>
+                  )}
+                </div>
+                <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium flex-shrink-0">
+                  Manual
+                </span>
+              </div>
+              {s.studentFieldOfStudy && (
+                <p className="text-xs text-muted-foreground pl-11">
+                  📚 {s.studentFieldOfStudy}
+                </p>
+              )}
+              {s.guardianName && (
+                <p className="text-xs text-muted-foreground pl-11">
+                  👨‍👩‍👧 Guardian: {s.guardianName}
+                </p>
+              )}
+              <p className="text-xs text-amber-600 font-medium pl-11">
+                Manually added · see details in My Students ↓
+              </p>
+            </div>
           ))}
         </div>
       )}
@@ -2108,6 +2436,7 @@ function StudentProfile({
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 export default function TeacherDashboard() {
+  const teacherStudentsValue = useTeacherStudentsProvider();
   const [selectedStudent, setSelectedStudent] = useState<StudentRecord | null>(
     null,
   );
@@ -2140,135 +2469,137 @@ export default function TeacherDashboard() {
   };
 
   return (
-    <PinGate userRole="teacher">
-      <div className="min-h-screen bg-background">
-        <div className="container mx-auto px-4 py-10 max-w-6xl">
-          {/* Teacher Account Banner — always visible */}
-          <div className="flex flex-wrap items-center justify-between gap-4 mb-6 bg-teal-50 border border-teal-200 rounded-2xl px-5 py-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center">
-                <User className="w-5 h-5 text-teal-700" />
-              </div>
-              <div>
-                <p className="font-semibold text-foreground text-sm">
-                  {userProfile?.name || "Set your name in Profile"}
-                </p>
-                {userProfile?.email ? (
-                  <div className="flex items-center gap-1 text-xs text-teal-700">
-                    <Mail className="w-3 h-3" />
-                    <a
-                      href={`mailto:${userProfile.email}`}
-                      className="hover:underline"
-                    >
-                      {userProfile.email}
-                    </a>
-                  </div>
-                ) : (
-                  <p className="text-xs text-muted-foreground">
-                    Add your email in Profile
+    <TeacherStudentsContext.Provider value={teacherStudentsValue}>
+      <PinGate userRole="teacher">
+        <div className="min-h-screen bg-background">
+          <div className="container mx-auto px-4 py-10 max-w-6xl">
+            {/* Teacher Account Banner — always visible */}
+            <div className="flex flex-wrap items-center justify-between gap-4 mb-6 bg-teal-50 border border-teal-200 rounded-2xl px-5 py-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center">
+                  <User className="w-5 h-5 text-teal-700" />
+                </div>
+                <div>
+                  <p className="font-semibold text-foreground text-sm">
+                    {userProfile?.name || "Set your name in Profile"}
                   </p>
-                )}
-              </div>
-            </div>
-
-            {/* Invite Link + Principal ID */}
-            <div className="flex items-center gap-2">
-              <div className="flex flex-col gap-2">
-                {/* Principal ID — only if logged in via Internet Identity */}
-                {identity && (
-                  <div className="flex items-center gap-2 bg-white border border-teal-100 rounded-xl px-3 py-2">
-                    <span className="text-xs text-muted-foreground whitespace-nowrap">
-                      Your Principal ID:
-                    </span>
-                    <span className="text-xs font-mono text-teal-700 truncate max-w-[140px]">
-                      {identity.getPrincipal().toString()}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        navigator.clipboard.writeText(
-                          identity.getPrincipal().toString(),
-                        );
-                        toast.success("Principal ID copied!");
-                      }}
-                      className="ml-1 text-teal-500 hover:text-teal-700 transition-colors flex-shrink-0"
-                      title="Copy Principal ID"
-                      data-ocid="teacher.principal_id.button"
-                    >
-                      <Copy className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                )}
-                {/* Invite Link — always visible */}
-                <div className="flex items-center gap-2 bg-white border border-teal-200 rounded-xl px-3 py-2">
-                  <Link2 className="w-4 h-4 text-teal-600 flex-shrink-0" />
-                  <span className="text-xs text-muted-foreground truncate max-w-[180px]">
-                    {inviteLink}
-                  </span>
+                  {userProfile?.email ? (
+                    <div className="flex items-center gap-1 text-xs text-teal-700">
+                      <Mail className="w-3 h-3" />
+                      <a
+                        href={`mailto:${userProfile.email}`}
+                        className="hover:underline"
+                      >
+                        {userProfile.email}
+                      </a>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      Add your email in Profile
+                    </p>
+                  )}
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={handleCopyLink}
-                data-ocid="teacher.invite_link.button"
-                className="flex items-center gap-1.5 bg-teal-600 hover:bg-teal-700 text-white text-xs font-medium px-3 py-2 rounded-xl transition-colors"
-              >
-                <Copy className="w-3.5 h-3.5" />
-                Copy Invite Link
-              </button>
-            </div>
-          </div>
 
-          <ChangePinDialog userRole="teacher" />
-          <AnimatePresence mode="wait">
-            {selectedBackendStudent ? (
-              <motion.div
-                key="backend-profile"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-              >
-                <BackendStudentProfile
-                  principal={selectedBackendStudent.principal}
-                  name={selectedBackendStudent.name}
-                  email={selectedBackendStudent.email}
-                  onBack={() => setSelectedBackendStudent(null)}
-                />
-              </motion.div>
-            ) : selectedStudent ? (
-              <motion.div
-                key="profile"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-              >
-                <StudentProfile
-                  student={selectedStudent}
-                  onBack={() => setSelectedStudent(null)}
-                />
-              </motion.div>
-            ) : (
-              <motion.div
-                key="overview"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-              >
-                <ClassOverview
-                  onSelectStudent={setSelectedStudent}
-                  onSelectBackendStudent={(p, n, e) =>
-                    setSelectedBackendStudent({
-                      principal: p,
-                      name: n,
-                      email: e,
-                    })
-                  }
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
+              {/* Invite Link + Principal ID */}
+              <div className="flex items-center gap-2">
+                <div className="flex flex-col gap-2">
+                  {/* Principal ID — only if logged in via Internet Identity */}
+                  {identity && (
+                    <div className="flex items-center gap-2 bg-white border border-teal-100 rounded-xl px-3 py-2">
+                      <span className="text-xs text-muted-foreground whitespace-nowrap">
+                        Your Principal ID:
+                      </span>
+                      <span className="text-xs font-mono text-teal-700 truncate max-w-[140px]">
+                        {identity.getPrincipal().toString()}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(
+                            identity.getPrincipal().toString(),
+                          );
+                          toast.success("Principal ID copied!");
+                        }}
+                        className="ml-1 text-teal-500 hover:text-teal-700 transition-colors flex-shrink-0"
+                        title="Copy Principal ID"
+                        data-ocid="teacher.principal_id.button"
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  )}
+                  {/* Invite Link — always visible */}
+                  <div className="flex items-center gap-2 bg-white border border-teal-200 rounded-xl px-3 py-2">
+                    <Link2 className="w-4 h-4 text-teal-600 flex-shrink-0" />
+                    <span className="text-xs text-muted-foreground truncate max-w-[180px]">
+                      {inviteLink}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleCopyLink}
+                  data-ocid="teacher.invite_link.button"
+                  className="flex items-center gap-1.5 bg-teal-600 hover:bg-teal-700 text-white text-xs font-medium px-3 py-2 rounded-xl transition-colors"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                  Copy Invite Link
+                </button>
+              </div>
+            </div>
+
+            <ChangePinDialog userRole="teacher" />
+            <AnimatePresence mode="wait">
+              {selectedBackendStudent ? (
+                <motion.div
+                  key="backend-profile"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                >
+                  <BackendStudentProfile
+                    principal={selectedBackendStudent.principal}
+                    name={selectedBackendStudent.name}
+                    email={selectedBackendStudent.email}
+                    onBack={() => setSelectedBackendStudent(null)}
+                  />
+                </motion.div>
+              ) : selectedStudent ? (
+                <motion.div
+                  key="profile"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                >
+                  <StudentProfile
+                    student={selectedStudent}
+                    onBack={() => setSelectedStudent(null)}
+                  />
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="overview"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                >
+                  <ClassOverview
+                    onSelectStudent={setSelectedStudent}
+                    onSelectBackendStudent={(p, n, e) =>
+                      setSelectedBackendStudent({
+                        principal: p,
+                        name: n,
+                        email: e,
+                      })
+                    }
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
-      </div>
-    </PinGate>
+      </PinGate>
+    </TeacherStudentsContext.Provider>
   );
 }

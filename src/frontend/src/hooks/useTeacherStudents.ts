@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { createContext, useContext, useState } from "react";
 
 export interface TeacherStudentEntry {
   id: string;
@@ -29,7 +29,17 @@ function saveStudents(students: TeacherStudentEntry[]) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(students));
 }
 
-export function useTeacherStudents() {
+export interface TeacherStudentsContextValue {
+  students: TeacherStudentEntry[];
+  addStudent: (entry: Omit<TeacherStudentEntry, "id">) => void;
+  removeStudent: (id: string) => void;
+  updateStudent: (id: string, entry: Omit<TeacherStudentEntry, "id">) => void;
+}
+
+export const TeacherStudentsContext =
+  createContext<TeacherStudentsContextValue | null>(null);
+
+export function useTeacherStudentsProvider(): TeacherStudentsContextValue {
   const [students, setStudents] = useState<TeacherStudentEntry[]>(loadStudents);
 
   function addStudent(entry: Omit<TeacherStudentEntry, "id">) {
@@ -48,5 +58,21 @@ export function useTeacherStudents() {
     setStudents(updated);
   }
 
-  return { students, addStudent, removeStudent };
+  function updateStudent(id: string, entry: Omit<TeacherStudentEntry, "id">) {
+    const updated = students.map((s) => (s.id === id ? { ...entry, id } : s));
+    saveStudents(updated);
+    setStudents(updated);
+  }
+
+  return { students, addStudent, removeStudent, updateStudent };
+}
+
+export function useTeacherStudents(): TeacherStudentsContextValue {
+  const ctx = useContext(TeacherStudentsContext);
+  if (!ctx) {
+    throw new Error(
+      "useTeacherStudents must be used within TeacherStudentsContext.Provider",
+    );
+  }
+  return ctx;
 }
