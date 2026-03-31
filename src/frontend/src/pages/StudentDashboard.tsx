@@ -15,7 +15,7 @@ import {
   TrendingUp,
   X,
 } from "lucide-react";
-import { Copy, GraduationCap, Share2 } from "lucide-react";
+import { Copy, GraduationCap, Mail, Phone, Share2 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -457,10 +457,20 @@ export default function StudentDashboard() {
                       </p>
                       <a
                         href={`mailto:${lumiProfile.linkedTeacherEmail}`}
-                        className="text-xs text-sage-600 hover:underline truncate"
+                        className="flex items-center gap-1 text-xs text-sage-600 hover:underline truncate"
                       >
+                        <Mail className="w-3 h-3 flex-shrink-0" />
                         {lumiProfile.linkedTeacherEmail}
                       </a>
+                      {(lumiProfile as any).linkedTeacherPhone && (
+                        <a
+                          href={`tel:${(lumiProfile as any).linkedTeacherPhone}`}
+                          className="flex items-center gap-1 text-xs text-sage-600 hover:underline mt-0.5"
+                        >
+                          <Phone className="w-3 h-3 flex-shrink-0" />
+                          {(lumiProfile as any).linkedTeacherPhone}
+                        </a>
+                      )}
                     </>
                   ) : (
                     <p className="text-xs text-muted-foreground">

@@ -22,6 +22,104 @@ import { useActor } from "../hooks/useActor";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
 import { useLinkGuardian } from "../hooks/useQueries";
 
+// ── Post-link sync helpers ────────────────────────────────────────────────────
+
+async function syncMoodHistoryToBackend(actor: any): Promise<void> {
+  const today = new Date();
+  for (let i = 0; i < 30; i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    const dateStr = d.toISOString().slice(0, 10);
+    const moodVal = localStorage.getItem(`lumi_arc_mood_${dateStr}`);
+    if (moodVal) {
+      actor.saveMoodEntry(dateStr, moodVal).catch(() => {});
+    }
+  }
+}
+
+async function syncHabitSummaryToBackend(actor: any): Promise<void> {
+  try {
+    const raw = localStorage.getItem("lumi_arc_daily_logs");
+    const logs: Record<
+      string,
+      { sleep?: boolean; exercise?: boolean; outdoor?: boolean }
+    > = raw ? JSON.parse(raw) : {};
+    const now = new Date();
+    let sleepStreak = 0;
+    let exerciseStreak = 0;
+    let outdoorStreak = 0;
+    let xp = 0;
+    for (let i = 0; i < 365; i++) {
+      const d = new Date(now);
+      d.setDate(now.getDate() - i);
+      const key = d.toISOString().slice(0, 10);
+      if (logs[key]?.sleep) sleepStreak++;
+      else break;
+    }
+    for (let i = 0; i < 365; i++) {
+      const d = new Date(now);
+      d.setDate(now.getDate() - i);
+      const key = d.toISOString().slice(0, 10);
+      if (logs[key]?.exercise) exerciseStreak++;
+      else break;
+    }
+    for (let i = 0; i < 365; i++) {
+      const d = new Date(now);
+      d.setDate(now.getDate() - i);
+      const key = d.toISOString().slice(0, 10);
+      if (logs[key]?.outdoor) outdoorStreak++;
+      else break;
+    }
+    for (const log of Object.values(logs)) {
+      if (log.sleep) xp += 10;
+      if (log.exercise) xp += 10;
+      if (log.outdoor) xp += 10;
+    }
+    actor
+      .saveHabitSummary(
+        BigInt(sleepStreak),
+        BigInt(exerciseStreak),
+        BigInt(outdoorStreak),
+        BigInt(xp),
+      )
+      .catch(() => {});
+  } catch {
+    // ignore
+  }
+}
+
+async function fetchAndStoreTeacherInfo(
+  actor: any,
+  teacherId: string,
+  principalId: string,
+): Promise<void> {
+  try {
+    const teacherInfoOpt = await actor
+      .getTeacherInfo(Principal.fromText(teacherId.trim()))
+      .catch(() => []);
+    const teacherInfoArr = Array.isArray(teacherInfoOpt)
+      ? teacherInfoOpt
+      : teacherInfoOpt?.__kind__ === "Some"
+        ? [teacherInfoOpt.value]
+        : [];
+    if (teacherInfoArr.length > 0) {
+      const info = teacherInfoArr[0];
+      const profileKey = `lumiArcProfile_${principalId}`;
+      try {
+        const existing = JSON.parse(localStorage.getItem(profileKey) || "{}");
+        existing.linkedTeacherName = info.name || "";
+        existing.linkedTeacherEmail = info.email || "";
+        existing.linkedTeacherPhone = info.phone || "";
+        localStorage.setItem(profileKey, JSON.stringify(existing));
+      } catch {
+        // ignore
+      }
+    }
+  } catch {
+    // ignore
+  }
+}
+
 export default function LinkGuardianPage() {
   const { identity } = useInternetIdentity();
   const { actor } = useActor();
@@ -213,6 +311,18 @@ export default function LinkGuardianPage() {
         toast.success(
           "Connected to teacher and parent! Your support network is set up. 🎉",
         );
+        // Sync historical data to backend (fire-and-forget)
+        if (actor) {
+          syncMoodHistoryToBackend(actor as any);
+          syncHabitSummaryToBackend(actor as any);
+        }
+        if (actor && identity) {
+          fetchAndStoreTeacherInfo(
+            actor as any,
+            trimmed,
+            identity.getPrincipal().toText(),
+          );
+        }
       } else {
         toast.error(
           "Could not complete the backend link. Your IDs are saved — try again later.",
@@ -255,6 +365,19 @@ export default function LinkGuardianPage() {
         toast.success(
           "Connected to parent and teacher! Your support network is set up. 🎉",
         );
+        // Sync historical data to backend (fire-and-forget)
+        if (actor) {
+          syncMoodHistoryToBackend(actor as any);
+          syncHabitSummaryToBackend(actor as any);
+        }
+        const savedTeacherId = localStorage.getItem("lumiLinkedTeacherId");
+        if (actor && identity && savedTeacherId) {
+          fetchAndStoreTeacherInfo(
+            actor as any,
+            savedTeacherId,
+            identity.getPrincipal().toText(),
+          );
+        }
       } else {
         toast.error(
           "Could not complete the backend link. Your IDs are saved — try again later.",

@@ -117,6 +117,10 @@ export default function ProfileModal({ open, onClose }: Props) {
         )
         .catch(() => {});
     }
+    // Sync teacher phone to backend
+    if (actor && identity && userRole === "teacher" && phoneNumber.trim()) {
+      (actor as any).saveTeacherPhone(phoneNumber.trim()).catch(() => {});
+    }
     setSaved(true);
     setTimeout(() => {
       setSaved(false);
@@ -328,6 +332,32 @@ export default function ProfileModal({ open, onClose }: Props) {
                     className="rounded-xl border-border/60"
                     maxLength={60}
                   />
+                </div>
+              )}
+
+              {/* Phone Number (teachers only) */}
+              {isTeacher && (
+                <div>
+                  <label
+                    htmlFor="profile-phone"
+                    className="text-xs font-semibold text-foreground/70 uppercase tracking-wide mb-1.5 block"
+                  >
+                    Phone Number (optional)
+                  </label>
+                  <Input
+                    id="profile-phone"
+                    data-ocid="profile.phone.input"
+                    placeholder="e.g. +91 98765 43210"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    className="rounded-xl border-border/60"
+                    maxLength={20}
+                    type="tel"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Students and parents will be able to see this number to
+                    contact you.
+                  </p>
                 </div>
               )}
 

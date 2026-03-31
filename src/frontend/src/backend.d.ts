@@ -53,6 +53,11 @@ export interface HabitSummary {
     xp: bigint;
     lastUpdated: Time;
 }
+export interface TeacherInfo {
+    name: string;
+    email: string;
+    phone: string;
+}
 export enum ActivityType {
     affirmation = "affirmation",
     word_association = "word_association",
@@ -95,7 +100,7 @@ export interface backendInterface {
     linkStudentToTeacherAndParent(teacherId: TeacherId, parentId: ParentId): Promise<void>;
     removeStudentLink(studentId: Principal): Promise<void>;
     submitActivityResponse(activityId: bigint, response: string): Promise<bigint>;
-    // New: extended data functions
+    // Extended data functions
     saveStudentExtendedProfile(name: string, email: string, age: string, fieldOfStudy: string, wellnessGoal: string): Promise<void>;
     getStudentExtendedProfile(studentId: StudentId): Promise<Option<StudentExtProfile>>;
     saveMoodEntry(date: string, mood: string): Promise<void>;
@@ -104,4 +109,8 @@ export interface backendInterface {
     getHabitSummary(studentId: StudentId): Promise<Option<HabitSummary>>;
     getParentLinkedStudent(): Promise<Option<Principal>>;
     getTeacherStudentsWithProfiles(): Promise<Array<[Principal, string, string, Option<StudentExtProfile>, Option<HabitSummary>]>>;
+    // Teacher contact info functions
+    saveTeacherPhone(phone: string): Promise<void>;
+    getTeacherInfo(teacherId: Principal): Promise<Option<TeacherInfo>>;
+    getParentLinkedStudentTeacherInfo(): Promise<Option<TeacherInfo>>;
 }

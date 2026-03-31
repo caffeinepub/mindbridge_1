@@ -88,6 +88,11 @@ export const HabitSummary = IDL.Record({
   'xp' : IDL.Nat,
   'lastUpdated' : IDL.Int,
 });
+export const TeacherInfo = IDL.Record({
+  'name' : IDL.Text,
+  'email' : IDL.Text,
+  'phone' : IDL.Text,
+});
 
 export const idlService = IDL.Service({
   '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
@@ -138,6 +143,16 @@ export const idlService = IDL.Service({
       [IDL.Opt(IDL.Principal)],
       ['query'],
     ),
+  'getTeacherInfo' : IDL.Func(
+      [IDL.Principal],
+      [IDL.Opt(TeacherInfo)],
+      ['query'],
+    ),
+  'getParentLinkedStudentTeacherInfo' : IDL.Func(
+      [],
+      [IDL.Opt(TeacherInfo)],
+      ['query'],
+    ),
   'getTeacherStudents' : IDL.Func(
       [],
       [IDL.Vec(IDL.Tuple(IDL.Principal, IDL.Text, IDL.Text))],
@@ -161,6 +176,7 @@ export const idlService = IDL.Service({
       [],
       [],
     ),
+  'saveTeacherPhone' : IDL.Func([IDL.Text], [], []),
   'removeStudentLink' : IDL.Func([IDL.Principal], [], []),
   'submitActivityResponse' : IDL.Func([IDL.Nat, IDL.Text], [IDL.Nat], []),
 });
@@ -248,6 +264,11 @@ export const idlFactory = ({ IDL }) => {
     'xp' : IDL.Nat,
     'lastUpdated' : IDL.Int,
   });
+  const TeacherInfo = IDL.Record({
+    'name' : IDL.Text,
+    'email' : IDL.Text,
+    'phone' : IDL.Text,
+  });
 
   return IDL.Service({
     '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
@@ -298,6 +319,16 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Opt(IDL.Principal)],
         ['query'],
       ),
+    'getTeacherInfo' : IDL.Func(
+        [IDL.Principal],
+        [IDL.Opt(TeacherInfo)],
+        ['query'],
+      ),
+    'getParentLinkedStudentTeacherInfo' : IDL.Func(
+        [],
+        [IDL.Opt(TeacherInfo)],
+        ['query'],
+      ),
     'getTeacherStudents' : IDL.Func(
         [],
         [IDL.Vec(IDL.Tuple(IDL.Principal, IDL.Text, IDL.Text))],
@@ -321,6 +352,7 @@ export const idlFactory = ({ IDL }) => {
         [],
         [],
       ),
+    'saveTeacherPhone' : IDL.Func([IDL.Text], [], []),
     'removeStudentLink' : IDL.Func([IDL.Principal], [], []),
     'submitActivityResponse' : IDL.Func([IDL.Nat, IDL.Text], [IDL.Nat], []),
   });

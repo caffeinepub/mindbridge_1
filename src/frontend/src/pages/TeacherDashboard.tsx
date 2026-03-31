@@ -33,7 +33,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { Principal } from "@icp-sdk/core/principal";
+import { Principal } from "@icp-sdk/core/principal";
 import { Copy, Link2, Mail, RefreshCw, User } from "lucide-react";
 import { Loader2, SmilePlus } from "lucide-react";
 import {
@@ -671,8 +671,10 @@ function EditStudentForm({ initial, onSave, onCancel }: EditStudentFormProps) {
 
 function MyStudentsSection({
   onSelectBackendStudent,
+  onSelectManualStudent,
 }: {
   onSelectBackendStudent?: (p: Principal, name: string, email: string) => void;
+  onSelectManualStudent?: (s: TeacherStudentEntry) => void;
 }) {
   const { data: backendStudents = [], isFetching } =
     useGetTeacherStudentsWithProfiles();
@@ -956,6 +958,18 @@ function MyStudentsSection({
                   </button>
                 </div>
               </div>
+              {onSelectManualStudent && (
+                <div className="mt-2 pt-2 border-t border-border/30">
+                  <button
+                    type="button"
+                    onClick={() => onSelectManualStudent(s)}
+                    data-ocid={`teacher.students.view_progress.${idx + 1}`}
+                    className="inline-flex items-center gap-1.5 bg-teal-600 hover:bg-teal-700 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
+                  >
+                    Click to view student progress →
+                  </button>
+                </div>
+              )}
               {/* Inline edit form */}
               {editingStudentId === s.id && (
                 <div className="mt-3 pt-3 border-t border-border/40">
@@ -1395,6 +1409,30 @@ function BackendStudentProfile({
         <ArrowLeft className="w-4 h-4" />
         Back to Class Overview
       </button>
+
+      {/* No activity data yet banner */}
+      {moodData.length === 0 &&
+        !habitData &&
+        (!assessments || assessments.length === 0) && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex items-start gap-3 bg-sky-50 border border-sky-200 rounded-2xl px-5 py-4 text-sky-800"
+            data-ocid="teacher.student_no_data.panel"
+          >
+            <SmilePlus className="w-5 h-5 flex-shrink-0 text-sky-500 mt-0.5" />
+            <div>
+              <p className="font-semibold text-sm">
+                No activity data recorded yet
+              </p>
+              <p className="text-xs mt-0.5 text-sky-700">
+                The student's mood, habits, and assessment data will appear here
+                once they start logging their daily activities. Ask the student
+                to open their Lumi Arc portal and log their first mood check-in.
+              </p>
+            </div>
+          </motion.div>
+        )}
 
       {/* Student banner */}
       <div className="rounded-2xl bg-teal-50 border border-teal-200 p-6">
@@ -2094,7 +2132,10 @@ function ClassOverview({
       )}
 
       {/* My Students contact directory */}
-      <MyStudentsSection onSelectBackendStudent={onSelectBackendStudent} />
+      <MyStudentsSection
+        onSelectBackendStudent={onSelectBackendStudent}
+        onSelectManualStudent={onSelectManualStudent}
+      />
     </div>
   );
 }
@@ -2108,6 +2149,91 @@ function ManualStudentProfile({
   student: TeacherStudentEntry;
   onBack: () => void;
 }) {
+  const { actor } = useActor();
+  const [loading, setLoading] = useState(true);
+  const [extProfile, setExtProfile] = useState<StudentExtProfile | null>(null);
+  const [habitData, setHabitData] = useState<HabitSummaryT | null>(null);
+  const [moodData, setMoodData] = useState<
+    Array<{ day: string; mood: number }>
+  >([]);
+
+  let principalObj: Principal | null = null;
+  let principalParseError = false;
+  if (student.studentPrincipalId) {
+    try {
+      principalObj = Principal.fromText(student.studentPrincipalId);
+    } catch {
+      principalParseError = true;
+    }
+  }
+
+  const { data: assessments } = useGetStudentAssessments(principalObj);
+
+  const pidStr = student.studentPrincipalId;
+  useEffect(() => {
+    if (!actor || !pidStr) {
+      setLoading(false);
+      return;
+    }
+    let p: Principal;
+    try {
+      p = Principal.fromText(pidStr);
+    } catch {
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    Promise.all([
+      (actor as any).getStudentExtendedProfile(p).catch(() => []),
+      (actor as any).getHabitSummary(p).catch(() => []),
+      (actor as any).getMoodHistory(p).catch(() => ""),
+    ])
+      .then(([profileOpt, habitOpt, moodStr]) => {
+        const profileVal = Array.isArray(profileOpt)
+          ? profileOpt[0]
+          : profileOpt?.__kind__ === "Some"
+            ? profileOpt.value
+            : undefined;
+        const habitVal = Array.isArray(habitOpt)
+          ? habitOpt[0]
+          : habitOpt?.__kind__ === "Some"
+            ? habitOpt.value
+            : undefined;
+        if (profileVal) setExtProfile(profileVal);
+        if (habitVal) setHabitData(habitVal);
+        if (moodStr) setMoodData(parseMoodHistory(moodStr));
+      })
+      .finally(() => setLoading(false));
+  }, [actor, pidStr]);
+
+  const latest = assessments?.[assessments.length - 1];
+  const chartData =
+    assessments
+      ?.slice()
+      .sort((a, b) => (a.timestamp < b.timestamp ? -1 : 1))
+      .map((a) => ({
+        date: formatDateT(a.timestamp),
+        Depression: Number(a.depression.rawScore),
+        Anxiety: Number(a.anxiety.rawScore),
+        Stress: Number(a.stress.rawScore),
+      })) ?? [];
+
+  const sleepStreak = habitData ? Number(habitData.sleepStreak) : 0;
+  const exerciseStreak = habitData ? Number(habitData.exerciseStreak) : 0;
+  const outdoorStreak = habitData ? Number(habitData.outdoorStreak) : 0;
+  const totalXP = habitData ? Number(habitData.xp) : 0;
+  const { levelLabel, xpProgress, xpToNextLevel } = getXPLevelInfo(totalXP);
+
+  const earnedBadgeIds = new Set<string>();
+  if (sleepStreak >= 7) earnedBadgeIds.add("sleep_champion");
+  if (sleepStreak >= 3) earnedBadgeIds.add("streak_starter");
+  if (sleepStreak >= 7) earnedBadgeIds.add("streak_legend");
+  if (totalXP >= 30) earnedBadgeIds.add("wellness_star");
+  if (totalXP >= 300) earnedBadgeIds.add("radiant");
+  if (totalXP >= 500) earnedBadgeIds.add("champion");
+  if (exerciseStreak >= 5) earnedBadgeIds.add("yoga_warrior");
+  if (outdoorStreak >= 5) earnedBadgeIds.add("outdoor_explorer");
+
   return (
     <motion.div
       initial={{ opacity: 0, x: 24 }}
@@ -2120,24 +2246,25 @@ function ManualStudentProfile({
       <button
         type="button"
         onClick={onBack}
+        data-ocid="teacher.manual_profile.back.button"
         className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors font-medium"
       >
         <ArrowLeft className="w-4 h-4" />
         Back to Class Overview
       </button>
 
-      {/* Student header */}
+      {/* Student header — amber for manually added */}
       <div className="rounded-2xl bg-amber-50 border border-amber-200 p-6">
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0 text-2xl">
             🧑‍🎓
           </div>
-          <div>
+          <div className="flex-1">
             <h2 className="font-display text-2xl font-bold text-foreground">
               {student.studentName}
             </h2>
             {student.studentEmail && (
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-muted-foreground mt-0.5">
                 {student.studentEmail}
               </p>
             )}
@@ -2146,14 +2273,26 @@ function ManualStudentProfile({
                 {student.studentFieldOfStudy}
               </p>
             )}
-            <span className="inline-flex items-center mt-2 text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">
+            {extProfile?.wellnessGoal && (
+              <p className="text-xs text-muted-foreground mt-0.5 italic">
+                Goal: {extProfile.wellnessGoal}
+              </p>
+            )}
+          </div>
+          <div className="text-right flex flex-col items-end gap-2">
+            <span className="inline-flex items-center text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">
               Manually Added
             </span>
+            {totalXP > 0 && (
+              <span className="inline-flex items-center gap-1 bg-amber-100 text-amber-700 px-3 py-1 rounded-full text-sm font-semibold">
+                <Zap className="w-3.5 h-3.5" /> {totalXP} XP
+              </span>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Student details */}
+      {/* Student Details */}
       <Card className="rounded-2xl border-border/40">
         <CardHeader>
           <CardTitle className="text-base">Student Details</CardTitle>
@@ -2185,7 +2324,7 @@ function ManualStudentProfile({
         </CardContent>
       </Card>
 
-      {/* Guardian details */}
+      {/* Guardian / Parent Details */}
       <Card className="rounded-2xl border-border/40">
         <CardHeader>
           <CardTitle className="text-base">Guardian / Parent Details</CardTitle>
@@ -2216,6 +2355,555 @@ function ManualStudentProfile({
           ))}
         </CardContent>
       </Card>
+
+      {/* ── Progress Section ─────────────────────────────────────────── */}
+
+      {/* No Principal ID notice */}
+      {!student.studentPrincipalId && !principalParseError && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-start gap-3 bg-sky-50 border border-sky-200 rounded-2xl px-5 py-4 text-sky-800"
+          data-ocid="teacher.manual_no_principal.panel"
+        >
+          <User className="w-5 h-5 flex-shrink-0 text-sky-500 mt-0.5" />
+          <div>
+            <p className="font-semibold text-sm">No Principal ID linked</p>
+            <p className="text-xs mt-0.5 text-sky-700">
+              Ask the student to share their Principal ID from the Student
+              portal (visible in their "Link Your Guardian" tab). Once you add
+              it here, their progress data will appear automatically.
+            </p>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Principal ID parse error */}
+      {principalParseError && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-2xl px-5 py-4 text-red-800"
+          data-ocid="teacher.manual_principal_error.panel"
+        >
+          <AlertTriangle className="w-5 h-5 flex-shrink-0 text-red-500 mt-0.5" />
+          <div>
+            <p className="font-semibold text-sm">Invalid Principal ID</p>
+            <p className="text-xs mt-0.5 text-red-700">
+              The stored Principal ID "{student.studentPrincipalId}" could not
+              be parsed. Please edit the student entry and correct it.
+            </p>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Loading progress data */}
+      {principalObj && loading && (
+        <div
+          className="flex items-center justify-center py-12"
+          data-ocid="teacher.manual_progress.loading_state"
+        >
+          <Loader2 className="w-6 h-6 animate-spin text-amber-500" />
+          <span className="ml-3 text-muted-foreground text-sm">
+            Loading student progress…
+          </span>
+        </div>
+      )}
+
+      {/* Progress content — only when principal is valid and not loading */}
+      {principalObj && !loading && (
+        <>
+          {/* No activity data banner */}
+          {moodData.length === 0 &&
+            !habitData &&
+            (!assessments || assessments.length === 0) && (
+              <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex items-start gap-3 bg-sky-50 border border-sky-200 rounded-2xl px-5 py-4 text-sky-800"
+                data-ocid="teacher.manual_student_no_data.panel"
+              >
+                <SmilePlus className="w-5 h-5 flex-shrink-0 text-sky-500 mt-0.5" />
+                <div>
+                  <p className="font-semibold text-sm">
+                    No activity data recorded yet
+                  </p>
+                  <p className="text-xs mt-0.5 text-sky-700">
+                    The student's mood, habits, and assessment data will appear
+                    here once they start logging their daily activities. Ask the
+                    student to open their Lumi Arc portal and log their first
+                    mood check-in.
+                  </p>
+                </div>
+              </motion.div>
+            )}
+
+          {/* DASS-21 summary score cards */}
+          {latest && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="grid grid-cols-2 md:grid-cols-4 gap-4"
+            >
+              {[
+                {
+                  label: "Depression",
+                  score: Number(latest.depression.rawScore),
+                  severity: latest.depression.severity,
+                },
+                {
+                  label: "Anxiety",
+                  score: Number(latest.anxiety.rawScore),
+                  severity: latest.anxiety.severity,
+                },
+                {
+                  label: "Stress",
+                  score: Number(latest.stress.rawScore),
+                  severity: latest.stress.severity,
+                },
+                {
+                  label: "Social Risk",
+                  score: getSocialScoreT(latest),
+                  severity: null,
+                  risk: getSocialIsolationRisk(getSocialScoreT(latest)).risk,
+                },
+              ].map((item, i) => (
+                <Card
+                  key={item.label}
+                  className="rounded-2xl border-border/40 shadow-sm"
+                  data-ocid={`teacher.manual_summary.item.${i + 1}`}
+                >
+                  <CardContent className="p-4 text-center">
+                    <div className="font-display text-3xl font-bold mb-1">
+                      {item.score}
+                    </div>
+                    <div className="text-xs text-muted-foreground mb-2">
+                      {item.label}
+                    </div>
+                    {item.severity ? (
+                      <Badge
+                        className={`text-xs rounded-full ${severityBgClass(item.severity)}`}
+                      >
+                        {formatSeverityLabel(item.severity)}
+                      </Badge>
+                    ) : (
+                      <Badge
+                        className={`text-xs rounded-full ${
+                          item.risk === "low"
+                            ? "bg-green-100 text-green-800"
+                            : item.risk === "moderate"
+                              ? "bg-yellow-100 text-yellow-800"
+                              : item.risk === "high"
+                                ? "bg-orange-100 text-orange-800"
+                                : "bg-red-100 text-red-800"
+                        }`}
+                      >
+                        {item.risk}
+                      </Badge>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </motion.div>
+          )}
+
+          {/* DASS-21 plain language summary */}
+          {latest && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.08 }}
+              data-ocid="teacher.manual_dass_summary.card"
+            >
+              <Card className="rounded-2xl border-border/40 shadow-sm">
+                <CardHeader className="pb-3">
+                  <CardTitle className="font-display text-base flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4 text-amber-500" />
+                    What the DASS-21 Scores Mean
+                  </CardTitle>
+                  <p className="text-xs text-muted-foreground">
+                    Plain-language guide to this student's latest results.
+                  </p>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {[
+                    {
+                      type: "depression" as const,
+                      label: "Depression",
+                      score: Number(latest.depression.rawScore),
+                    },
+                    {
+                      type: "anxiety" as const,
+                      label: "Anxiety",
+                      score: Number(latest.anxiety.rawScore),
+                    },
+                    {
+                      type: "stress" as const,
+                      label: "Stress",
+                      score: Number(latest.stress.rawScore),
+                    },
+                  ].map(({ type, label, score }) => {
+                    const sev = getDassPlainSeverityT(type, score);
+                    return (
+                      <div
+                        key={type}
+                        className={`rounded-xl border p-3 ${sev.bg}`}
+                      >
+                        <div className="flex items-center justify-between mb-0.5">
+                          <span className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                            {label}
+                          </span>
+                          <span
+                            className={`text-xs font-semibold ${sev.color}`}
+                          >
+                            {sev.level}
+                          </span>
+                        </div>
+                        <p className={`text-sm leading-relaxed ${sev.color}`}>
+                          {sev.description}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+
+          {/* Assessment Trends line chart */}
+          {chartData.length > 1 && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.12 }}
+            >
+              <Card className="rounded-2xl border-border/40 shadow-sm">
+                <CardHeader>
+                  <CardTitle className="font-display text-base flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4 text-amber-500" />
+                    Assessment Trends
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={280}>
+                    <LineChart data={chartData}>
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        stroke="oklch(0.9 0.02 180)"
+                      />
+                      <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                      <YAxis tick={{ fontSize: 11 }} domain={[0, 42]} />
+                      <Tooltip
+                        contentStyle={{
+                          borderRadius: "12px",
+                          border: "1px solid oklch(0.88 0.025 180)",
+                          fontSize: "12px",
+                        }}
+                      />
+                      <Legend wrapperStyle={{ fontSize: "12px" }} />
+                      <Line
+                        type="monotone"
+                        dataKey="Depression"
+                        stroke="oklch(0.55 0.18 25)"
+                        strokeWidth={2}
+                        dot={{ r: 4 }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="Anxiety"
+                        stroke="oklch(0.58 0.18 55)"
+                        strokeWidth={2}
+                        dot={{ r: 4 }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="Stress"
+                        stroke="oklch(0.42 0.09 195)"
+                        strokeWidth={2}
+                        dot={{ r: 4 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+
+          {/* Weekly Mood bar chart */}
+          {moodData.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.16 }}
+              data-ocid="teacher.manual_student_mood.panel"
+            >
+              <Card className="rounded-2xl border-border/40 shadow-sm">
+                <CardHeader>
+                  <CardTitle className="font-display text-base flex items-center gap-2">
+                    <SmilePlus className="w-4 h-4 text-amber-500" />
+                    Weekly Mood Check-Ins
+                  </CardTitle>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Mood score: 1 = Very Sad · 2 = Sad · 3 = Okay · 4 = Happy ·
+                    5 = Very Happy
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={220}>
+                    <BarChart
+                      data={moodData}
+                      barCategoryGap="28%"
+                      margin={{ top: 4, right: 8, left: -10, bottom: 0 }}
+                    >
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        vertical={false}
+                        stroke="oklch(0.92 0.015 195)"
+                      />
+                      <XAxis
+                        dataKey="day"
+                        tick={{ fontSize: 11 }}
+                        axisLine={false}
+                        tickLine={false}
+                      />
+                      <YAxis
+                        domain={[0, 5]}
+                        ticks={[1, 2, 3, 4, 5]}
+                        tick={{ fontSize: 11 }}
+                        axisLine={false}
+                        tickLine={false}
+                      />
+                      <Tooltip
+                        content={<MoodTooltipT />}
+                        cursor={{ fill: "oklch(0.96 0.02 195 / 0.5)" }}
+                      />
+                      <Bar dataKey="mood" radius={[6, 6, 0, 0]} maxBarSize={48}>
+                        {moodData.map((entry) => (
+                          <Cell
+                            key={`mood-bar-${entry.day}`}
+                            fill={
+                              MOOD_BAR_COLORS_T[entry.mood] ??
+                              MOOD_BAR_COLORS_T[0]
+                            }
+                          />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+
+          {/* Daily Habit Streaks */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <Card className="rounded-2xl border-border/40 shadow-sm">
+              <CardHeader className="pb-3">
+                <CardTitle className="font-display text-base flex items-center gap-2">
+                  <Flame className="w-4 h-4 text-orange-400" />
+                  Daily Habit Streaks
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-3 gap-3">
+                  {[
+                    {
+                      icon: "🌙",
+                      label: "Sleep Streak",
+                      value: sleepStreak,
+                      color: "from-indigo-100 to-violet-100 border-indigo-200",
+                    },
+                    {
+                      icon: "💪",
+                      label: "Exercise Streak",
+                      value: exerciseStreak,
+                      color: "from-orange-100 to-rose-100 border-orange-200",
+                    },
+                    {
+                      icon: "🌳",
+                      label: "Outdoor Streak",
+                      value: outdoorStreak,
+                      color: "from-emerald-100 to-teal-100 border-emerald-200",
+                    },
+                  ].map((s) => (
+                    <div
+                      key={s.label}
+                      className={`rounded-2xl border bg-gradient-to-br ${s.color} p-4 text-center shadow-sm`}
+                    >
+                      <div className="text-2xl mb-1">{s.icon}</div>
+                      <div className="font-display text-3xl font-bold text-foreground flex items-center justify-center gap-1">
+                        {s.value > 0 && <span className="text-xl">🔥</span>}
+                        {s.value}
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-0.5 font-medium">
+                        {s.label}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {s.value === 1 ? "day" : "days"}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* XP Level banner */}
+                <div className="rounded-2xl bg-gradient-to-r from-amber-50 via-orange-50 to-yellow-50 border border-amber-200 p-4 shadow-sm">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-display font-bold text-foreground text-base">
+                      {levelLabel}
+                    </span>
+                    <span className="text-sm font-semibold text-amber-700">
+                      {totalXP} XP
+                    </span>
+                  </div>
+                  <Progress value={xpProgress} className="h-2 bg-amber-100" />
+                  <div className="text-xs text-muted-foreground mt-1.5">
+                    {xpToNextLevel > 0
+                      ? `${xpToNextLevel} XP to next level`
+                      : "Max level reached! 🏆"}
+                  </div>
+                </div>
+
+                <p className="text-xs text-muted-foreground text-center italic">
+                  Detailed day-by-day habit logs are visible only to the
+                  student.
+                </p>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Badges shelf */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.24 }}
+          >
+            <Card className="rounded-2xl border-border/40 shadow-sm">
+              <CardHeader className="pb-3">
+                <CardTitle className="font-display text-base flex items-center gap-2">
+                  🏅 Achievements
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-5 gap-3">
+                  {TEACHER_BADGES.map((badge) => {
+                    const unlocked = earnedBadgeIds.has(badge.id);
+                    return (
+                      <div
+                        key={badge.id}
+                        title={badge.hint}
+                        className={`flex flex-col items-center gap-1 p-2 rounded-xl text-center transition-all ${
+                          unlocked
+                            ? "bg-amber-50 border border-amber-200 shadow-sm ring-1 ring-amber-300/50"
+                            : "bg-muted/40 border border-border/30 opacity-50 grayscale"
+                        }`}
+                      >
+                        <span className="text-xl">{badge.emoji}</span>
+                        <span className="text-[10px] font-medium leading-tight text-foreground">
+                          {badge.name}
+                        </span>
+                        {unlocked && (
+                          <span className="text-[9px] text-amber-600 font-semibold">
+                            Earned!
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Assessment history table */}
+          {assessments && assessments.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.28 }}
+            >
+              <Card className="rounded-2xl border-border/40 shadow-sm">
+                <CardHeader>
+                  <CardTitle className="font-display text-base flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4 text-amber-500" />
+                    Assessment History
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <div className="overflow-x-auto">
+                    <Table data-ocid="teacher.manual_student_assessments.table">
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Depression</TableHead>
+                          <TableHead>Anxiety</TableHead>
+                          <TableHead>Stress</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {assessments
+                          .slice()
+                          .sort((a, b) => (a.timestamp > b.timestamp ? -1 : 1))
+                          .map((a, i) => (
+                            <TableRow
+                              key={a.id.toString()}
+                              data-ocid={`teacher.manual_assessment.row.${i + 1}`}
+                            >
+                              <TableCell className="text-sm">
+                                {formatDateT(a.timestamp)}
+                              </TableCell>
+                              <TableCell>
+                                <Badge
+                                  className={`text-xs rounded-full ${severityBgClass(a.depression.severity)}`}
+                                >
+                                  {Number(a.depression.rawScore)} —{" "}
+                                  {formatSeverityLabel(a.depression.severity)}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <Badge
+                                  className={`text-xs rounded-full ${severityBgClass(a.anxiety.severity)}`}
+                                >
+                                  {Number(a.anxiety.rawScore)} —{" "}
+                                  {formatSeverityLabel(a.anxiety.severity)}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <Badge
+                                  className={`text-xs rounded-full ${severityBgClass(a.stress.severity)}`}
+                                >
+                                  {Number(a.stress.rawScore)} —{" "}
+                                  {formatSeverityLabel(a.stress.severity)}
+                                </Badge>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+
+          {!latest && (
+            <div
+              className="text-center py-12 text-muted-foreground"
+              data-ocid="teacher.manual_student_assessments.empty_state"
+            >
+              <p className="font-display text-lg font-semibold mb-1 text-foreground">
+                No assessments yet
+              </p>
+              <p className="text-sm">
+                This student has not completed any DASS-21 assessments.
+              </p>
+            </div>
+          )}
+        </>
+      )}
     </motion.div>
   );
 }
@@ -2601,7 +3289,12 @@ export default function TeacherDashboard() {
     const name = userProfile?.name ?? "Teacher";
     const email = userProfile?.email ?? "";
     actor.createTeacherProfile(name, email).catch(() => {});
-  }, [actor, identity, userProfile?.name, userProfile?.email]);
+    const phone = (userProfile as any)?.phoneNumber ?? "";
+    if (phone) {
+      (actor as any).saveTeacherPhone(phone).catch(() => {});
+    }
+    // biome-ignore lint/correctness/useExhaustiveDependencies: intentional
+  }, [actor, identity, userProfile]);
   const inviteLink = identity
     ? generateTeacherInviteLink(identity)
     : `${window.location.origin}/?teacherInvite=`;

@@ -135,6 +135,13 @@ actor {
     };
   };
 
+  // Teacher contact info (returned to students/guardians)
+  public type TeacherInfo = {
+    name : Text;
+    email : Text;
+    phone : Text;
+  };
+
   public type Severity = Severity.Type;
   public type ResourceCategory = ResourceCategory.Type;
   public type ActivityType = ActivityType.Type;
@@ -150,6 +157,7 @@ actor {
   stable var _stableStudentExtProfiles : [(StudentId, {name : Text; email : Text; age : Text; fieldOfStudy : Text; wellnessGoal : Text})] = [];
   stable var _stableHabitSummaries : [(StudentId, {sleepStreak : Nat; exerciseStreak : Nat; outdoorStreak : Nat; xp : Nat; lastUpdated : Time.Time})] = [];
   stable var _stableStudentMoodData : [(StudentId, Text)] = [];
+  stable var _stableTeacherPhones : [(TeacherId, Text)] = [];
   stable var _stableNextAssessmentId : Nat = 1;
   stable var _stableNextResourceId : Nat = 1;
   stable var _stableNextActivityId : Nat = 1;
@@ -173,6 +181,8 @@ actor {
   let habitSummaries = Map.empty<StudentId, HabitSummary.Type>();
   // Mood data: StudentId -> encoded string "YYYY-MM-DD=moodValue;..."
   let studentMoodData = Map.empty<StudentId, Text>();
+  // Teacher phone numbers
+  let teacherPhones = Map.empty<TeacherId, Text>();
 
   public type UserRole = UserRole.Type;
   public type DASS21Assessment = DASS21Assessment.Type;
@@ -231,6 +241,57 @@ actor {
     parentProfiles.add(caller, profile);
   };
 
+  // Save teacher phone number (teacher calls from their profile)
+  public shared ({ caller }) func saveTeacherPhone(phone : Text) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized");
+    };
+    teacherPhones.add(caller, phone);
+  };
+
+  // Get teacher contact info (name, email, phone) by teacher Principal
+  // Accessible by any logged-in user (students and parents need this)
+  public query ({ caller }) func getTeacherInfo(teacherId : TeacherId) : async ?TeacherInfo {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized");
+    };
+    switch (teacherProfiles.get(teacherId)) {
+      case null null;
+      case (?tp) {
+        let phone = switch (teacherPhones.get(teacherId)) {
+          case null "";
+          case (?p) p;
+        };
+        ?{ name = tp.name; email = tp.email; phone };
+      };
+    };
+  };
+
+  // Get the linked teacher's contact info for the calling parent
+  // Parent calls this after linking; uses studentLinks to find teacher
+  public query ({ caller }) func getParentLinkedStudentTeacherInfo() : async ?TeacherInfo {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized");
+    };
+    // Find the student linked to this parent
+    for ((studentId, (teacherId, parentId)) in studentLinks.entries()) {
+      if (parentId == caller) {
+        // Found the student; now get the teacher's info
+        switch (teacherProfiles.get(teacherId)) {
+          case null { return null };
+          case (?tp) {
+            let phone = switch (teacherPhones.get(teacherId)) {
+              case null "";
+              case (?p) p;
+            };
+            return ?{ name = tp.name; email = tp.email; phone };
+          };
+        };
+      };
+    };
+    null;
+  };
+
   public shared ({ caller }) func linkStudentToTeacherAndParent(
     teacherId : TeacherId,
     parentId : ParentId
@@ -258,14 +319,17 @@ actor {
     let result = List.empty<(Principal, Text, Text)>();
     for ((studentId, (teacherId, _)) in studentLinks.entries()) {
       if (teacherId == caller) {
-        switch (studentProfiles.get(studentId)) {
-          case (?profile) {
-            result.add((studentId, profile.name, profile.email));
-          };
+        // Prefer extended profile name/email
+        let (finalName, finalEmail) = switch (studentExtProfiles.get(studentId)) {
+          case (?ep) (ep.name, ep.email);
           case null {
-            result.add((studentId, "", ""));
+            switch (studentProfiles.get(studentId)) {
+              case (?profile) (profile.name, profile.email);
+              case null ("", "");
+            };
           };
         };
+        result.add((studentId, finalName, finalEmail));
       };
     };
     result.toArray();
@@ -337,6 +401,7 @@ actor {
       Runtime.trap("Unauthorized");
     };
     let newPart = date # "=" # mood;
+    // Simple append: frontend parseMoodHistory uses a map so last value for each date wins
     let existing = switch (studentMoodData.get(caller)) {
       case null newPart;
       case (?s) s # ";" # newPart;
@@ -571,8 +636,6 @@ actor {
         case null {};
       };
 
-
-
       // Admin can view all assessments
       if (not authorized and not AccessControl.isAdmin(accessControlState, caller)) {
         Runtime.trap("Unauthorized: Can only view assessments for linked students");
@@ -717,6 +780,10 @@ actor {
     for (entry in studentMoodData.entries()) { smdList.add(entry) };
     _stableStudentMoodData := smdList.toArray();
 
+    let tpPhoneList = List.empty<(TeacherId, Text)>();
+    for (entry in teacherPhones.entries()) { tpPhoneList.add(entry) };
+    _stableTeacherPhones := tpPhoneList.toArray();
+
     _stableNextAssessmentId := nextAssessmentId;
     _stableNextResourceId := nextResourceId;
     _stableNextActivityId := nextActivityId;
@@ -732,6 +799,7 @@ actor {
     for ((k, v) in _stableStudentExtProfiles.vals()) { studentExtProfiles.add(k, v) };
     for ((k, v) in _stableHabitSummaries.vals()) { habitSummaries.add(k, v) };
     for ((k, v) in _stableStudentMoodData.vals()) { studentMoodData.add(k, v) };
+    for ((k, v) in _stableTeacherPhones.vals()) { teacherPhones.add(k, v) };
     nextAssessmentId := _stableNextAssessmentId;
     nextResourceId := _stableNextResourceId;
     nextActivityId := _stableNextActivityId;

@@ -684,6 +684,11 @@ export default function GuardianDashboard() {
   }> | null>(null);
   const [autoLoadDone, setAutoLoadDone] = useState(false);
   const [autoLoadLoading, setAutoLoadLoading] = useState(false);
+  const [linkedTeacherInfo, setLinkedTeacherInfo] = useState<{
+    name: string;
+    email: string;
+    phone: string;
+  } | null>(null);
 
   // Manual fallback inputs (shown only if no linked student found)
   const [studentIdInput, setStudentIdInput] = useState("");
@@ -746,6 +751,22 @@ export default function GuardianDashboard() {
               });
             }
             setBackendMoodData(parsed);
+          }
+          // Load teacher info for the linked student
+          try {
+            const teacherInfoOpt = await (actor as any)
+              .getParentLinkedStudentTeacherInfo()
+              .catch(() => []);
+            const teacherInfoArr = Array.isArray(teacherInfoOpt)
+              ? teacherInfoOpt
+              : teacherInfoOpt?.__kind__ === "Some"
+                ? [teacherInfoOpt.value]
+                : [];
+            if (teacherInfoArr.length > 0) {
+              setLinkedTeacherInfo(teacherInfoArr[0]);
+            }
+          } catch {
+            // ignore — teacher info is optional
           }
         }
       } catch {}
@@ -866,9 +887,10 @@ export default function GuardianDashboard() {
           )}
           <ChangePinDialog userRole="guardian" />
         </div>
-        {/* Teacher Contact Card (from profile) */}
-        {(guardianProfile?.linkedTeacherEmailForGuardian ||
-          guardianProfile?.linkedTeacherNameForGuardian) && (
+        {/* Teacher Contact Card — prefer live backend data, fall back to profile fields */}
+        {linkedTeacherInfo ||
+        guardianProfile?.linkedTeacherEmailForGuardian ||
+        guardianProfile?.linkedTeacherNameForGuardian ? (
           <div
             className="mb-4 bg-teal-50 border border-teal-200 rounded-2xl px-5 py-4 flex items-center gap-4"
             data-ocid="guardian.teacher_contact.panel"
@@ -881,21 +903,33 @@ export default function GuardianDashboard() {
                 Your Child's Mentor Teacher
               </p>
               <p className="text-sm font-medium text-foreground">
-                {guardianProfile.linkedTeacherNameForGuardian || "Teacher"}
+                {linkedTeacherInfo?.name ||
+                  guardianProfile?.linkedTeacherNameForGuardian ||
+                  "Teacher"}
               </p>
-              {guardianProfile.linkedTeacherEmailForGuardian && (
+              {(linkedTeacherInfo?.email ||
+                guardianProfile?.linkedTeacherEmailForGuardian) && (
                 <a
-                  href={`mailto:${guardianProfile.linkedTeacherEmailForGuardian}`}
+                  href={`mailto:${linkedTeacherInfo?.email || guardianProfile?.linkedTeacherEmailForGuardian}`}
                   className="flex items-center gap-1 text-xs text-teal-600 hover:underline mt-0.5"
                 >
                   <Mail className="w-3 h-3" />
-                  {guardianProfile.linkedTeacherEmailForGuardian}
+                  {linkedTeacherInfo?.email ||
+                    guardianProfile?.linkedTeacherEmailForGuardian}
+                </a>
+              )}
+              {linkedTeacherInfo?.phone && (
+                <a
+                  href={`tel:${linkedTeacherInfo.phone}`}
+                  className="flex items-center gap-1 text-xs text-teal-600 hover:underline mt-0.5"
+                >
+                  <Phone className="w-3 h-3" />
+                  {linkedTeacherInfo.phone}
                 </a>
               )}
             </div>
           </div>
-        )}
-        {!guardianProfile?.linkedTeacherEmailForGuardian && (
+        ) : (
           <div
             className="mb-4 bg-muted/30 border border-border/40 rounded-2xl px-5 py-3 flex items-center gap-3"
             data-ocid="guardian.teacher_contact.panel"
