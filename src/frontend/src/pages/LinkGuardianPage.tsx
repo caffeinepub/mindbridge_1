@@ -14,6 +14,7 @@ import {
   Loader2,
   Shield,
   Sparkles,
+  Unlink,
 } from "lucide-react";
 import { motion } from "motion/react";
 import { useEffect, useState } from "react";
@@ -135,6 +136,8 @@ export default function LinkGuardianPage() {
   const [teacherPending, setTeacherPending] = useState(false);
   const [parentPending, setParentPending] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [unlinkTeacherPending, setUnlinkTeacherPending] = useState(false);
+  const [unlinkParentPending, setUnlinkParentPending] = useState(false);
 
   const myPrincipal = identity?.getPrincipal().toString() ?? "";
 
@@ -272,6 +275,44 @@ export default function LinkGuardianPage() {
       setBothLinked(true);
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleUnlinkTeacher = async () => {
+    setUnlinkTeacherPending(true);
+    try {
+      if (actor && identity) {
+        const myId = identity.getPrincipal();
+        await (actor as any).removeStudentLink(myId);
+      }
+    } catch {
+      // ignore if backend unavailable
+    }
+    localStorage.removeItem("lumiLinkedTeacherId");
+    setTeacherId("");
+    setTeacherLinked(false);
+    setBothLinked(false);
+    toast.success("Teacher unlinked. You can re-link using a new invite link.");
+    setUnlinkTeacherPending(false);
+  };
+
+  const handleUnlinkParent = async () => {
+    setUnlinkParentPending(true);
+    try {
+      if (actor && identity) {
+        const myId = identity.getPrincipal();
+        await (actor as any).removeStudentLink(myId);
+      }
+    } catch {
+      // ignore if backend unavailable
+    }
+    localStorage.removeItem("lumiLinkedParentId");
+    setParentId("");
+    setParentLinked(false);
+    setBothLinked(false);
+    toast.success(
+      "Parent / Guardian unlinked. You can re-link using their Principal ID.",
+    );
+    setUnlinkParentPending(false);
+  };
 
   const handleCopy = () => {
     if (myPrincipal) {
@@ -573,24 +614,47 @@ export default function LinkGuardianPage() {
                   submitting.
                 </div>
               )}
-              <Button
-                onClick={handleLinkTeacher}
-                disabled={teacherPending}
-                className="w-full h-11 rounded-xl bg-teal-600 hover:bg-teal-700 text-white"
-                data-ocid="link-guardian.teacher.submit_button"
-              >
-                {teacherPending ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <GraduationCap className="w-4 h-4 mr-2" />
-                    {teacherLinked ? "Update Teacher Link" : "Link to Teacher"}
-                  </>
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleLinkTeacher}
+                  disabled={teacherPending}
+                  className="flex-1 h-11 rounded-xl bg-teal-600 hover:bg-teal-700 text-white"
+                  data-ocid="link-guardian.teacher.submit_button"
+                >
+                  {teacherPending ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <GraduationCap className="w-4 h-4 mr-2" />
+                      {teacherLinked
+                        ? "Update Teacher Link"
+                        : "Link to Teacher"}
+                    </>
+                  )}
+                </Button>
+                {teacherLinked && (
+                  <Button
+                    onClick={handleUnlinkTeacher}
+                    disabled={unlinkTeacherPending}
+                    variant="outline"
+                    className="h-11 rounded-xl border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 px-4"
+                    data-ocid="link-guardian.teacher.unlink_button"
+                    title="Unlink Teacher"
+                  >
+                    {unlinkTeacherPending ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <>
+                        <Unlink className="w-4 h-4 mr-1" />
+                        Unlink
+                      </>
+                    )}
+                  </Button>
                 )}
-              </Button>
+              </div>
             </CardContent>
           </Card>
         </motion.div>
@@ -651,26 +715,47 @@ export default function LinkGuardianPage() {
                   submitting.
                 </div>
               )}
-              <Button
-                onClick={handleLinkParent}
-                disabled={parentPending}
-                className="w-full h-11 rounded-xl bg-rose-500 hover:bg-rose-600 text-white"
-                data-ocid="link-guardian.parent.submit_button"
-              >
-                {parentPending ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <Heart className="w-4 h-4 mr-2" />
-                    {parentLinked
-                      ? "Update Parent Link"
-                      : "Link to Parent / Guardian"}
-                  </>
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleLinkParent}
+                  disabled={parentPending}
+                  className="flex-1 h-11 rounded-xl bg-rose-500 hover:bg-rose-600 text-white"
+                  data-ocid="link-guardian.parent.submit_button"
+                >
+                  {parentPending ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Heart className="w-4 h-4 mr-2" />
+                      {parentLinked
+                        ? "Update Parent Link"
+                        : "Link to Parent / Guardian"}
+                    </>
+                  )}
+                </Button>
+                {parentLinked && (
+                  <Button
+                    onClick={handleUnlinkParent}
+                    disabled={unlinkParentPending}
+                    variant="outline"
+                    className="h-11 rounded-xl border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 px-4"
+                    data-ocid="link-guardian.parent.unlink_button"
+                    title="Unlink Parent / Guardian"
+                  >
+                    {unlinkParentPending ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <>
+                        <Unlink className="w-4 h-4 mr-1" />
+                        Unlink
+                      </>
+                    )}
+                  </Button>
                 )}
-              </Button>
+              </div>
             </CardContent>
           </Card>
         </motion.div>

@@ -1956,6 +1956,23 @@ function ClassOverview({
     useGetTeacherStudentsWithProfiles();
   const { students: manualStudents, removeStudent } = useTeacherStudents();
   const queryClient = useQueryClient();
+  const { actor } = useActor();
+
+  async function handleUnlinkBackendStudent(principal: Principal) {
+    if (!actor) return;
+    try {
+      await (actor as any).removeStudentLink(principal);
+    } catch (_) {
+      // ignore if method not available
+    }
+    queryClient.invalidateQueries({
+      queryKey: ["teacherStudentsWithProfiles"],
+    });
+    queryClient.invalidateQueries({ queryKey: ["teacherStudents"] });
+    toast.success(
+      "Student unlinked. They will need to re-link to appear again.",
+    );
+  }
 
   function handleRefresh() {
     queryClient.invalidateQueries({
@@ -2026,14 +2043,10 @@ function ClassOverview({
           data-ocid="teacher.students_grid"
         >
           {backendStudents.map(([principal, name, email], idx) => (
-            <button
-              type="button"
+            <div
               key={principal.toString()}
               data-ocid={`teacher.student_card.${idx + 1}`}
-              onClick={() =>
-                onSelectBackendStudent(principal, name || "Name not set", email)
-              }
-              className="bg-teal-50 border border-teal-200 rounded-2xl p-4 space-y-2 w-full text-left hover:bg-teal-100 transition-colors cursor-pointer"
+              className="bg-teal-50 border border-teal-200 rounded-2xl p-4 space-y-2 w-full"
             >
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center flex-shrink-0">
@@ -2064,14 +2077,33 @@ function ClassOverview({
                 >
                   <Copy className="w-3.5 h-3.5" />
                 </button>
+                <button
+                  type="button"
+                  onClick={() => handleUnlinkBackendStudent(principal)}
+                  data-ocid={`teacher.student_card.delete_button.${idx + 1}`}
+                  className="text-red-400 hover:text-red-600 transition-colors flex-shrink-0"
+                  title="Remove student link"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
               </div>
               <p className="text-xs text-muted-foreground font-mono pl-11">
                 {principal.toString().slice(0, 16)}…
               </p>
-              <p className="text-xs text-teal-600 font-medium pl-11">
+              <button
+                type="button"
+                onClick={() =>
+                  onSelectBackendStudent(
+                    principal,
+                    name || "Name not set",
+                    email,
+                  )
+                }
+                className="text-xs text-teal-600 font-medium pl-11 hover:underline cursor-pointer"
+              >
                 Click to view progress →
-              </p>
-            </button>
+              </button>
+            </div>
           ))}
           {manualStudents.map((s, idx) => (
             <button
