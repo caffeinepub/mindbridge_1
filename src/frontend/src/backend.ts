@@ -157,9 +157,23 @@ export interface backendInterface {
     getAllResources(): Promise<Array<WellnessResource>>;
     getCallerUserRole(): Promise<UserRole>;
     getStudentAssessments(studentId: StudentId): Promise<Array<DASS21Assessment>>;
+    getTeacherStudents(): Promise<Array<[Principal, string, string]>>;
     isCallerAdmin(): Promise<boolean>;
     linkStudentToTeacherAndParent(teacherId: TeacherId, parentId: ParentId): Promise<void>;
+    removeStudentLink(studentId: Principal): Promise<void>;
     submitActivityResponse(activityId: bigint, response: string): Promise<bigint>;
+    // Extended profile, mood, habit, teacher-info methods
+    saveStudentExtendedProfile(name: string, email: string, age: string, fieldOfStudy: string, wellnessGoal: string): Promise<void>;
+    getStudentExtendedProfile(studentId: Principal): Promise<[] | [{ name: string; email: string; age: string; fieldOfStudy: string; wellnessGoal: string }]>;
+    saveMoodEntry(date: string, mood: string): Promise<void>;
+    getMoodHistory(studentId: Principal): Promise<string>;
+    saveHabitSummary(sleepStreak: bigint, exerciseStreak: bigint, outdoorStreak: bigint, xp: bigint): Promise<void>;
+    getHabitSummary(studentId: Principal): Promise<[] | [{ sleepStreak: bigint; exerciseStreak: bigint; outdoorStreak: bigint; xp: bigint; lastUpdated: bigint }]>;
+    getParentLinkedStudent(): Promise<[] | [Principal]>;
+    getTeacherStudentsWithProfiles(): Promise<Array<[Principal, string, string, Array<{ name: string; email: string; age: string; fieldOfStudy: string; wellnessGoal: string }>, Array<{ sleepStreak: bigint; exerciseStreak: bigint; outdoorStreak: bigint; xp: bigint; lastUpdated: bigint }>]>>;
+    saveTeacherPhone(phone: string): Promise<void>;
+    getTeacherInfo(teacherId: Principal): Promise<[] | [{ name: string; email: string; phone: string }]>;
+    getParentLinkedStudentTeacherInfo(): Promise<[] | [{ name: string; email: string; phone: string }]>;
 }
 import type { ActivityType as _ActivityType, DASS21Assessment as _DASS21Assessment, DASS21Subscale as _DASS21Subscale, LanguageActivity as _LanguageActivity, ResourceCategory as _ResourceCategory, StudentId as _StudentId, Time as _Time, Type as _Type, Type__1 as _Type__1, Type__2 as _Type__2, UserRole as _UserRole, WellnessResource as _WellnessResource } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
@@ -386,6 +400,157 @@ export class Backend implements backendInterface {
         } else {
             const result = await (this.actor as any).getTeacherStudents();
             return result;
+        }
+    }
+    async removeStudentLink(studentId: Principal): Promise<void> {
+        if (this.processError) {
+            try {
+                await (this.actor as any).removeStudentLink(studentId);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            await (this.actor as any).removeStudentLink(studentId);
+        }
+    }
+    async saveStudentExtendedProfile(name: string, email: string, age: string, fieldOfStudy: string, wellnessGoal: string): Promise<void> {
+        if (this.processError) {
+            try {
+                await (this.actor as any).saveStudentExtendedProfile(name, email, age, fieldOfStudy, wellnessGoal);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            await (this.actor as any).saveStudentExtendedProfile(name, email, age, fieldOfStudy, wellnessGoal);
+        }
+    }
+    async getStudentExtendedProfile(studentId: Principal): Promise<any> {
+        if (this.processError) {
+            try {
+                const result = await (this.actor as any).getStudentExtendedProfile(studentId);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            return await (this.actor as any).getStudentExtendedProfile(studentId);
+        }
+    }
+    async saveMoodEntry(date: string, mood: string): Promise<void> {
+        if (this.processError) {
+            try {
+                await (this.actor as any).saveMoodEntry(date, mood);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            await (this.actor as any).saveMoodEntry(date, mood);
+        }
+    }
+    async getMoodHistory(studentId: Principal): Promise<string> {
+        if (this.processError) {
+            try {
+                const result = await (this.actor as any).getMoodHistory(studentId);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            return await (this.actor as any).getMoodHistory(studentId);
+        }
+    }
+    async saveHabitSummary(sleepStreak: bigint, exerciseStreak: bigint, outdoorStreak: bigint, xp: bigint): Promise<void> {
+        if (this.processError) {
+            try {
+                await (this.actor as any).saveHabitSummary(sleepStreak, exerciseStreak, outdoorStreak, xp);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            await (this.actor as any).saveHabitSummary(sleepStreak, exerciseStreak, outdoorStreak, xp);
+        }
+    }
+    async getHabitSummary(studentId: Principal): Promise<any> {
+        if (this.processError) {
+            try {
+                const result = await (this.actor as any).getHabitSummary(studentId);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            return await (this.actor as any).getHabitSummary(studentId);
+        }
+    }
+    async getParentLinkedStudent(): Promise<any> {
+        if (this.processError) {
+            try {
+                const result = await (this.actor as any).getParentLinkedStudent();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            return await (this.actor as any).getParentLinkedStudent();
+        }
+    }
+    async getTeacherStudentsWithProfiles(): Promise<any> {
+        if (this.processError) {
+            try {
+                const result = await (this.actor as any).getTeacherStudentsWithProfiles();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            return await (this.actor as any).getTeacherStudentsWithProfiles();
+        }
+    }
+    async saveTeacherPhone(phone: string): Promise<void> {
+        if (this.processError) {
+            try {
+                await (this.actor as any).saveTeacherPhone(phone);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            await (this.actor as any).saveTeacherPhone(phone);
+        }
+    }
+    async getTeacherInfo(teacherId: Principal): Promise<any> {
+        if (this.processError) {
+            try {
+                const result = await (this.actor as any).getTeacherInfo(teacherId);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            return await (this.actor as any).getTeacherInfo(teacherId);
+        }
+    }
+    async getParentLinkedStudentTeacherInfo(): Promise<any> {
+        if (this.processError) {
+            try {
+                const result = await (this.actor as any).getParentLinkedStudentTeacherInfo();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            return await (this.actor as any).getParentLinkedStudentTeacherInfo();
         }
     }
 }

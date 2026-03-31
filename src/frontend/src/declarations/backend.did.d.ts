@@ -61,6 +61,25 @@ export interface WellnessResource {
   'description' : string,
   'category' : Type__1,
 }
+export interface StudentExtProfile {
+  'name' : string,
+  'email' : string,
+  'age' : string,
+  'fieldOfStudy' : string,
+  'wellnessGoal' : string,
+}
+export interface HabitSummary {
+  'sleepStreak' : bigint,
+  'exerciseStreak' : bigint,
+  'outdoorStreak' : bigint,
+  'xp' : bigint,
+  'lastUpdated' : bigint,
+}
+export interface TeacherInfo {
+  'name' : string,
+  'email' : string,
+  'phone' : string,
+}
 export interface _SERVICE {
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
   'addLanguageActivity' : ActorMethod<
@@ -82,13 +101,25 @@ export interface _SERVICE {
   'getAllActivities' : ActorMethod<[], Array<LanguageActivity>>,
   'getAllResources' : ActorMethod<[], Array<WellnessResource>>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
+  'getHabitSummary' : ActorMethod<[StudentId], [] | [HabitSummary]>,
+  'getMoodHistory' : ActorMethod<[StudentId], string>,
+  'getParentLinkedStudent' : ActorMethod<[], [] | [Principal]>,
+  'getParentLinkedStudentTeacherInfo' : ActorMethod<[], [] | [TeacherInfo]>,
   'getStudentAssessments' : ActorMethod<[StudentId], Array<DASS21Assessment>>,
+  'getStudentExtendedProfile' : ActorMethod<[StudentId], [] | [StudentExtProfile]>,
+  'getTeacherInfo' : ActorMethod<[Principal], [] | [TeacherInfo]>,
   'getTeacherStudents' : ActorMethod<[], Array<[Principal, string, string]>>,
+  'getTeacherStudentsWithProfiles' : ActorMethod<[], Array<[Principal, string, string, [] | [StudentExtProfile], [] | [HabitSummary]]>>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'linkStudentToTeacherAndParent' : ActorMethod<
     [TeacherId, ParentId],
     undefined
   >,
+  'removeStudentLink' : ActorMethod<[Principal], undefined>,
+  'saveHabitSummary' : ActorMethod<[bigint, bigint, bigint, bigint], undefined>,
+  'saveMoodEntry' : ActorMethod<[string, string], undefined>,
+  'saveStudentExtendedProfile' : ActorMethod<[string, string, string, string, string], undefined>,
+  'saveTeacherPhone' : ActorMethod<[string], undefined>,
   'submitActivityResponse' : ActorMethod<[bigint, string], bigint>,
 }
 export declare const idlService: IDL.ServiceClass;

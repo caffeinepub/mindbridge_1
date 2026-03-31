@@ -1314,6 +1314,7 @@ function BackendStudentProfile({
 }) {
   const { actor } = useActor();
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [extProfile, setExtProfile] = useState<StudentExtProfile | null>(null);
   const [habitData, setHabitData] = useState<HabitSummaryT | null>(null);
   const [moodData, setMoodData] = useState<
@@ -1324,13 +1325,33 @@ function BackendStudentProfile({
 
   useEffect(() => {
     if (!actor) return;
+    let cancelled = false;
     setLoading(true);
+    setFetchError(null);
+
+    const studentId = principal.toString();
+    console.log("Fetching progress for:", studentId);
+
     Promise.all([
-      (actor as any).getStudentExtendedProfile(principal).catch(() => []),
-      (actor as any).getHabitSummary(principal).catch(() => []),
-      (actor as any).getMoodHistory(principal).catch(() => ""),
+      (actor as any)
+        .getStudentExtendedProfile(principal)
+        .catch((e: unknown) => {
+          console.error("getStudentExtendedProfile failed:", e);
+          return [];
+        }),
+      (actor as any).getHabitSummary(principal).catch((e: unknown) => {
+        console.error("getHabitSummary failed:", e);
+        return [];
+      }),
+      (actor as any).getMoodHistory(principal).catch((e: unknown) => {
+        console.error("getMoodHistory failed:", e);
+        return "";
+      }),
     ])
       .then(([profileOpt, habitOpt, moodStr]) => {
+        if (cancelled) return;
+        console.log("Response:", { profileOpt, habitOpt, moodStr });
+
         const profileVal = Array.isArray(profileOpt)
           ? profileOpt[0]
           : profileOpt?.__kind__ === "Some"
@@ -1343,9 +1364,23 @@ function BackendStudentProfile({
             : undefined;
         if (profileVal) setExtProfile(profileVal);
         if (habitVal) setHabitData(habitVal);
-        if (moodStr) setMoodData(parseMoodHistory(moodStr));
+        if (moodStr) setMoodData(parseMoodHistory(moodStr as string));
       })
-      .finally(() => setLoading(false));
+      .catch((err: unknown) => {
+        if (cancelled) return;
+        console.error("Progress fetch failed:", err);
+        setFetchError(
+          "Could not load student data. Please refresh and try again.",
+        );
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+    // biome-ignore lint/correctness/useExhaustiveDependencies: intentional
   }, [actor, principal]);
 
   const latest = assessments?.[assessments.length - 1];
@@ -1409,6 +1444,22 @@ function BackendStudentProfile({
         <ArrowLeft className="w-4 h-4" />
         Back to Class Overview
       </button>
+
+      {/* Error banner */}
+      {fetchError && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-2xl px-5 py-4 text-red-800"
+          data-ocid="teacher.student_fetch_error.panel"
+        >
+          <AlertTriangle className="w-5 h-5 flex-shrink-0 text-red-500 mt-0.5" />
+          <div>
+            <p className="font-semibold text-sm">Could not load student data</p>
+            <p className="text-xs mt-0.5 text-red-700">{fetchError}</p>
+          </div>
+        </motion.div>
+      )}
 
       {/* No activity data yet banner */}
       {moodData.length === 0 &&
@@ -1962,16 +2013,17 @@ function ClassOverview({
     if (!actor) return;
     try {
       await (actor as any).removeStudentLink(principal);
-    } catch (_) {
-      // ignore if method not available
+      queryClient.invalidateQueries({
+        queryKey: ["teacherStudentsWithProfiles"],
+      });
+      queryClient.invalidateQueries({ queryKey: ["teacherStudents"] });
+      toast.success(
+        "Student unlinked. They will need to re-link to appear again.",
+      );
+    } catch (err) {
+      console.error("Failed to unlink student:", err);
+      toast.error("Could not unlink student. Please try again.");
     }
-    queryClient.invalidateQueries({
-      queryKey: ["teacherStudentsWithProfiles"],
-    });
-    queryClient.invalidateQueries({ queryKey: ["teacherStudents"] });
-    toast.success(
-      "Student unlinked. They will need to re-link to appear again.",
-    );
   }
 
   function handleRefresh() {
@@ -2106,12 +2158,10 @@ function ClassOverview({
             </div>
           ))}
           {manualStudents.map((s, idx) => (
-            <button
-              type="button"
+            <div
               key={s.id}
               data-ocid={`teacher.manual_student_card.${backendStudents.length + idx + 1}`}
-              onClick={() => onSelectManualStudent(s)}
-              className="bg-amber-50 border border-amber-200 rounded-2xl p-4 space-y-2 w-full text-left hover:bg-amber-100 transition-colors cursor-pointer"
+              className="bg-amber-50 border border-amber-200 rounded-2xl p-4 space-y-2 w-full"
             >
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
@@ -2138,6 +2188,7 @@ function ClassOverview({
                       removeStudent(s.id);
                       toast.success("Student removed.");
                     }}
+                    data-ocid={`teacher.manual_student_card.delete_button.${backendStudents.length + idx + 1}`}
                     className="text-red-400 hover:text-red-600 transition-colors p-1 rounded"
                     title="Remove student"
                   >
@@ -2155,10 +2206,14 @@ function ClassOverview({
                   👨‍👩‍👧 Guardian: {s.guardianName}
                 </p>
               )}
-              <p className="text-xs text-amber-600 font-medium pl-11">
+              <button
+                type="button"
+                onClick={() => onSelectManualStudent(s)}
+                className="text-xs text-amber-600 font-medium pl-11 hover:underline cursor-pointer"
+              >
                 Click to view details →
-              </p>
-            </button>
+              </button>
+            </div>
           ))}
         </div>
       )}
@@ -2183,6 +2238,7 @@ function ManualStudentProfile({
 }) {
   const { actor } = useActor();
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [extProfile, setExtProfile] = useState<StudentExtProfile | null>(null);
   const [habitData, setHabitData] = useState<HabitSummaryT | null>(null);
   const [moodData, setMoodData] = useState<
@@ -2212,15 +2268,36 @@ function ManualStudentProfile({
       p = Principal.fromText(pidStr);
     } catch {
       setLoading(false);
+      setFetchError(
+        "Invalid Principal ID format. Please edit the student entry to correct it.",
+      );
       return;
     }
+
+    let cancelled = false;
     setLoading(true);
+    setFetchError(null);
+
+    console.log("Fetching progress for:", pidStr);
+
     Promise.all([
-      (actor as any).getStudentExtendedProfile(p).catch(() => []),
-      (actor as any).getHabitSummary(p).catch(() => []),
-      (actor as any).getMoodHistory(p).catch(() => ""),
+      (actor as any).getStudentExtendedProfile(p).catch((e: unknown) => {
+        console.error("getStudentExtendedProfile failed:", e);
+        return [];
+      }),
+      (actor as any).getHabitSummary(p).catch((e: unknown) => {
+        console.error("getHabitSummary failed:", e);
+        return [];
+      }),
+      (actor as any).getMoodHistory(p).catch((e: unknown) => {
+        console.error("getMoodHistory failed:", e);
+        return "";
+      }),
     ])
       .then(([profileOpt, habitOpt, moodStr]) => {
+        if (cancelled) return;
+        console.log("Response:", { profileOpt, habitOpt, moodStr });
+
         const profileVal = Array.isArray(profileOpt)
           ? profileOpt[0]
           : profileOpt?.__kind__ === "Some"
@@ -2233,9 +2310,22 @@ function ManualStudentProfile({
             : undefined;
         if (profileVal) setExtProfile(profileVal);
         if (habitVal) setHabitData(habitVal);
-        if (moodStr) setMoodData(parseMoodHistory(moodStr));
+        if (moodStr) setMoodData(parseMoodHistory(moodStr as string));
       })
-      .finally(() => setLoading(false));
+      .catch((err: unknown) => {
+        if (cancelled) return;
+        console.error("Manual student progress fetch failed:", err);
+        setFetchError(
+          "Could not load student data. Check the console for details.",
+        );
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [actor, pidStr]);
 
   const latest = assessments?.[assessments.length - 1];
@@ -2445,6 +2535,24 @@ function ManualStudentProfile({
       {/* Progress content — only when principal is valid and not loading */}
       {principalObj && !loading && (
         <>
+          {/* Error banner */}
+          {fetchError && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-2xl px-5 py-4 text-red-800"
+              data-ocid="teacher.manual_student_fetch_error.panel"
+            >
+              <AlertTriangle className="w-5 h-5 flex-shrink-0 text-red-500 mt-0.5" />
+              <div>
+                <p className="font-semibold text-sm">
+                  Could not load student data
+                </p>
+                <p className="text-xs mt-0.5 text-red-700">{fetchError}</p>
+              </div>
+            </motion.div>
+          )}
+
           {/* No activity data banner */}
           {moodData.length === 0 &&
             !habitData &&
